@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "SEU_PROJECT_NUMBER",
+    "project_id": "SEU_PROJECT_ID",
+    "storage_bucket": "SEU_PROJECT_ID.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:SEU_PROJECT_NUMBER:android:xxxxxxxxxxxxxxxxxxxxxx",
+        "android_client_info": {
+          "package_name": "br.com.runnex.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "SEU_PROJECT_NUMBER-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "br.com.runnex.app",
+            "certificate_hash": "SEU_SHA1_DEBUG_OU_RELEASE"
+          }
+        },
+        {
+          "client_id": "SEU_PROJECT_NUMBER-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "SUA_API_KEY_ANDROID"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "SEU_PROJECT_NUMBER-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

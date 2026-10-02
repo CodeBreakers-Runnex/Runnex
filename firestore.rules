@@ -1,0 +1,340 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+    // ============================================================
+    // USERS
+    // ============================================================
+
+    function hasOnlyUserFields() {
+      return request.resource.data.keys().hasOnly([
+        'displayName',
+        'photoURL',
+        'totalXP',
+        'monthlyKm',
+        'monthlyKmMonth',
+        'level',
+        'bio',
+        'location',
+        'privateProfile',
+        'weeklyGoalKm',
+        'onboarded',
+        'enrolledEvents',
+        'joinedGroupIds',
+        'termsAcceptedAt',
+        'termsVersion',
+        'createdAt',
+        'lastUpdated',
+        'petSpecies',
+        'petName',
+        'petCoins',
+        'petUnlockedAccessoryIds',
+        'petEquippedCabeca',
+        'petEquippedPescoco',
+        'petEquippedFundo'
+      ]);
+    }
+
+    function optionalString(field, maxSize) {
+      return !(field in request.resource.data)
+        || request.resource.data[field] == null
+        || (
+          request.resource.data[field] is string
+          && request.resource.data[field].size() <= maxSize
+        );
+    }
+
+    function optionalNumber(field, minValue, maxValue) {
+      return !(field in request.resource.data)
+        || (
+          request.resource.data[field] is number
+          && request.resource.data[field] >= minValue
+          && request.resource.data[field] <= maxValue
+        );
+    }
+
+    function optionalTimestamp(field) {
+      return !(field in request.resource.data)
+        || request.resource.data[field] is timestamp;
+    }
+
+    function validUserBase(userId) {
+      return isOwner(userId)
+        && optionalString('displayName', 80)
+        && optionalString('photoURL', 1000)
+        && optionalString('monthlyKmMonth', 10)
+        && optionalString('level', 40)
+        && optionalString('bio', 240)
+        && optionalString('location', 120)
+        && (
+          !('privateProfile' in request.resource.data)
+          || request.resource.data.privateProfile is bool
+        )
+        && optionalNumber('weeklyGoalKm', 0, 500)
+        && optionalNumber('totalXP', 0, 1000000)
+        && optionalNumber('monthlyKm', 0, 5000)
+        && (
+          !('onboarded' in request.resource.data)
+          || request.resource.data.onboarded is bool
+        )
+        && (
+          !('enrolledEvents' in request.resource.data)
+          || (
+            request.resource.data.enrolledEvents is list
+            && request.resource.data.enrolledEvents.size() <= 100
+          )
+        )
+        && (
+          !('joinedGroupIds' in request.resource.data)
+          || (
+            request.resource.data.joinedGroupIds is list
+            && request.resource.data.joinedGroupIds.size() <= 100
+          )
+        )
+        && optionalString('termsVersion', 20)
+        && optionalTimestamp('termsAcceptedAt')
+        && optionalTimestamp('createdAt')
+        && optionalTimestamp('lastUpdated')
+        && optionalString('petSpecies', 20)
+        && optionalString('petName', 30)
+        && optionalNumber('petCoins', 0, 1000000)
+        && (
+          !('petUnlockedAccessoryIds' in request.resource.data)
+          || (
+            request.resource.data.petUnlockedAccessoryIds is list
+            && request.resource.data.petUnlockedAccessoryIds.size() <= 50
+          )
+        )
+        && optionalString('petEquippedCabeca', 40)
+        && optionalString('petEquippedPescoco', 40)
+        && optionalString('petEquippedFundo', 40);
+    }
+
+    function validUserCreate(userId) {
+      return hasOnlyUserFields()
+        && (
+          !('totalXP' in request.resource.data)
+          || request.resource.data.totalXP == 0
+        )
+        && (
+          !('monthlyKm' in request.resource.data)
+          || request.resource.data.monthlyKm == 0
+        )
+        && (
+          !('level' in request.resource.data)
+          || request.resource.data.level == 'Iniciante'
+        )
+        && (
+          !('createdAt' in request.resource.data)
+          || request.resource.data.createdAt == request.time
+        )
+        && (
+          !('lastUpdated' in request.resource.data)
+          || request.resource.data.lastUpdated == request.time
+        );
+    }
+
+    // As funções abaixo (usadas em validUserUpdate) não chamam mais
+    // validUserBase() individualmente: com 7 alternativas em OR, repetir
+    // esse bloco em cada uma estourava o limite de 1000 expressões
+    // avaliadas por escrita do Firestore, fazendo QUALQUER update em
+    // users/{userId} falhar com "Missing or insufficient permissions"
+    // mesmo quando a operação era legítima. validUserBase agora é chamado
+    // uma única vez em validUserUpdate.
+    function validProfileUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            'displayName',
+            'photoURL',
+            'bio',
+            'location',
+            'privateProfile',
+            'weeklyGoalKm',
+            'onboarded',
+            'createdAt',
+            'lastUpdated'
+          ]);
+    }
+
+    function validStatsProgressUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            'displayName',
+            'photoURL',
+            'totalXP',
+            'monthlyKm',
+            'monthlyKmMonth',
+            'level',
+            'lastUpdated'
+          ])
+        && (
+          !('totalXP' in resource.data)
+          || request.resource.data.totalXP >= resource.data.totalXP
+        )
+        && (
+          // Teto de XP por escrita alinhado ao máximo real que uma única
+          // atividade pode gerar: 200km (limite de "activities.distance")
+          // * 100 XP/km * 1.2 de bônus de pace = 24.000. 25.000 dá uma
+          // margem pequena para arredondamento.
+          !('totalXP' in resource.data)
+          || request.resource.data.totalXP <= resource.data.totalXP + 25000
+        )
+        && (
+          'totalXP' in resource.data
+          || request.resource.data.totalXP <= 25000
+        )
+        && (
+          !('monthlyKm' in resource.data)
+          || request.resource.data.monthlyKm >= resource.data.monthlyKm
+        )
+        && (
+          !('monthlyKm' in resource.data)
+          || request.resource.data.monthlyKm <= resource.data.monthlyKm + 200
+        )
+        && (
+          'monthlyKm' in resource.data
+          || request.resource.data.monthlyKm <= 200
+        )
+        && (
+          !('lastUpdated' in request.resource.data)
+          || request.resource.data.lastUpdated == request.time
+        );
+    }
+
+    function validMonthlyKmReset() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            'monthlyKm',
+            'monthlyKmMonth'
+          ])
+        && request.resource.data.monthlyKm == 0;
+    }
+
+    function validUserRunReset() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            'totalXP',
+            'monthlyKm',
+            'level',
+            'lastUpdated'
+          ])
+        && request.resource.data.totalXP == 0
+        && request.resource.data.monthlyKm == 0
+        && request.resource.data.level == 'Iniciante'
+        && (
+          !('lastUpdated' in request.resource.data)
+          || request.resource.data.lastUpdated == request.time
+        );
+    }
+
+    // Usada só ao apagar uma corrida (o cliente recalcula a soma das
+    // atividades restantes). Remover uma atividade nunca pode fazer as
+    // estatísticas do usuário aumentarem — por isso, além da faixa
+    // absoluta, totalXP/monthlyKm aqui só podem manter ou diminuir o valor
+    // já salvo. Isso fecha a brecha de um cliente chamar esta função
+    // isoladamente para se colocar no topo do ranking sem nenhuma corrida
+    // real por trás.
+    function validStatsRecalculation() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            'totalXP',
+            'monthlyKm',
+            'monthlyKmMonth',
+            'level',
+            'lastUpdated'
+          ])
+        && request.resource.data.totalXP is number
+        && request.resource.data.totalXP >= 0
+        && request.resource.data.totalXP <= 1000000
+        && (
+          !('totalXP' in resource.data)
+          || request.resource.data.totalXP <= resource.data.totalXP
+        )
+        && request.resource.data.monthlyKm is number
+        && request.resource.data.monthlyKm >= 0
+        && request.resource.data.monthlyKm <= 5000
+        && (
+          !('monthlyKm' in resource.data)
+          || request.resource.data.monthlyKm <= resource.data.monthlyKm
+        )
+        && (
+          !('lastUpdated' in request.resource.data)
+          || request.resource.data.lastUpdated == request.time
+        );
+    }
+
+    function validEnrolledEventsUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['enrolledEvents'])
+        && request.resource.data.enrolledEvents is list
+        && request.resource.data.enrolledEvents.size() <= 100;
+    }
+
+    function validJoinedGroupsUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['joinedGroupIds'])
+        && request.resource.data.joinedGroupIds is list
+        && request.resource.data.joinedGroupIds.size() <= 100;
+    }
+
+    function validUserUpdate(userId) {
+      return validUserBase(userId)
+        && (
+          validProfileUpdate()
+          || validStatsProgressUpdate()
+          || validMonthlyKmReset()
+          || validUserRunReset()
+          || validStatsRecalculation()
+          || validEnrolledEventsUpdate()
+          || validJoinedGroupsUpdate()
+        );
+    }
+
+    // ============================================================
+    // COLLECTIONS
+    // ============================================================
+
+    // Desde 05/09 o app so usa o Firestore para o documento do proprio
+    // usuario (ids de grupos/eventos de demonstracao e foto do Google).
+    // Corridas, grupos, eventos e produtos vivem no backend (Postgres): as
+    // colecoes antigas ficam fechadas. Antes, qualquer usuario logado podia
+    // ler todas as corridas antigas (com rota GPS) e o perfil de qualquer
+    // outro usuario direto pelo SDK.
+    match /activities/{activityId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if validUserBase(userId) && validUserCreate(userId);
+      allow update: if validUserBase(userId) && validUserUpdate(userId);
+      // Exclusao de conta (deleteCurrentAccount): o dono apaga o proprio doc legado.
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /products/{productId} {
+      allow read, write: if false;
+    }
+
+    match /events/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /groups/{groupId}/{document=**} {
+      allow read, write: if false;
+    }
+
+    // Bloqueia qualquer coleção não declarada acima
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

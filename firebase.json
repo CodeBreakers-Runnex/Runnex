@@ -1,0 +1,37 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": [
+    {
+      "target": "veloxyMain",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "!/__/auth/**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
+      "target": "veloxyRun",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "!/__/auth/**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ]
+}

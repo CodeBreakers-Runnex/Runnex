@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "veloxy-20b42"
+  },
+  "targets": {
+    "veloxy-20b42": {
+      "hosting": {
+        "veloxyRun": [
+          "veloxy-run"
+        ],
+        "veloxyMain": [
+          "veloxy-20b42"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
