@@ -18,6 +18,7 @@ from app.services.activity_effects import (
     get_or_create_user,
     update_weekly_km_for_user_groups,
 )
+from app.services.training import clear_activity_links
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 
@@ -211,10 +212,12 @@ def delete_activity(
     db: Session = Depends(get_db),
     current_user: FirebaseUser = Depends(get_current_user),
 ):
-    activity = db.get(Activity, activity_id)
+    activity = db.query(Activity).filter(Activity.id == activity_id).with_for_update().first()
     if not activity or activity.user_id != current_user.uid:
         raise HTTPException(status_code=404, detail="Corrida nao encontrada para este usuario.")
 
+    clear_activity_links(db, current_user.uid, [activity_id])
+    db.flush()
     db.delete(activity)
     db.commit()
 
@@ -231,6 +234,9 @@ def delete_all_user_activities(
     if current_user.uid != user_id:
         raise HTTPException(status_code=403, detail="So e possivel apagar as proprias corridas.")
 
+    rows = db.query(Activity).filter(Activity.user_id == user_id).order_by(Activity.id).with_for_update().all()
+    clear_activity_links(db, user_id, [row.id for row in rows])
+    db.flush()
     count = db.query(Activity).filter(Activity.user_id == user_id).delete()
 
     user = db.get(User, user_id)

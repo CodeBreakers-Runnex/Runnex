@@ -35,6 +35,10 @@ import { getBestUserPhotoURL } from "@/lib/user-photo";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { decimateRoute, haversineKm } from "@/lib/route";
+import { clearPlannedRun, getPlannedRun, selectPlannedRun } from "@/lib/trainingRunSelection";
+import { loadPlannedRun, completePlannedRun } from "@/services/plannedRun";
+import { auth } from "@/config/firebase";
+import type { Workout } from "@/types/training";
 
 const BackgroundGeolocation =
   registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
@@ -82,6 +86,8 @@ const SIMULATED_STEP_KM = 12 / 3600;
 const ACTIVE_RUN_STORAGE_KEY = "veloxy_active_run_v1";
 
 type ActiveRunSnapshot = {
+  userId: string;
+  plannedWorkoutId?: number;
   distance: number;
   seconds: number;
   path: [number, number][];
@@ -89,8 +95,12 @@ type ActiveRunSnapshot = {
   savedAt: number;
 };
 
-function clearActiveRunSnapshot() {
+function clearActiveRunSnapshot(uid?: string) {
   try {
+    if (uid) {
+      const snapshot = JSON.parse(localStorage.getItem(ACTIVE_RUN_STORAGE_KEY) || "null") as ActiveRunSnapshot | null;
+      if (snapshot?.userId !== uid) return;
+    }
     localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
   } catch {
     // localStorage indisponível (modo privado etc.) — nada a limpar
@@ -190,6 +200,10 @@ const RunTracking = () => {
   const [isMusicOpen, setIsMusicOpen] = useState(false);
   const [recoverableRun, setRecoverableRun] = useState<ActiveRunSnapshot | null>(null);
   const [confirmExit, setConfirmExit] = useState(false);
+  const [plannedRun, setPlannedRun] = useState<{ uid: string; workout: Workout } | null>(null);
+  const plannedWorkout = plannedRun && plannedRun.uid === user?.uid ? plannedRun.workout : null;
+  const runningOwner = useRef<string | null>(null);
+  const runningWorkoutId = useRef<number | undefined>();
   const wakeLockRef = useRef<ScreenWakeLockSentinel | null>(null);
   const simulatedPointRef = useRef(0);
   const isNativeAndroid = Capacitor.getPlatform() === "android";
@@ -197,32 +211,43 @@ const RunTracking = () => {
   // Ao abrir a tela, verifica se existe uma corrida que não chegou a ser
   // salva (ex: app foi encerrado pelo Android no meio do treino).
   useEffect(() => {
+    if (!user?.uid) return;
+    const uid = user.uid;
+    let live = true;
+    let workoutId = getPlannedRun(uid)?.workoutId;
     try {
       const raw = localStorage.getItem(ACTIVE_RUN_STORAGE_KEY);
-      if (!raw) return;
-      const snapshot = JSON.parse(raw) as ActiveRunSnapshot;
-      if (snapshot && Array.isArray(snapshot.path) && typeof snapshot.distance === "number" && snapshot.distance > 0.01) {
+      const snapshot = raw ? JSON.parse(raw) as ActiveRunSnapshot : null;
+      if (snapshot?.userId === uid && Array.isArray(snapshot.path) && typeof snapshot.distance === "number" && snapshot.distance > 0.01) {
         setRecoverableRun(snapshot);
-      } else {
+        workoutId = snapshot.plannedWorkoutId;
+        if (workoutId) selectPlannedRun(uid, workoutId); else clearPlannedRun(uid);
+      } else if (snapshot && (!snapshot.userId || snapshot.userId === uid)) {
         clearActiveRunSnapshot();
       }
     } catch (error) {
       console.warn("Nao foi possivel ler a corrida salva:", error);
       clearActiveRunSnapshot();
     }
-  }, []);
+    if (workoutId) void loadPlannedRun(uid, workoutId).then(workout => { if (live) setPlannedRun({ uid, workout }); }).catch(error => { if (live) { setPlannedRun(null); toast.warning(error instanceof Error ? error.message : "Confira o treino selecionado na agenda."); } });
+    return () => { live = false; };
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (runningOwner.current && runningOwner.current !== user?.uid) { setIsRunning(false); setIsPaused(false); setRecoverableRun(null); setPlannedRun(null); setDistance(0); setSeconds(0); setPath([]); runningOwner.current = null; }
+  }, [user?.uid]);
 
   // Salva um retrato da corrida a cada mudança relevante enquanto ela está
   // ativa, para poder recuperar depois de um fechamento inesperado do app.
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isRunning || !user || runningOwner.current !== user.uid) return;
     try {
-      const snapshot: ActiveRunSnapshot = { distance, seconds, path, isSimulating, savedAt: Date.now() };
+      const snapshot: ActiveRunSnapshot = { userId: user.uid, plannedWorkoutId: runningWorkoutId.current, distance, seconds, path, isSimulating, savedAt: Date.now() };
       localStorage.setItem(ACTIVE_RUN_STORAGE_KEY, JSON.stringify(snapshot));
     } catch (error) {
       console.warn("Nao foi possivel salvar o progresso da corrida:", error);
     }
-  }, [isRunning, distance, seconds, path, isSimulating]);
+  }, [isRunning, distance, seconds, path, isSimulating, user]);
 
   // Gerenciar Screen Wake Lock para PWA (Não deixar a tela do celular apagar/pausar o app)
   useEffect(() => {
@@ -536,6 +561,9 @@ const RunTracking = () => {
   };
 
   const handleStart = () => {
+    if (!user || isSaving) return;
+    runningOwner.current = user.uid;
+    runningWorkoutId.current = plannedWorkout?.id ?? getPlannedRun(user.uid)?.workoutId;
     const startPoint = !isSimulating ? currentPos : null;
     setDistance(0);
     setSeconds(0);
@@ -548,7 +576,9 @@ const RunTracking = () => {
   };
 
   const handleResumeRun = () => {
-    if (!recoverableRun) return;
+    if (!recoverableRun || recoverableRun.userId !== user?.uid) return;
+    runningOwner.current = user.uid;
+    runningWorkoutId.current = recoverableRun.plannedWorkoutId;
     setDistance(recoverableRun.distance);
     setSeconds(recoverableRun.seconds);
     setPath(recoverableRun.path);
@@ -562,12 +592,15 @@ const RunTracking = () => {
   };
 
   const handleDiscardRun = () => {
-    clearActiveRunSnapshot();
+    clearActiveRunSnapshot(user?.uid);
+    if (user) clearPlannedRun(user.uid);
+    setPlannedRun(null);
     setRecoverableRun(null);
     toast.info("Corrida descartada.");
   };
 
   const handleBack = () => {
+    if (isSaving) return;
     if (isRunning && !confirmExit) {
       setConfirmExit(true);
       toast.warning("Toque novamente para sair. Sua corrida fica salva e voce pode continuar depois.");
@@ -582,10 +615,11 @@ const RunTracking = () => {
   const MIN_DISTANCE_TO_SAVE_KM = 0.01;
 
   const handleFinish = async () => {
-    if (!user) return;
+    if (!user || isSaving || (runningOwner.current && runningOwner.current !== user.uid)) return;
 
     if (distance < MIN_DISTANCE_TO_SAVE_KM) {
-      clearActiveRunSnapshot();
+      clearActiveRunSnapshot(user.uid);
+      clearPlannedRun(user.uid);
       toast.info("Corrida cancelada — nenhuma distancia percorrida.");
       navigate("/");
       return;
@@ -606,13 +640,25 @@ const RunTracking = () => {
         type: "RUNNING"
       });
 
-      clearActiveRunSnapshot();
+      const selection = runningWorkoutId.current ? { uid: user.uid, workoutId: runningWorkoutId.current } : null;
+      runningOwner.current = null;
+      setIsRunning(false);
+      setIsPaused(false);
+      clearActiveRunSnapshot(user.uid);
+      if (selection) clearPlannedRun(user.uid, selection.workoutId);
+      if (selection) {
+        try {
+          const workout = plannedWorkout?.id === selection.workoutId ? plannedWorkout : await loadPlannedRun(user.uid, selection.workoutId);
+          await completePlannedRun(user.uid, workout, Number(result.id));
+        } catch { if (auth.currentUser?.uid === user.uid) toast.warning("Corrida salva. Não foi possível vinculá-la ao treino; abra a agenda e selecione esta corrida para tentar novamente.", { duration: 8000 }); }
+      }
+      if (auth.currentUser?.uid !== user.uid) return;
       if (result.xpUpdateFailed) {
         toast.warning("Corrida salva, mas nao foi possivel atualizar seu XP agora. Tente novamente mais tarde.", { duration: 8000 });
       } else {
         toast.success("Corrida salva com sucesso!");
       }
-      navigate("/");
+      navigate(selection ? "/calendario-treinos" : "/");
     } catch (error) {
       console.error("Erro ao finalizar corrida:", error);
       toast.error(getSaveErrorMessage(error), { duration: 8000 });
@@ -623,6 +669,7 @@ const RunTracking = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col safe-top">
+      {plannedWorkout && <div className="border-b border-primary/20 bg-primary/10 px-6 py-3 text-sm"><p className="font-bold">{plannedWorkout.title}</p><p className="text-xs text-muted-foreground">{plannedWorkout.targetDistanceKm == null ? "Distância livre" : `Meta: ${plannedWorkout.targetDistanceKm} km`}{plannedWorkout.targetDurationMinutes != null ? ` · ${plannedWorkout.targetDurationMinutes} min` : ""}</p></div>}
       {/* Premium Header */}
       <motion.header
         initial={{ opacity: 0, y: -16 }}
@@ -640,7 +687,7 @@ const RunTracking = () => {
           transition={{ duration: 0.25 }}
           className="font-display font-black text-xl tracking-tighter text-purple-500 uppercase drop-shadow-[0_0_18px_rgba(168,85,247,0.35)]"
         >
-          {isRunning ? (isPaused ? "PAUSADO" : isSimulating ? "SIMULANDO..." : "MONITORANDO") : "INICIAR TREINO"}
+          {isSaving ? "FINALIZANDO..." : isRunning ? (isPaused ? "PAUSADO" : isSimulating ? "SIMULANDO..." : "MONITORANDO") : "INICIAR TREINO"}
         </motion.h1>
         {import.meta.env.DEV ? (
           <button
@@ -804,6 +851,7 @@ const RunTracking = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleStart}
+                disabled={isSaving}
                 className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-[0_14px_44px_rgba(147,51,234,0.48)] border-4 border-background group animate-soft-glow"
                 aria-label="Iniciar corrida"
               >
@@ -858,7 +906,7 @@ const RunTracking = () => {
       </footer>
 
       <AnimatePresence>
-        {recoverableRun && (
+        {recoverableRun?.userId === user?.uid && recoverableRun && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
