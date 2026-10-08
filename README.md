@@ -21,6 +21,7 @@ O Runnex foi criado para transformar treinos em uma experiência mais social e o
 - Sistema de conquistas (achievements) calculadas a partir do histórico real de corridas
 - Pet virtual gamificado: escolha de espécie, moeda própria (RunCoin) e loja de acessórios
 - Treinador virtual: chatbot de corrida que responde com base nas corridas e na meta semanal do usuário
+- Sono e recuperação: registros privados, check-in de cansaço, meta pessoal, histórico e leitura opcional de sono pelo Health Connect no Android
 - PWA instalável e build nativo Android via Capacitor
 
 > Marketplace/loja com checkout está fora do escopo deste ciclo — ver "Fora de escopo" no Roadmap.
@@ -42,6 +43,8 @@ O Runnex foi criado para transformar treinos em uma experiência mais social e o
 - WebSocket para chat/feed/comentários de grupo em tempo real
 
 Detalhes de setup e arquitetura do backend em [backend/README.md](backend/README.md).
+
+O módulo de sono está documentado em [docs/CONTROLE_SONO.md](docs/CONTROLE_SONO.md), incluindo API, migração, consentimento e testes Android. A versão nativa com Health Connect 1.1.0 usa mínimo Android 8 (API 26); a importação automática requer Android 9 (API 28) ou superior e uma fonte compatível. Web e Android 8 têm registro manual.
 
 ## Estrutura
 
