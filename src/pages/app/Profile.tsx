@@ -681,6 +681,12 @@ const Profile = () => {
           <h3 className="font-display font-black text-sm tracking-tighter">SEU PROGRESSO</h3>
         </div>
 
+        <button onClick={() => navigate("/sono")} className="mb-4 flex w-full items-center gap-3 rounded-3xl border border-border bg-card/80 p-4 text-left transition hover:bg-secondary">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Moon size={22} /></div>
+          <div className="flex-1"><p className="text-sm font-black">Sono e recuperação</p><p className="mt-1 text-xs text-muted-foreground">Acompanhe seu descanso junto aos treinos</p></div>
+          <ChevronRight size={18} className="text-muted-foreground" />
+        </button>
+
         <button
           onClick={() => navigate("/pet")}
           className="mb-4 flex w-full items-center gap-3 rounded-3xl bg-card/80 backdrop-blur-xl border border-border p-4 text-left active:scale-[0.98] transition-transform"
