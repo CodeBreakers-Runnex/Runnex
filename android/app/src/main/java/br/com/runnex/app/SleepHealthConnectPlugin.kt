@@ -196,7 +196,7 @@ class SleepHealthConnectPlugin : Plugin() {
                             }
                         }
                     }
-                    pending[key] = result.getString("nextToken")
+                    pending[key] = result.getString("nextToken") ?: error("Missing changes token")
                     call.resolve(result)
                 }
             } catch (_: Exception) { call.reject("Não foi possível ler o sono. Confira a permissão e tente sincronizar novamente.", "HEALTH_READ") }
