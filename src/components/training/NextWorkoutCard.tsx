@@ -15,7 +15,7 @@ export default function NextWorkoutCard() {
     if (!uid) return;
     let live = true;
     setFailed(false);
-    const load = () => { void getNextWorkout().then(workout => { if (live) setData({ uid, workout }); }).catch(() => { if (live) setFailed(true); }); };
+    const load = () => { void getNextWorkout().then(workout => { if (live) { setData({ uid, workout }); setFailed(false); } }).catch(() => { if (live) setFailed(true); }); };
     load(); window.addEventListener("focus", load);
     return () => { live = false; window.removeEventListener("focus", load); };
   }, [uid]);

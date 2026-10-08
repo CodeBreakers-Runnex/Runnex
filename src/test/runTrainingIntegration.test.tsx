@@ -54,4 +54,13 @@ describe("corrida iniciada por treino", () => {
     expect(localStorage.getItem("veloxy_active_run_v1")).not.toBeNull();
     expect(mocks.navigate).not.toHaveBeenCalled();
   });
+  it("pausa a corrida e bloqueia a retomada enquanto salva", async () => {
+    let resolve!: (result: { id: string; xpUpdateFailed: boolean }) => void;
+    mocks.save.mockImplementation(() => new Promise(done => { resolve = done; }));
+    await finish();
+    const resume = screen.getByRole("button", { name: "Retomar corrida" });
+    expect(resume).toBeDisabled();
+    expect(JSON.parse(localStorage.getItem("veloxy_active_run_v1")!).seconds).toBe(300);
+    await act(async () => { resolve({ id: "77", xpUpdateFailed: false }); });
+  });
 });

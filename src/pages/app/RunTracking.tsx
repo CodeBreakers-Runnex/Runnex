@@ -616,6 +616,7 @@ const RunTracking = () => {
 
   const handleFinish = async () => {
     if (!user || isSaving || (runningOwner.current && runningOwner.current !== user.uid)) return;
+    setIsPaused(true);
 
     if (distance < MIN_DISTANCE_TO_SAVE_KM) {
       clearActiveRunSnapshot(user.uid);
@@ -880,6 +881,7 @@ const RunTracking = () => {
                 transition={{ type: "spring", stiffness: 360, damping: 22, delay: 0.06 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsPaused(!isPaused)}
+                disabled={isSaving}
                 className="w-24 h-24 rounded-full bg-zinc-100 flex items-center justify-center shadow-[0_16px_42px_rgba(255,255,255,0.16)] border-4 border-background group active:scale-95 transition-transform"
                 aria-label={isPaused ? "Retomar corrida" : "Pausar corrida"}
               >

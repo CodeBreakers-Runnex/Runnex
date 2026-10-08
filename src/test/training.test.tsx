@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import TrainingCalendar from "@/pages/app/TrainingCalendar";
 import { dayKey, weekStart } from "@/lib/training";
@@ -98,5 +98,18 @@ describe("calendário de treinos", () => {
     app.rerender(<MemoryRouter><TrainingCalendar /></MemoryRouter>);
     expect(screen.queryByDisplayValue("Privado da Ana")).not.toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+  it("libera a nova agenda enquanto termina uma operação da conta anterior", async () => {
+    let finish!: (value: Workout) => void;
+    mocks.status.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const app = mount(); fireEvent.click(await screen.findByText("Leve 5 km"));
+    fireEvent.click(screen.getByRole("button", { name: "Concluir manualmente" }));
+    await waitFor(() => expect(mocks.status).toHaveBeenCalled());
+    mocks.uid = "bruno"; mocks.get.mockResolvedValue([]);
+    app.rerender(<MemoryRouter><TrainingCalendar /></MemoryRouter>);
+    await waitFor(() => expect(screen.queryByText("Carregando agenda…")).toBeNull());
+    expect(screen.getByRole("button", { name: "Adicionar treino" })).toBeEnabled();
+    await act(async () => { finish(workout({ status: "completed" })); });
+    expect(screen.queryByText("Leve 5 km")).toBeNull();
   });
 });

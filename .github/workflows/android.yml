@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   android:
-    name: Android (build)
+    name: Android (build e testes)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +25,7 @@ jobs:
           java-version: "21"
       - uses: android-actions/setup-android@v3
         with:
+          # O pacote legado "tools" não é mais fornecido pelo sdkmanager.
           packages: platform-tools
       - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - run: npm ci
@@ -32,6 +33,6 @@ jobs:
         env:
           VITE_API_URL: https://example.invalid
       - run: npx cap sync android
-      - name: Compilar APK
-        run: bash gradlew --no-daemon :app:assembleDebug
+      - name: Compilar APK e executar testes Android
+        run: bash gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
         working-directory: android

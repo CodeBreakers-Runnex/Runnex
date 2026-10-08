@@ -32,6 +32,7 @@ export default function TrainingCalendar() {
   const [loadError, setLoadError] = useState("");
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
+  const operationRef = useRef<symbol | null>(null);
   const requests = useRef(0);
   const [refresh, setRefresh] = useState(0);
   const [form, setForm] = useState<FormState | null>(null);
@@ -53,7 +54,7 @@ export default function TrainingCalendar() {
   const invalidateRequests = useCallback(() => { requests.current++; }, []);
   useEffect(() => { void load(); return invalidateRequests; }, [load, refresh, invalidateRequests]);
   useEffect(() => { const focus = () => { if (!busyRef.current) void load(); }; window.addEventListener("focus", focus); return () => window.removeEventListener("focus", focus); }, [load]);
-  useEffect(() => { setForm(null); setSelectedId(null); setConfirmDelete(false); }, [uid]);
+  useEffect(() => { setForm(null); setSelectedId(null); setConfirmDelete(false); setBusy(false); busyRef.current = false; operationRef.current = null; }, [uid]);
   const agenda = data?.uid === uid ? data : null;
   const workouts = agenda?.workouts ?? [];
   const selected = workouts.find(w => w.id === selectedId);
@@ -62,15 +63,17 @@ export default function TrainingCalendar() {
   async function perform<T>(task: () => Promise<T>, success?: (value: T) => void): Promise<T> {
     if (!uid || busyRef.current) throw new Error("Aguarde a operação atual.");
     const scope = uid;
+    const operation = Symbol();
+    operationRef.current = operation;
     busyRef.current = true; setBusy(true); setError("");
     try {
       const result = await task();
-      if (scopeRef.current === scope) { success?.(result); setRefresh(n => n + 1); }
+      if (scopeRef.current === scope && operationRef.current === operation) { success?.(result); setRefresh(n => n + 1); }
       return result;
     } catch (e) {
-      if (scopeRef.current === scope) { setError(e instanceof Error ? e.message : "Não foi possível atualizar o treino."); setRefresh(n => n + 1); }
+      if (scopeRef.current === scope && operationRef.current === operation) { setError(e instanceof Error ? e.message : "Não foi possível atualizar o treino."); setRefresh(n => n + 1); }
       throw e;
-    } finally { busyRef.current = false; if (scopeRef.current === scope) setBusy(false); }
+    } finally { if (operationRef.current === operation) { operationRef.current = null; busyRef.current = false; setBusy(false); } }
   }
   const runAction = (task: () => Promise<unknown>, success?: () => void) => { void perform(task, success).catch(() => undefined); };
   const save = async (input: WorkoutInput) => {

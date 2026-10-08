@@ -66,3 +66,7 @@ Teste em aparelho antes da distribuição pública: navegar mês/semana/lista, e
 As branches de tênis e sono partem da mesma migração base. Se outro PR com migração entrar primeiro, atualizar a branch e unir os heads do Alembic antes de integrar. A agenda funciona sem depender desses módulos.
 
 Repetição semanal, lembretes, ICS/eventos e integrações com sono/tênis são as próximas etapas do plano. A política de privacidade geral segue na entrega informada pela equipe; o calendário não modifica seu texto.
+
+## Revisão dos fluxos
+
+Finalizar pausa o GPS/cronômetro e bloqueia a retomada durante o salvamento. Falhas mantêm o rascunho pausado. Troca de conta encerra o bloqueio da agenda anterior; a conclusão de uma operação antiga não altera a interface nem o bloqueio de uma nova operação. O cartão do próximo treino recupera o estado normal após uma consulta bem-sucedida.
