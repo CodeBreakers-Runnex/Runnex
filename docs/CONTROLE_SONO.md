@@ -80,3 +80,7 @@ Checklist em aparelho real antes da publicação: Android 9–13 e 14+, conectar
 - [Leitura e paginação](https://developer.android.com/health-and-fitness/health-connect/read-data).
 - [Sincronização e eventos de exclusão](https://developer.android.com/health-and-fitness/health-connect/sync-data).
 - [Capacitor — plugins Android e callbacks](https://capacitorjs.com/docs/plugins/android).
+
+## Revisão de troca de conta
+
+Os dados carregados são identificados pelo UID. Se a conta mudar durante a permissão do Android, o controle de sono cancela os passos seguintes de conexão; respostas tardias de exportação não abrem o salvamento de dados da conta anterior. Operações pendentes ficam isoladas por conta e não bloqueiam os formulários da nova sessão.

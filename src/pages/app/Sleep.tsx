@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { AlertCircle, ArrowLeft, Download, Loader2, Lock, Moon, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { auth } from "@/config/firebase";
 import { SLEEP_CONSENT_TEXT } from "@/content/sleepContent";
 import SleepEntryForm from "@/components/sleep/SleepEntryForm";
 import SleepCheckInForm from "@/components/sleep/SleepCheckInForm";
@@ -22,8 +23,13 @@ function errorMessage(error: unknown) {
 
 export default function Sleep() {
   const { user } = useAuth();
+  const uid = user?.uid;
+  const scopeRef = useRef(uid);
+  scopeRef.current = uid;
+  const operationRef = useRef<symbol | null>(null);
   const [days, setDays] = useState(7);
-  const [data, setData] = useState<RecoveryOverview | null>(null);
+  const [loaded, setLoaded] = useState<{ uid: string; data: RecoveryOverview } | null>(null);
+  const data = loaded && loaded.uid === uid ? loaded.data : null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -37,16 +43,14 @@ export default function Sleep() {
   const [confirmErase, setConfirmErase] = useState(false);
   const requestNumber = useRef(0);
   const autoSyncScope = useRef("");
-  const uid = user?.uid;
-
   const load = useCallback(async () => {
-    if (!uid) return;
+    if (!uid || scopeRef.current !== uid || auth.currentUser?.uid !== uid) return;
     const request = ++requestNumber.current;
     setLoading(true);
     try {
       const overview = await getRecoveryOverview(days);
-      if (request !== requestNumber.current) return;
-      setData(overview);
+      if (request !== requestNumber.current || scopeRef.current !== uid || auth.currentUser?.uid !== uid) return;
+      setLoaded({ uid, data: overview });
       setGoalHours(overview.settings.goalMinutes !== null ? String(overview.settings.goalMinutes / 60) : "");
       setPreferredOrigin(overview.settings.preferredOrigin ?? "");
       setError("");
@@ -61,13 +65,15 @@ export default function Sleep() {
   useEffect(() => { refresh.current = load; }, [load]);
 
   useEffect(() => {
-    setData(null);
+    setLoaded(null);
     setEditor(null);
     setConfirmErase(false);
     setChecked(false);
     void load();
     return () => { requestNumber.current += 1; };
   }, [load]);
+
+  useEffect(() => { operationRef.current = null; setSaving(false); }, [uid]);
 
   useEffect(() => {
     let active = true;
@@ -81,9 +87,18 @@ export default function Sleep() {
     return () => { active = false; window.removeEventListener("focus", update); document.removeEventListener("visibilitychange", update); };
   }, [uid]);
 
-  async function perform(task: () => Promise<void>) {
+  async function perform(task: (checkAccount: () => void) => Promise<void>) {
+    if (!uid || operationRef.current) return;
+    const scope = uid;
+    const operation = Symbol();
+    const checkAccount = () => {
+      if (scopeRef.current !== scope || auth.currentUser?.uid !== scope) throw new Error("A conta mudou. Abra novamente o controle de sono.");
+    };
+    operationRef.current = operation;
     setSaving(true);
-    try { await task(); } catch (err) { toast.error(errorMessage(err)); } finally { setSaving(false); }
+    try { checkAccount(); await task(checkAccount); }
+    catch (err) { if (scopeRef.current === scope && operationRef.current === operation) toast.error(errorMessage(err)); }
+    finally { if (operationRef.current === operation) { operationRef.current = null; setSaving(false); } }
   }
 
   const generation = data?.settings.syncGeneration;
@@ -102,11 +117,13 @@ export default function Sleep() {
   }, [uid, generation, connected, consented, health.status, health.granted]);
 
   async function saveRecord(input: SleepInput) {
-    await perform(async () => {
+    await perform(async checkAccount => {
       if (editor?.record) await updateSleepSession(editor.record.id, input);
       else await createSleepSession(input);
+      checkAccount();
       setEditor(null);
       await load();
+      checkAccount();
       toast.success("Registro de sono salvo.");
     });
   }
@@ -114,46 +131,58 @@ export default function Sleep() {
   async function saveGoal(event: FormEvent) {
     event.preventDefault();
     if (!data) return;
-    await perform(async () => {
+    await perform(async checkAccount => {
       await updateRecoveryPreferences({ goalMinutes: goalHours.trim() ? Math.round(Number(goalHours) * 60) : null, timezone: data.settings.timezone, preferredOrigin: preferredOrigin || null });
+      checkAccount();
       await load();
+      checkAccount();
       toast.success("Preferências de sono salvas.");
     });
   }
 
   async function connect() {
     if (!uid || !data) return;
-    await perform(async () => {
+    await perform(async checkAccount => {
       const status = await requestSleepPermission();
+      checkAccount();
       setHealth(status);
       if (!status.granted) { toast.info("A leitura de sono não foi autorizada. Você pode usar o registro manual."); return; }
       const settings = await setSleepConnection(true);
+      checkAccount();
       autoSyncScope.current = `${uid}:${settings.syncGeneration}:true`;
       await syncSleep(uid, settings.syncGeneration);
+      checkAccount();
       await load();
+      checkAccount();
       toast.success("Sono sincronizado.");
     });
   }
 
   async function disconnect() {
     if (!uid || !data) return;
-    await perform(async () => {
+    await perform(async checkAccount => {
       await setSleepConnection(false);
+      checkAccount();
       await clearSleepSync(uid, data.settings.syncGeneration);
+      checkAccount();
       await load();
+      checkAccount();
       toast.success("Novas importações interrompidas. Os registros anteriores continuam no histórico.");
     });
   }
 
   async function erase() {
     if (!uid || !data) return;
-    await perform(async () => {
+    await perform(async checkAccount => {
       await deleteRecoveryData();
+      checkAccount();
       // A exclusão no servidor já revogou o consentimento e invalidou lotes pendentes.
       await clearSleepSync(uid, data.settings.syncGeneration).catch(() => undefined);
+      checkAccount();
       setConfirmErase(false);
       setChecked(false);
       await load();
+      checkAccount();
       toast.success("Dados de sono apagados e autorização retirada.");
     });
   }
@@ -177,7 +206,7 @@ export default function Sleep() {
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Acompanhe seu descanso e o cansaço junto ao histórico de corridas. Você pode começar sem relógio.</p>
           <label className="mt-5 flex items-start gap-3 text-sm leading-relaxed"><input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-purple-600" />{SLEEP_CONSENT_TEXT}</label>
           <Link className="mt-4 inline-block text-sm font-bold text-primary underline" to="/termos-e-privacidade">Consultar termos e política de privacidade</Link>
-          <button disabled={!checked || busy} className="mt-5 block rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground disabled:opacity-50" onClick={() => void perform(async () => { await acceptSleepConsent(Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo"); await load(); })}>Ativar controle de sono</button>
+          <button disabled={!checked || busy} className="mt-5 block rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground disabled:opacity-50" onClick={() => void perform(async checkAccount => { await acceptSleepConsent(Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo"); checkAccount(); await load(); })}>Ativar controle de sono</button>
         </section>}
 
         {data?.settings.consented && today && <>
@@ -197,7 +226,7 @@ export default function Sleep() {
           </section>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <section className={panel}><h2 className="mb-4 text-lg font-black">Como você está hoje?</h2><SleepCheckInForm key={`${today.date}:${today.checkIn?.quality}:${today.checkIn?.fatigue}`} value={today.checkIn} busy={busy} onSave={input => perform(async () => { await saveSleepCheckIn(today.date, input); await load(); toast.success("Check-in salvo."); })} />{today.checkIn && <button className="mt-3 text-xs font-bold text-muted-foreground underline" disabled={busy} onClick={() => void perform(async () => { await deleteSleepCheckIn(today.date); await load(); })}>Apagar check-in de hoje</button>}</section>
+            <section className={panel}><h2 className="mb-4 text-lg font-black">Como você está hoje?</h2><SleepCheckInForm key={`${today.date}:${today.checkIn?.quality}:${today.checkIn?.fatigue}`} value={today.checkIn} busy={busy} onSave={input => perform(async checkAccount => { await saveSleepCheckIn(today.date, input); checkAccount(); await load(); checkAccount(); toast.success("Check-in salvo."); })} />{today.checkIn && <button className="mt-3 text-xs font-bold text-muted-foreground underline" disabled={busy} onClick={() => void perform(async () => { await deleteSleepCheckIn(today.date); await load(); })}>Apagar check-in de hoje</button>}</section>
             <section className={panel}><h2 className="text-lg font-black">Sua meta e fonte de sono</h2><form onSubmit={saveGoal} className="mt-4 space-y-3"><label className="block text-sm font-bold">Meta de sono, em horas<input type="number" min="1" max="16" step="any" placeholder="Escolha sua meta" value={goalHours} onChange={e => setGoalHours(e.target.value)} className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5" /></label>{data.origins.length > 0 && <label className="block text-sm font-bold">Fonte preferencial<select value={preferredOrigin} onChange={e => setPreferredOrigin(e.target.value)} className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5"><option value="">Escolher automaticamente</option>{Array.from(new Set([...data.origins, ...(preferredOrigin ? [preferredOrigin] : [])])).map(origin => <option key={origin} value={origin}>{data.sessions.find(s => s.origin === origin)?.originLabel ?? "Fonte anterior"}</option>)}</select></label>}<button disabled={busy} className={action}>Salvar preferências</button></form><p className="mt-3 text-xs text-muted-foreground">Um registro manual tem prioridade. O resumo usa uma sessão principal por dia e não soma cópias de relógios diferentes.</p></section>
           </div>
 
@@ -206,7 +235,7 @@ export default function Sleep() {
             {health.status === "web" && <p className="mt-4 text-sm text-muted-foreground">A conexão automática está disponível no aplicativo Android atualizado. Aqui, use o registro manual.</p>}
             {health.status === "unavailable" && <p className="mt-4 text-sm text-muted-foreground">Health Connect indisponível neste aparelho. O registro manual continua disponível.</p>}
             {health.status === "update_required" && <div className="mt-4"><p className="text-sm text-muted-foreground">Instale ou atualize o Health Connect para conectar.</p><button disabled={busy} className={`${action} mt-3`} onClick={() => void perform(openSleepHealthSettings)}>Abrir Health Connect</button></div>}
-            {health.status === "available" && <div className="mt-4 flex flex-wrap gap-2">{data.settings.healthConnectEnabled && health.granted ? <><button disabled={busy} className={action} onClick={() => void perform(async () => { if (!uid) return; await syncSleep(uid, data.settings.syncGeneration); await load(); toast.success("Sono sincronizado."); })}><RefreshCw size={16} className={busy ? "animate-spin" : ""} />Sincronizar agora</button><button disabled={busy} className={action} onClick={() => void disconnect()}>Desconectar</button></> : <button disabled={busy} className={action} onClick={() => void connect()}>Conectar Health Connect</button>}<button disabled={busy} className={action} onClick={() => void perform(openSleepHealthSettings)}>Gerenciar permissões</button></div>}
+            {health.status === "available" && <div className="mt-4 flex flex-wrap gap-2">{data.settings.healthConnectEnabled && health.granted ? <><button disabled={busy} className={action} onClick={() => void perform(async checkAccount => { if (!uid) return; await syncSleep(uid, data.settings.syncGeneration); checkAccount(); await load(); checkAccount(); toast.success("Sono sincronizado."); })}><RefreshCw size={16} className={busy ? "animate-spin" : ""} />Sincronizar agora</button><button disabled={busy} className={action} onClick={() => void disconnect()}>Desconectar</button></> : <button disabled={busy} className={action} onClick={() => void connect()}>Conectar Health Connect</button>}<button disabled={busy} className={action} onClick={() => void perform(openSleepHealthSettings)}>Gerenciar permissões</button></div>}
             <p className="mt-4 text-xs text-muted-foreground">Última sincronização: {data.settings.lastSyncedAt ? new Date(data.settings.lastSyncedAt).toLocaleString("pt-BR") : "ainda não realizada"}. O relógio ou aplicativo de origem precisa disponibilizar sono no Health Connect.</p>
           </section>
 
@@ -221,10 +250,10 @@ export default function Sleep() {
 
           <section className={panel}><h2 className="text-lg font-black">Seus registros</h2>{data.sessions.length === 0 ? <p className="mt-4 text-sm text-muted-foreground">Nenhum sono registrado neste período. Registre seu primeiro sono para começar.</p> : <ul className="mt-4 divide-y divide-border">{data.sessions.map(session => <li key={session.id} className="flex flex-wrap items-center gap-3 py-4"><div className="min-w-0 flex-1"><p className="text-sm font-bold">{formatSleepDay(session.wakeDate)} · {session.kind === "nap" ? "Cochilo" : "Sono principal"}</p><p className="mt-1 text-sm text-muted-foreground">{session.sleepSeconds === null ? `Período registrado: ${formatSleepMinutes(session.periodSeconds / 60)}` : `Sono ${session.source === "manual" ? "informado" : "estimado"}: ${formatSleepMinutes(session.sleepSeconds / 60)}`} · {session.originLabel}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(session.startTime).toLocaleString("pt-BR")} — {new Date(session.endTime).toLocaleString("pt-BR")}</p></div>{session.source === "manual" && <button className={action} disabled={busy} aria-label={`Editar sono ${session.id}`} onClick={() => setEditor({ record: session })}><Pencil size={15} /></button>}<button className={action} disabled={busy} aria-label={`Apagar sono ${session.id}`} onClick={() => { if (window.confirm("Apagar este registro de sono?")) void perform(async () => { await deleteSleepSession(session.id); await load(); }); }}><Trash2 size={15} /></button></li>)}</ul>}</section>
 
-          <section className={panel}><h2 className="text-lg font-black">Você controla seus dados</h2><p className="mt-2 text-sm text-muted-foreground">Seu sono e check-ins são privados, mesmo com perfil público. Exporte os registros ou retire a autorização e apague os dados deste módulo.</p><div className="mt-4 flex flex-wrap gap-3"><button className={action} disabled={busy} onClick={() => void perform(async () => { const exported = await getSleepExport(); if (await exportSleepData(exported)) toast.success("Dados de sono exportados."); })}><Download size={16} />Exportar meus dados</button><button className={`${action} text-red-400`} disabled={busy} onClick={() => setConfirmErase(true)}><Trash2 size={16} />Apagar dados e retirar autorização</button></div>{confirmErase && <div role="alert" className="mt-4 rounded-xl border border-red-400/30 p-4 text-sm"><p>Isso apaga todos os registros de sono e check-ins do Runnex e interrompe novas importações. Os dados no relógio e no Health Connect continuam na origem. Conectar novamente poderá importar os últimos 30 dias.</p><div className="mt-3 flex gap-2"><button disabled={busy} className={`${action} text-red-400`} onClick={() => void erase()}>Confirmar exclusão dos dados de sono</button><button disabled={busy} className={action} onClick={() => setConfirmErase(false)}>Cancelar</button></div></div>}</section>
+          <section className={panel}><h2 className="text-lg font-black">Você controla seus dados</h2><p className="mt-2 text-sm text-muted-foreground">Seu sono e check-ins são privados, mesmo com perfil público. Exporte os registros ou retire a autorização e apague os dados deste módulo.</p><div className="mt-4 flex flex-wrap gap-3"><button className={action} disabled={busy} onClick={() => void perform(async checkAccount => { const exported = await getSleepExport(); checkAccount(); const saved = await exportSleepData(exported); checkAccount(); if (saved) toast.success("Dados de sono exportados."); })}><Download size={16} />Exportar meus dados</button><button className={`${action} text-red-400`} disabled={busy} onClick={() => setConfirmErase(true)}><Trash2 size={16} />Apagar dados e retirar autorização</button></div>{confirmErase && <div role="alert" className="mt-4 rounded-xl border border-red-400/30 p-4 text-sm"><p>Isso apaga todos os registros de sono e check-ins do Runnex e interrompe novas importações. Os dados no relógio e no Health Connect continuam na origem. Conectar novamente poderá importar os últimos 30 dias.</p><div className="mt-3 flex gap-2"><button disabled={busy} className={`${action} text-red-400`} onClick={() => void erase()}>Confirmar exclusão dos dados de sono</button><button disabled={busy} className={action} onClick={() => setConfirmErase(false)}>Cancelar</button></div></div>}</section>
         </>}
       </div>
-      {editor && <SleepEntryForm key={editor.record?.id ?? "new"} record={editor.record} busy={busy} onSave={saveRecord} onClose={() => setEditor(null)} />}
+      {editor && data && <SleepEntryForm key={editor.record?.id ?? "new"} record={editor.record} busy={busy} onSave={saveRecord} onClose={() => setEditor(null)} />}
     </main>
   );
 }

@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { RecoveryOverview, SleepSession } from "@/types/sleep";
 
 const mocks = vi.hoisted(() => ({
+  uid: "ana",
   getRecoveryOverview: vi.fn(), acceptSleepConsent: vi.fn(), createSleepSession: vi.fn(), updateSleepSession: vi.fn(), deleteSleepSession: vi.fn(), saveSleepCheckIn: vi.fn(), deleteSleepCheckIn: vi.fn(), updateRecoveryPreferences: vi.fn(), setSleepConnection: vi.fn(), deleteRecoveryData: vi.fn(), getSleepExport: vi.fn(),
   sleepHealthStatus: vi.fn(), syncSleep: vi.fn(), clearSleepSync: vi.fn(), requestSleepPermission: vi.fn(), openSleepHealthSettings: vi.fn(), exportSleepData: vi.fn(),
 }));
-vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: { uid: "ana" } }) }));
+vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: { uid: mocks.uid } }) }));
+vi.mock("@/config/firebase", () => ({ auth: { get currentUser() { return { uid: mocks.uid }; } } }));
 vi.mock("@/services/recoveryApi", () => mocks);
 vi.mock("@/services/sleepHealthConnect", () => mocks);
 
@@ -23,7 +25,8 @@ function renderPage() { return render(<MemoryRouter><Sleep /></MemoryRouter>); }
 
 describe("controle de sono", () => {
   beforeEach(() => {
-    for (const fn of Object.values(mocks)) fn.mockReset().mockResolvedValue(undefined);
+    mocks.uid = "ana";
+    for (const fn of Object.values(mocks)) if (typeof fn === "function") fn.mockReset().mockResolvedValue(undefined);
     mocks.getRecoveryOverview.mockResolvedValue(overview());
     mocks.sleepHealthStatus.mockResolvedValue({ status: "web", granted: false });
   });
@@ -109,5 +112,31 @@ describe("controle de sono", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Servidor indisponível");
     fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
     expect(await screen.findByRole("button", { name: "Registrar sono" })).toBeInTheDocument();
+  });
+  it("cancela conexão quando a conta muda durante a permissão Android", async () => {
+    let grant!: (status: { status: string; granted: boolean }) => void;
+    mocks.sleepHealthStatus.mockResolvedValue({ status: "available", granted: false });
+    mocks.requestSleepPermission.mockImplementation(() => new Promise(resolve => { grant = resolve; }));
+    mocks.setSleepConnection.mockResolvedValue(overview().settings);
+    const app = renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Conectar Health Connect" }));
+    await waitFor(() => expect(mocks.requestSleepPermission).toHaveBeenCalled());
+    mocks.uid = "bia"; app.rerender(<MemoryRouter><Sleep /></MemoryRouter>);
+    await screen.findByRole("button", { name: "Registrar sono" });
+    await act(async () => { grant({ status: "available", granted: true }); });
+    expect(mocks.setSleepConnection).not.toHaveBeenCalled();
+    expect(mocks.syncSleep).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Registrar sono" })).toBeEnabled();
+  });
+  it("não exporta uma resposta da conta anterior depois da troca", async () => {
+    let finish!: (data: Record<string, unknown>) => void;
+    mocks.getSleepExport.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const app = renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Exportar meus dados" }));
+    await waitFor(() => expect(mocks.getSleepExport).toHaveBeenCalled());
+    mocks.uid = "bia"; app.rerender(<MemoryRouter><Sleep /></MemoryRouter>);
+    await screen.findByRole("button", { name: "Registrar sono" });
+    await act(async () => { finish({ sleepSessions: [record] }); });
+    expect(mocks.exportSleepData).not.toHaveBeenCalled();
   });
 });

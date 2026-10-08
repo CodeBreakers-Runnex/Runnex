@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   android:
-    name: Android (build e testes de sono)
+    name: Android (build e testes)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +33,6 @@ jobs:
         env:
           VITE_API_URL: https://example.invalid
       - run: npx cap sync android
-      - name: Compilar APK e testar cálculo de duração
+      - name: Compilar APK e executar testes Android
         run: bash gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
         working-directory: android
