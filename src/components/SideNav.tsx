@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Activity, BarChart3, Bot, CalendarDays, PawPrint, Trophy, User, Users } from "lucide-react";
+import { Activity, BarChart3, Bot, CalendarDays, Footprints, Moon, PawPrint, Trophy, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Navegação do desktop (lg+). No celular a BottomNav cumpre esse papel;
@@ -9,9 +9,12 @@ const links = [
   { to: "/dashboard", icon: BarChart3, label: "Estatísticas" },
   { to: "/social", icon: Users, label: "Social" },
   { to: "/events", icon: CalendarDays, label: "Eventos" },
+  { to: "/calendario-treinos", icon: CalendarDays, label: "Treinos" },
   { to: "/pet", icon: PawPrint, label: "Pet" },
   { to: "/conquistas", icon: Trophy, label: "Conquistas" },
   { to: "/treinador", icon: Bot, label: "Treinador" },
+  { to: "/tenis", icon: Footprints, label: "Meus tênis" },
+  { to: "/sono", icon: Moon, label: "Sono e recuperação" },
   { to: "/profile", icon: User, label: "Perfil" },
 ];
 

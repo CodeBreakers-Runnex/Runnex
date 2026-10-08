@@ -13,11 +13,14 @@ from app.listing import MAX_PAGE_SIZE, page_size, visible_to
 from app.models import Activity, User
 from app.rate_limit import rate_limit
 from app.schemas import ActivityCreate, ActivityOut, SaveActivityResult, ToggleLikeIn
+from app.schemas_shoe import ActivityShoeInput
+from app.services.shoes import owned_shoe
 from app.services.activity_effects import (
     apply_xp_and_km,
     get_or_create_user,
     update_weekly_km_for_user_groups,
 )
+from app.services.training import clear_activity_links
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 
@@ -65,8 +68,12 @@ def save_activity(
 
     xp_gained = calculate_xp(payload.distance, payload.duration_seconds)
 
+    if payload.shoe_id is not None:
+        owned_shoe(db, payload.shoe_id, current_user.uid, require_active=True)
+
     activity = Activity(
         user_id=payload.user_id,
+        shoe_id=payload.shoe_id,
         user_name=payload.user_name,
         user_avatar=payload.user_avatar,
         distance=payload.distance,
@@ -182,6 +189,24 @@ def get_feed(
     return q.limit(page_size(limit)).all()
 
 
+@router.put("/{activity_id}/shoe", response_model=ActivityOut, dependencies=[Depends(rate_limit("activities:shoe", 60, 60))])
+def assign_activity_shoe(
+    activity_id: int,
+    payload: ActivityShoeInput,
+    db: Session = Depends(get_db),
+    current_user: FirebaseUser = Depends(require_verified_email),
+):
+    activity = db.query(Activity).filter(Activity.id == activity_id, Activity.user_id == current_user.uid).with_for_update().first()
+    if not activity:
+        raise HTTPException(status_code=404, detail="Corrida não encontrada para este usuário.")
+    if payload.shoe_id is not None and payload.shoe_id != activity.shoe_id:
+        owned_shoe(db, payload.shoe_id, current_user.uid, require_active=True)
+    activity.shoe_id = payload.shoe_id
+    db.commit()
+    db.refresh(activity)
+    return activity
+
+
 @router.post("/{activity_id}/like", dependencies=[Depends(rate_limit("activities:like", 60, 60))])
 def toggle_like(
     activity_id: int,
@@ -211,10 +236,12 @@ def delete_activity(
     db: Session = Depends(get_db),
     current_user: FirebaseUser = Depends(get_current_user),
 ):
-    activity = db.get(Activity, activity_id)
+    activity = db.query(Activity).filter(Activity.id == activity_id).with_for_update().first()
     if not activity or activity.user_id != current_user.uid:
         raise HTTPException(status_code=404, detail="Corrida nao encontrada para este usuario.")
 
+    clear_activity_links(db, current_user.uid, [activity_id])
+    db.flush()
     db.delete(activity)
     db.commit()
 
@@ -231,6 +258,9 @@ def delete_all_user_activities(
     if current_user.uid != user_id:
         raise HTTPException(status_code=403, detail="So e possivel apagar as proprias corridas.")
 
+    rows = db.query(Activity).filter(Activity.user_id == user_id).order_by(Activity.id).with_for_update().all()
+    clear_activity_links(db, user_id, [row.id for row in rows])
+    db.flush()
     count = db.query(Activity).filter(Activity.user_id == user_id).delete()
 
     user = db.get(User, user_id)
