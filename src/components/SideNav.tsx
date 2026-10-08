@@ -9,6 +9,7 @@ const links = [
   { to: "/dashboard", icon: BarChart3, label: "Estatísticas" },
   { to: "/social", icon: Users, label: "Social" },
   { to: "/events", icon: CalendarDays, label: "Eventos" },
+  { to: "/calendario-treinos", icon: CalendarDays, label: "Treinos" },
   { to: "/pet", icon: PawPrint, label: "Pet" },
   { to: "/conquistas", icon: Trophy, label: "Conquistas" },
   { to: "/treinador", icon: Bot, label: "Treinador" },

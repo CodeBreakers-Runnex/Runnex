@@ -676,6 +676,11 @@ const Profile = () => {
       </section>
 
       {/* Progresso: numeros principais, pet, metas e nivel agrupados sob um unico titulo */}
+      <section className="px-6 mt-8 lg:px-0">
+        <button onClick={() => navigate("/calendario-treinos")} className="flex w-full items-center gap-3 rounded-3xl border border-border bg-card p-4 text-left">
+          <Calendar className="text-primary" size={22} /><div className="flex-1"><p className="text-sm font-black">Calendário de treinos</p><p className="mt-1 text-xs text-muted-foreground">Planeje suas corridas e acompanhe sua agenda</p></div><ChevronRight size={18} />
+        </button>
+      </section>
       <section className="px-6 mt-10 lg:px-0">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display font-black text-sm tracking-tighter">SEU PROGRESSO</h3>

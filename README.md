@@ -8,6 +8,8 @@ Aplicativo gamificado de corrida que combina tracking de atividades, comunidade,
 
 O Runnex foi criado para transformar treinos em uma experiência mais social e orientada por dados. A aplicação permite registrar corridas com GPS real, acompanhar estatísticas, evoluir em níveis, participar de grupos e eventos e adotar um mascote virtual (pet) que evolui com os treinos e ganha acessórios comprados com a moeda do app (RunCoin).
 
+O [calendário de treinos](docs/CALENDARIO_TREINOS.md) permite planejar corridas e descanso, reagendar, acompanhar a agenda e comparar objetivos com atividades registradas. Acesse pelo perfil, menu lateral ou tela inicial; rota `/calendario-treinos`. O [plano de ação](docs/PLANO_CALENDARIO_TREINOS.md) descreve as próximas etapas.
+
 ## Funcionalidades
 
 - Autenticação com e-mail/senha (com confirmação obrigatória de e-mail) e login com Google
