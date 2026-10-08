@@ -1,4 +1,12 @@
 import pytest
+from concurrent.futures import ThreadPoolExecutor
+from time import monotonic, sleep
+
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.models import Activity
+from app.routers.shoes import lock_owner
 
 from tests.helpers import run_payload
 
@@ -11,6 +19,29 @@ def create(client, **overrides):
     response = client.post("/shoes", json=shoe_payload(**overrides))
     assert response.status_code == 201, response.text
     return response.json()
+
+
+def test_saving_activity_can_commit_while_default_shoe_owner_is_locked(client, make_user, db, request):
+    if request.config.pluginmanager.hasplugin("runnex_pg_compat"):
+        pytest.skip("Este teste exige transações PostgreSQL concorrentes; o runtime WASM usa uma única sessão.")
+    make_user("ana")
+    shoe = create(client)
+    with Session(db.get_bind()) as owner, ThreadPoolExecutor(max_workers=1) as pool:
+        lock_owner(owner, "ana")
+        future = pool.submit(client.post, "/activities", json=run_payload("ana", shoeId=shoe["id"]))
+        inserted = False
+        try:
+            deadline = monotonic() + 3
+            while monotonic() < deadline:
+                if owner.scalar(select(func.count(Activity.id))) == 1:
+                    inserted = True
+                    break
+                sleep(0.05)
+        finally:
+            owner.rollback()
+        response = future.result(timeout=5)
+    assert inserted, "O lock do tênis padrão impediu a gravação da corrida pela FK de usuário."
+    assert response.status_code == 200, response.text
 
 
 def test_shoes_require_authentication(client):

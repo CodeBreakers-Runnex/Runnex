@@ -20,8 +20,9 @@ def get_shoes(db: Session = Depends(get_db), current_user: FirebaseUser = Depend
 def lock_owner(db: Session, uid: str) -> None:
     get_or_create_user(db, uid, "Corredor", None)
     db.flush()
-    # Serializa mudanças do tênis padrão feitas em duas abas/dispositivos.
-    db.query(User).filter(User.uid == uid).with_for_update().one()
+    # Serializa mudanças do padrão sem bloquear o KEY SHARE da FK ao salvar
+    # uma corrida. No PostgreSQL, key_share=True produz FOR NO KEY UPDATE.
+    db.query(User).filter(User.uid == uid).with_for_update(key_share=True).one()
 
 
 def apply_input(db: Session, shoe: Shoe, payload: ShoeInput, uid: str) -> None:

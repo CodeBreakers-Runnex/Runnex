@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -234,8 +234,13 @@ export default function Shoes() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const uid = user?.uid;
-  const [shoes, setShoes] = useState<RunningShoe[]>([]);
-  const [activities, setActivities] = useState<FeedActivity[]>([]);
+  const scopeRef = useRef(uid);
+  scopeRef.current = uid;
+  const [loadedUid, setLoadedUid] = useState<string>();
+  const [storedShoes, setShoes] = useState<RunningShoe[]>([]);
+  const [storedActivities, setActivities] = useState<FeedActivity[]>([]);
+  const shoes = loadedUid === uid ? storedShoes : [];
+  const activities = loadedUid === uid ? storedActivities : [];
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
@@ -244,6 +249,8 @@ export default function Shoes() {
   const [busy, setBusy] = useState(false);
   const [showRetired, setShowRetired] = useState(false);
   const [assigning, setAssigning] = useState<string | null>(null);
+
+  useEffect(() => { setEditing(null); setBusy(false); setAssigning(null); }, [uid]);
 
   useEffect(() => {
     let cancelled = false;
@@ -260,6 +267,7 @@ export default function Shoes() {
     ])
       .then(([nextShoes, runs]) => {
         if (!cancelled) {
+          setLoadedUid(uid);
           setShoes(nextShoes);
           setActivities(runs);
         }
@@ -286,52 +294,55 @@ export default function Shoes() {
     });
 
   const save = async (values: ShoeInput) => {
-    if (busy || assigning) return;
+    if (!uid || busy || assigning) return;
     setBusy(true);
     try {
-      putInList(
-        editing
+      const saved = editing
           ? await updateShoe(editing.id, values)
-          : await createShoe(values),
-      );
+          : await createShoe(values);
+      if (scopeRef.current !== uid) return;
+      putInList(saved);
       setFormOpen(false);
       toast.success("Tênis salvo.");
     } catch (cause) {
-      toast.error(errorMessage(cause));
+      if (scopeRef.current === uid) toast.error(errorMessage(cause));
     } finally {
-      setBusy(false);
+      if (scopeRef.current === uid) setBusy(false);
     }
   };
 
   const makeDefault = async (shoe: RunningShoe) => {
-    if (busy || assigning) return;
+    if (!uid || busy || assigning) return;
     setBusy(true);
     try {
-      putInList(
-        await updateShoe(shoe.id, { ...shoeInput(shoe), isDefault: true }),
-      );
+      const saved = await updateShoe(shoe.id, { ...shoeInput(shoe), isDefault: true });
+      if (scopeRef.current !== uid) return;
+      putInList(saved);
       toast.success("Tênis padrão atualizado.");
     } catch (cause) {
-      toast.error(errorMessage(cause));
+      if (scopeRef.current === uid) toast.error(errorMessage(cause));
     } finally {
-      setBusy(false);
+      if (scopeRef.current === uid) setBusy(false);
     }
   };
 
   const assign = async (run: FeedActivity, id: string) => {
-    if (assigning) return;
+    if (!uid || assigning || busy) return;
     setAssigning(run.id);
     try {
       const saved = await assignActivityShoe(run.id, id || null);
+      if (scopeRef.current !== uid) return;
       setActivities((prev) =>
         prev.map((item) => (item.id === saved.id ? saved : item)),
       );
-      setShoes(await getShoes());
+      const updated = await getShoes();
+      if (scopeRef.current !== uid) return;
+      setShoes(updated);
       toast.success("Tênis da corrida atualizado.");
     } catch (cause) {
-      toast.error(errorMessage(cause));
+      if (scopeRef.current === uid) toast.error(errorMessage(cause));
     } finally {
-      setAssigning(null);
+      if (scopeRef.current === uid) setAssigning(null);
     }
   };
 

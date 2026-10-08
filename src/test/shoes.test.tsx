@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { FeedActivity, RunningShoe } from "@/types";
 
 const mocks = vi.hoisted(() => ({
+  uid: "ana",
   getShoes: vi.fn(),
   createShoe: vi.fn(),
   updateShoe: vi.fn(),
@@ -11,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   get: vi.fn(),
 }));
 vi.mock("@/hooks/useAuth", () => ({
-  useAuth: () => ({ user: { uid: "ana" } }),
+  useAuth: () => ({ user: { uid: mocks.uid } }),
 }));
 vi.mock("@/services/apiClient", () => ({ api: { get: mocks.get } }));
 vi.mock("@/services/shoesApi", async () => {
@@ -57,6 +58,7 @@ const renderPage = () =>
 describe("controle de tênis", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.uid = "ana";
     mocks.getShoes.mockResolvedValue([shoe]);
     mocks.get.mockResolvedValue([run]);
     vi.spyOn(window, "scrollTo").mockImplementation(() => {});
@@ -155,5 +157,18 @@ describe("controle de tênis", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
     expect(await screen.findByText("Atenção")).toBeInTheDocument();
+  });
+  it("ignora resposta de edição da conta anterior", async () => {
+    let finish!: (value: RunningShoe) => void;
+    mocks.updateShoe.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const app = renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Editar Meu treino" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar tênis" }));
+    await waitFor(() => expect(mocks.updateShoe).toHaveBeenCalled());
+    mocks.uid = "bia"; mocks.getShoes.mockResolvedValue([{ ...shoe, id: "2", name: "Tênis da Bia" }]);
+    app.rerender(<MemoryRouter><Shoes /></MemoryRouter>);
+    await screen.findByRole("heading", { name: "Tênis da Bia" });
+    await act(async () => { finish({ ...shoe, name: "Edição privada da Ana" }); });
+    expect(screen.queryByText("Edição privada da Ana")).toBeNull();
   });
 });

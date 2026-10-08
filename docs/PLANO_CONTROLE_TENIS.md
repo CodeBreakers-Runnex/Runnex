@@ -118,3 +118,7 @@ existente. Publicar em produção não faz parte da alteração de código na br
 - Previsão de quando o limite será alcançado com base no ritmo de uso recente.
 
 Essas evoluções são propostas e não estão implementadas neste ciclo.
+
+## Revisão de 8 de outubro de 2026
+
+A recuperação de corridas exige UID confirmado; rascunhos antigos sem proprietário não são retomados automaticamente. Troca de conta interrompe a corrida na interface sem atribuir seu rascunho à nova conta. Respostas de gravação, edição e avisos ficam restritas à conta que iniciou a operação. O lock do tênis padrão serializa edições usando FOR NO KEY UPDATE, permitindo a gravação da atividade pela FK de usuário. A CI também compila o APK e executa os testes Android disponíveis.
