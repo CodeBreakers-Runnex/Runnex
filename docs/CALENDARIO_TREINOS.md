@@ -70,3 +70,7 @@ Repetição semanal, lembretes, ICS/eventos e integrações com sono/tênis são
 ## Revisão dos fluxos
 
 Finalizar pausa o GPS/cronômetro e bloqueia a retomada durante o salvamento. A resposta de uma gravação anterior não interrompe uma corrida retomada por outra conta, e a seleção do treino é capturada antes do envio. Falhas mantêm o rascunho pausado. Troca de conta encerra o bloqueio da agenda anterior; a conclusão de uma operação antiga não altera a interface nem o bloqueio de uma nova operação. O cartão do próximo treino recupera o estado normal após uma consulta bem-sucedida.
+
+A troca de conta também limpa o bloqueio quando a atividade já foi salva e apenas o vínculo com o calendário permanece pendente. A nova conta pode retomar sua corrida sem esperar essa resposta; a conclusão do vínculo antigo não altera a corrida atual.
+
+Cada mudança de conta invalida as respostas visuais da sessão anterior, inclusive quando o usuário volta ao mesmo UID. Uma resposta antiga não redireciona a tela, remove o rascunho atual nem libera o bloqueio de um salvamento novo.

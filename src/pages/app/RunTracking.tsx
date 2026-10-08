@@ -203,13 +203,30 @@ const RunTracking = () => {
   const [plannedRun, setPlannedRun] = useState<{ uid: string; workout: Workout } | null>(null);
   const plannedWorkout = plannedRun && plannedRun.uid === user?.uid ? plannedRun.workout : null;
   const runningOwner = useRef<string | null>(null);
+  const accountVersion = useRef(0);
   const runningWorkoutId = useRef<number | undefined>();
   const wakeLockRef = useRef<ScreenWakeLockSentinel | null>(null);
   const simulatedPointRef = useRef(0);
   const isNativeAndroid = Capacitor.getPlatform() === "android";
 
   useEffect(() => {
-    if (runningOwner.current && runningOwner.current !== user?.uid) { setIsRunning(false); setIsPaused(false); setIsSaving(false); setRecoverableRun(null); setPlannedRun(null); setDistance(0); setSeconds(0); setPath([]); runningOwner.current = null; }
+    accountVersion.current += 1;
+    // O vínculo pode continuar pendente depois de salvar a atividade,
+    // quando runningOwner já foi limpo. Cada conta começa sem esse bloqueio.
+    setIsRunning(false);
+    setIsPaused(false);
+    setIsSaving(false);
+    setRecoverableRun(null);
+    setPlannedRun(null);
+    setDistance(0);
+    setSeconds(0);
+    setPath([]);
+    setCurrentPos(null);
+    setGpsAccuracy(null);
+    setConfirmExit(false);
+    setIsMusicOpen(false);
+    runningOwner.current = null;
+    runningWorkoutId.current = undefined;
   }, [user?.uid]);
 
   // Ao abrir a tela, verifica se existe uma corrida que não chegou a ser
@@ -616,6 +633,8 @@ const RunTracking = () => {
 
   const handleFinish = async () => {
     if (!user || isSaving || (runningOwner.current && runningOwner.current !== user.uid)) return;
+    const version = accountVersion.current;
+    const isCurrentAccount = () => accountVersion.current === version && auth.currentUser?.uid === user.uid;
     const selection = runningWorkoutId.current ? { uid: user.uid, workoutId: runningWorkoutId.current } : null;
     setIsPaused(true);
 
@@ -642,9 +661,11 @@ const RunTracking = () => {
         type: "RUNNING"
       });
 
-      clearActiveRunSnapshot(user.uid);
-      if (selection) clearPlannedRun(user.uid, selection.workoutId);
-      if (auth.currentUser?.uid !== user.uid) return;
+      if (accountVersion.current === version || auth.currentUser?.uid !== user.uid) {
+        clearActiveRunSnapshot(user.uid);
+        if (selection) clearPlannedRun(user.uid, selection.workoutId);
+      }
+      if (!isCurrentAccount()) return;
       runningOwner.current = null;
       setIsRunning(false);
       setIsPaused(false);
@@ -652,9 +673,9 @@ const RunTracking = () => {
         try {
           const workout = plannedWorkout?.id === selection.workoutId ? plannedWorkout : await loadPlannedRun(user.uid, selection.workoutId);
           await completePlannedRun(user.uid, workout, Number(result.id));
-        } catch { if (auth.currentUser?.uid === user.uid) toast.warning("Corrida salva. Não foi possível vinculá-la ao treino; abra a agenda e selecione esta corrida para tentar novamente.", { duration: 8000 }); }
+        } catch { if (isCurrentAccount()) toast.warning("Corrida salva. Não foi possível vinculá-la ao treino; abra a agenda e selecione esta corrida para tentar novamente.", { duration: 8000 }); }
       }
-      if (auth.currentUser?.uid !== user.uid) return;
+      if (!isCurrentAccount()) return;
       if (result.xpUpdateFailed) {
         toast.warning("Corrida salva, mas nao foi possivel atualizar seu XP agora. Tente novamente mais tarde.", { duration: 8000 });
       } else {
@@ -662,11 +683,11 @@ const RunTracking = () => {
       }
       navigate(selection ? "/calendario-treinos" : "/");
     } catch (error) {
-      if (auth.currentUser?.uid !== user.uid) return;
+      if (!isCurrentAccount()) return;
       console.error("Erro ao finalizar corrida:", error);
       toast.error(getSaveErrorMessage(error), { duration: 8000 });
     } finally {
-      if (auth.currentUser?.uid === user.uid) setIsSaving(false);
+      if (isCurrentAccount()) setIsSaving(false);
     }
   };
 
