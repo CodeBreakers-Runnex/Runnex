@@ -602,7 +602,7 @@ const RunTracking = () => {
   };
 
   const handleResumeRun = () => {
-    if (!recoverableRun || recoverableRun.userId !== user?.uid) return;
+    if (!recoverableRun || isSaving || recoverableRun.userId !== user?.uid || auth.currentUser?.uid !== user?.uid) return;
     runningOwner.current = user.uid;
     setDistance(recoverableRun.distance);
     setSeconds(recoverableRun.seconds);
@@ -807,7 +807,7 @@ const RunTracking = () => {
         </div>
 
         {/* Floating Mini Stats Group */}
-        <AnimatePresence>
+        <AnimatePresence key={`stats-${user?.uid}`}>
           {isRunning && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -953,7 +953,7 @@ const RunTracking = () => {
         </div>
       </footer>
 
-      <AnimatePresence>
+      <AnimatePresence key={`recovery-${user?.uid}`}>
         {recoverableRun?.userId === user?.uid && recoverableRun && (
           <>
             <motion.div
@@ -994,7 +994,7 @@ const RunTracking = () => {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
+      <AnimatePresence key={`music-${user?.uid}`}>
         {isMusicOpen && (
           <>
             <motion.div

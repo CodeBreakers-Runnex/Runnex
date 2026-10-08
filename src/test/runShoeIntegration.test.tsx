@@ -44,15 +44,24 @@ describe("corrida com tênis e troca de conta", () => {
     expect(JSON.parse(localStorage.getItem(key)!).userId).toBe("ana");
     expect(mocks.save).not.toHaveBeenCalled();
   });
-  it("ignora a conclusão visual de uma gravação após trocar de conta", async () => {
+  it("preserva a corrida retomada pela nova conta após uma resposta antiga", async () => {
     let finish!: (result: { id: string; xpUpdateFailed: boolean }) => void;
     mocks.save.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
     const app = render(tree()); fireEvent.click(await screen.findByRole("button", { name: "Continuar" }));
     fireEvent.click(screen.getByRole("button", { name: "Finalizar corrida" }));
     await waitFor(() => expect(mocks.save).toHaveBeenCalled());
-    mocks.uid = "bia"; app.rerender(tree());
+    mocks.uid = "bia";
+    localStorage.setItem(key, JSON.stringify({ ...snapshot, userId: "bia", shoeId: "10", distance: 2, seconds: 600 }));
+    app.rerender(tree());
+    fireEvent.click(await screen.findByRole("button", { name: "Continuar" }));
     await act(async () => { finish({ id: "77", xpUpdateFailed: false }); });
+    expect(screen.getByRole("button", { name: "Finalizar corrida" })).toBeEnabled();
+    expect(JSON.parse(localStorage.getItem(key)!).userId).toBe("bia");
     expect(mocks.navigate).not.toHaveBeenCalled();
     expect(mocks.warning).not.toHaveBeenCalled();
+    mocks.save.mockResolvedValue({ id: "88", xpUpdateFailed: false });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Finalizar corrida" })); });
+    expect(mocks.save).toHaveBeenCalledTimes(2);
+    expect(mocks.save.mock.calls[1][0]).toEqual(expect.objectContaining({ userId: "bia", shoeId: "10", distance: 2 }));
   });
 });
