@@ -35,6 +35,9 @@ import { getBestUserPhotoURL } from "@/lib/user-photo";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { decimateRoute, haversineKm } from "@/lib/route";
+import { getShoes } from "@/services/shoesApi";
+import type { RunningShoe } from "@/types";
+import ShoeStatusBadge from "@/components/ShoeStatusBadge";
 
 const BackgroundGeolocation =
   registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
@@ -87,6 +90,8 @@ type ActiveRunSnapshot = {
   path: [number, number][];
   isSimulating: boolean;
   savedAt: number;
+  userId?: string;
+  shoeId?: string | null;
 };
 
 function clearActiveRunSnapshot() {
@@ -193,16 +198,43 @@ const RunTracking = () => {
   const wakeLockRef = useRef<ScreenWakeLockSentinel | null>(null);
   const simulatedPointRef = useRef(0);
   const isNativeAndroid = Capacitor.getPlatform() === "android";
+  const [shoes, setShoes] = useState<RunningShoe[]>([]);
+  const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
+  const [loadingShoes, setLoadingShoes] = useState(true);
+  const [shoeLoadError, setShoeLoadError] = useState(false);
+  const shoeSelectionMade = useRef(false);
+  const selectedShoe = shoes.find((shoe) => shoe.id === selectedShoeId);
+
+  useEffect(() => {
+    let cancelled = false;
+    shoeSelectionMade.current = false;
+    setSelectedShoeId(null);
+    setShoes([]);
+    setLoadingShoes(true);
+    setShoeLoadError(false);
+    if (!user?.uid) return () => { cancelled = true; };
+    getShoes().then((items) => {
+      if (cancelled) return;
+      setShoes(items);
+      if (!shoeSelectionMade.current) setSelectedShoeId(items.find((shoe) => shoe.isDefault && !shoe.retired)?.id ?? null);
+    }).catch(() => { if (!cancelled) setShoeLoadError(true); })
+      .finally(() => { if (!cancelled) setLoadingShoes(false); });
+    return () => { cancelled = true; };
+  }, [user?.uid]);
 
   // Ao abrir a tela, verifica se existe uma corrida que não chegou a ser
   // salva (ex: app foi encerrado pelo Android no meio do treino).
   useEffect(() => {
+    if (!user?.uid) return;
     try {
       const raw = localStorage.getItem(ACTIVE_RUN_STORAGE_KEY);
       if (!raw) return;
       const snapshot = JSON.parse(raw) as ActiveRunSnapshot;
+      if (snapshot.userId && snapshot.userId !== user.uid) return;
       if (snapshot && Array.isArray(snapshot.path) && typeof snapshot.distance === "number" && snapshot.distance > 0.01) {
         setRecoverableRun(snapshot);
+        shoeSelectionMade.current = true;
+        setSelectedShoeId(snapshot.shoeId ?? null);
       } else {
         clearActiveRunSnapshot();
       }
@@ -210,19 +242,19 @@ const RunTracking = () => {
       console.warn("Nao foi possivel ler a corrida salva:", error);
       clearActiveRunSnapshot();
     }
-  }, []);
+  }, [user?.uid]);
 
   // Salva um retrato da corrida a cada mudança relevante enquanto ela está
   // ativa, para poder recuperar depois de um fechamento inesperado do app.
   useEffect(() => {
     if (!isRunning) return;
     try {
-      const snapshot: ActiveRunSnapshot = { distance, seconds, path, isSimulating, savedAt: Date.now() };
+      const snapshot: ActiveRunSnapshot = { distance, seconds, path, isSimulating, savedAt: Date.now(), userId: user?.uid, shoeId: selectedShoeId };
       localStorage.setItem(ACTIVE_RUN_STORAGE_KEY, JSON.stringify(snapshot));
     } catch (error) {
       console.warn("Nao foi possivel salvar o progresso da corrida:", error);
     }
-  }, [isRunning, distance, seconds, path, isSimulating]);
+  }, [isRunning, distance, seconds, path, isSimulating, user?.uid, selectedShoeId]);
 
   // Gerenciar Screen Wake Lock para PWA (Não deixar a tela do celular apagar/pausar o app)
   useEffect(() => {
@@ -554,6 +586,8 @@ const RunTracking = () => {
     setPath(recoverableRun.path);
     setCurrentPos(recoverableRun.path[recoverableRun.path.length - 1] ?? null);
     setIsSimulating(recoverableRun.isSimulating);
+    shoeSelectionMade.current = true;
+    setSelectedShoeId(recoverableRun.shoeId ?? null);
     simulatedPointRef.current = recoverableRun.path.length;
     setIsPaused(false);
     setIsRunning(true);
@@ -564,6 +598,7 @@ const RunTracking = () => {
   const handleDiscardRun = () => {
     clearActiveRunSnapshot();
     setRecoverableRun(null);
+    setSelectedShoeId(shoes.find((shoe) => shoe.isDefault && !shoe.retired)?.id ?? null);
     toast.info("Corrida descartada.");
   };
 
@@ -582,7 +617,10 @@ const RunTracking = () => {
   const MIN_DISTANCE_TO_SAVE_KM = 0.01;
 
   const handleFinish = async () => {
-    if (!user) return;
+    if (!user || isSaving) return;
+    // Congela o GPS e o cronômetro no momento de salvar. Uma falha mantém
+    // a corrida pausada e seu snapshot disponível para uma nova tentativa.
+    setIsPaused(true);
 
     if (distance < MIN_DISTANCE_TO_SAVE_KM) {
       clearActiveRunSnapshot();
@@ -603,7 +641,8 @@ const RunTracking = () => {
         pace: getPace(),
         calories: Number(getCalories()),
         route: decimateRoute(path).map(([lat, lng]) => ({ lat, lng })),
-        type: "RUNNING"
+        type: "RUNNING",
+        shoeId: selectedShoeId,
       });
 
       clearActiveRunSnapshot();
@@ -611,6 +650,15 @@ const RunTracking = () => {
         toast.warning("Corrida salva, mas nao foi possivel atualizar seu XP agora. Tente novamente mais tarde.", { duration: 8000 });
       } else {
         toast.success("Corrida salva com sucesso!");
+      }
+      if (selectedShoeId) {
+        // Uma falha ao consultar o aviso não deve transformar uma corrida
+        // já salva em erro nem incentivar que o usuário salve de novo.
+        void getShoes().then((items) => {
+          const updated = items.find((shoe) => shoe.id === selectedShoeId);
+          if (updated?.status === "worn") toast.warning(`${updated.name}: gasto pelo limite de uso ou pelo desgaste informado. Confira em Meus tênis.`, { duration: 8000 });
+          else if (updated?.status === "attention") toast.warning(`${updated.name}: atenção, ${updated.usagePercent.toFixed(0)}% do limite de uso atingido.`, { duration: 8000 });
+        }).catch(() => { /* A corrida já está salva; o aviso aparece em Meus tênis. */ });
       }
       navigate("/");
     } catch (error) {
@@ -653,6 +701,22 @@ const RunTracking = () => {
           <div className="w-10 h-10" aria-hidden="true" />
         )}
       </motion.header>
+
+      <section className="mx-6 mt-4 rounded-2xl border border-border bg-card/80 p-4" aria-label="Tênis da corrida">
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="run-shoe" className="text-sm font-bold">Tênis da corrida</label>
+          {!isRunning && <button type="button" onClick={() => navigate("/tenis")} className="text-xs font-bold text-primary">Meus tênis</button>}
+        </div>
+        <select id="run-shoe" value={selectedShoeId ?? ""} disabled={loadingShoes || isSaving || (isRunning && !isPaused)} onChange={(e) => { shoeSelectionMade.current = true; setSelectedShoeId(e.target.value || null); }} className="mt-2 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm disabled:opacity-60">
+          <option value="">{loadingShoes ? "Carregando tênis..." : "Sem tênis vinculado"}</option>
+          {shoes.filter((shoe) => !shoe.retired || shoe.id === selectedShoeId).map((shoe) => <option key={shoe.id} value={shoe.id} disabled={shoe.retired}>{shoe.name}{shoe.isDefault ? " (padrão)" : ""}{shoe.retired ? " (aposentado)" : ""}</option>)}
+          {selectedShoeId && !selectedShoe && <option value={selectedShoeId}>Tênis salvo com o treino</option>}
+        </select>
+        {shoeLoadError && <p className="mt-2 text-xs text-amber-500">Não foi possível carregar os tênis. Você pode continuar sem vínculo e associá-lo depois em Meus tênis.</p>}
+        {selectedShoe && <div className="mt-2 flex flex-wrap items-center gap-2"><ShoeStatusBadge status={selectedShoe.status} /><span className="text-xs text-muted-foreground">{selectedShoe.totalKm.toLocaleString("pt-BR")} / {selectedShoe.limitKm.toLocaleString("pt-BR")} km</span></div>}
+        {selectedShoe && (selectedShoe.status === "attention" || selectedShoe.status === "worn" || selectedShoe.retired) && <p className="mt-2 text-xs text-amber-500">{selectedShoe.retired ? "Tênis aposentado. Pause e escolha outro tênis para salvar a corrida." : "Confira o desgaste deste tênis antes do treino."}</p>}
+        {isRunning && <p className="mt-2 text-xs text-muted-foreground">Pause a corrida para corrigir o tênis escolhido.</p>}
+      </section>
 
       {/* Map Content Section */}
       <motion.div
@@ -804,7 +868,8 @@ const RunTracking = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleStart}
-                className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-[0_14px_44px_rgba(147,51,234,0.48)] border-4 border-background group animate-soft-glow"
+                disabled={loadingShoes}
+                className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-[0_14px_44px_rgba(147,51,234,0.48)] border-4 border-background group animate-soft-glow disabled:opacity-50"
                 aria-label="Iniciar corrida"
               >
                 <Play size={40} className="text-white fill-current ml-2 group-hover:scale-110 transition-transform" />
@@ -832,6 +897,7 @@ const RunTracking = () => {
                 transition={{ type: "spring", stiffness: 360, damping: 22, delay: 0.06 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsPaused(!isPaused)}
+                disabled={isSaving}
                 className="w-24 h-24 rounded-full bg-zinc-100 flex items-center justify-center shadow-[0_16px_42px_rgba(255,255,255,0.16)] border-4 border-background group active:scale-95 transition-transform"
                 aria-label={isPaused ? "Retomar corrida" : "Pausar corrida"}
               >

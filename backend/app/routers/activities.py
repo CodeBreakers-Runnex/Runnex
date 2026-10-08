@@ -13,6 +13,8 @@ from app.listing import MAX_PAGE_SIZE, page_size, visible_to
 from app.models import Activity, User
 from app.rate_limit import rate_limit
 from app.schemas import ActivityCreate, ActivityOut, SaveActivityResult, ToggleLikeIn
+from app.schemas_shoe import ActivityShoeInput
+from app.services.shoes import owned_shoe
 from app.services.activity_effects import (
     apply_xp_and_km,
     get_or_create_user,
@@ -65,8 +67,12 @@ def save_activity(
 
     xp_gained = calculate_xp(payload.distance, payload.duration_seconds)
 
+    if payload.shoe_id is not None:
+        owned_shoe(db, payload.shoe_id, current_user.uid, require_active=True)
+
     activity = Activity(
         user_id=payload.user_id,
+        shoe_id=payload.shoe_id,
         user_name=payload.user_name,
         user_avatar=payload.user_avatar,
         distance=payload.distance,
@@ -180,6 +186,24 @@ def get_feed(
     if before_id is not None:
         q = q.filter(Activity.id < before_id)
     return q.limit(page_size(limit)).all()
+
+
+@router.put("/{activity_id}/shoe", response_model=ActivityOut, dependencies=[Depends(rate_limit("activities:shoe", 60, 60))])
+def assign_activity_shoe(
+    activity_id: int,
+    payload: ActivityShoeInput,
+    db: Session = Depends(get_db),
+    current_user: FirebaseUser = Depends(require_verified_email),
+):
+    activity = db.query(Activity).filter(Activity.id == activity_id, Activity.user_id == current_user.uid).with_for_update().first()
+    if not activity:
+        raise HTTPException(status_code=404, detail="Corrida não encontrada para este usuário.")
+    if payload.shoe_id is not None and payload.shoe_id != activity.shoe_id:
+        owned_shoe(db, payload.shoe_id, current_user.uid, require_active=True)
+    activity.shoe_id = payload.shoe_id
+    db.commit()
+    db.refresh(activity)
+    return activity
 
 
 @router.post("/{activity_id}/like", dependencies=[Depends(rate_limit("activities:like", 60, 60))])

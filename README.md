@@ -21,6 +21,7 @@ O Runnex foi criado para transformar treinos em uma experiência mais social e o
 - Sistema de conquistas (achievements) calculadas a partir do histórico real de corridas
 - Pet virtual gamificado: escolha de espécie, moeda própria (RunCoin) e loja de acessórios
 - Treinador virtual: chatbot de corrida que responde com base nas corridas e na meta semanal do usuário
+- Controle de tênis: cadastro, quilometragem por corrida, limite editável, avisos de desgaste e aposentadoria com histórico preservado — [plano de ação](docs/PLANO_CONTROLE_TENIS.md)
 - PWA instalável e build nativo Android via Capacitor
 
 > Marketplace/loja com checkout está fora do escopo deste ciclo — ver "Fora de escopo" no Roadmap.

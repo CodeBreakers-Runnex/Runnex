@@ -3,6 +3,7 @@ from app.models.chatbot import ChatbotProfile
 from app.models.event import Event, EventParticipant
 from app.models.group import Group, GroupMember, GroupMessage, GroupPost, GroupPostComment
 from app.models.product import Product
+from app.models.shoe import Shoe
 from app.models.user import User
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "EventParticipant",
     "Product",
     "ChatbotProfile",
+    "Shoe",
 ]
