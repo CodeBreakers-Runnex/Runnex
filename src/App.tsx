@@ -48,6 +48,8 @@ const Pet = lazy(() => import("@/pages/app/Pet"));
 const Achievements = lazy(() => import("@/pages/app/Achievements"));
 const Coach = lazy(() => import("@/pages/app/Coach"));
 const Shoes = lazy(() => import("@/pages/app/Shoes"));
+const Sleep = lazy(() => import("@/pages/app/Sleep"));
+const TrainingCalendar = lazy(() => import("@/pages/app/TrainingCalendar"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -214,6 +216,8 @@ const App = () => {
                   />
 
                   <Route path="tenis" element={<Shoes />} />
+                  <Route path="sono" element={<Sleep />} />
+                  <Route path="calendario-treinos" element={<TrainingCalendar />} />
                 </Route>
 
                 {/* =========================

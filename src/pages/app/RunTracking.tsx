@@ -35,10 +35,13 @@ import { getBestUserPhotoURL } from "@/lib/user-photo";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { decimateRoute, haversineKm } from "@/lib/route";
+import { clearPlannedRun, getPlannedRun, selectPlannedRun } from "@/lib/trainingRunSelection";
+import { loadPlannedRun, completePlannedRun } from "@/services/plannedRun";
+import { auth } from "@/config/firebase";
+import type { Workout } from "@/types/training";
 import { getShoes } from "@/services/shoesApi";
 import type { RunningShoe } from "@/types";
 import ShoeStatusBadge from "@/components/ShoeStatusBadge";
-import { auth } from "@/config/firebase";
 
 const BackgroundGeolocation =
   registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
@@ -86,13 +89,14 @@ const SIMULATED_STEP_KM = 12 / 3600;
 const ACTIVE_RUN_STORAGE_KEY = "veloxy_active_run_v1";
 
 type ActiveRunSnapshot = {
+  userId: string;
+  plannedWorkoutId?: number;
+  shoeId?: string | null;
   distance: number;
   seconds: number;
   path: [number, number][];
   isSimulating: boolean;
   savedAt: number;
-  userId: string;
-  shoeId?: string | null;
 };
 
 function clearActiveRunSnapshot(uid?: string) {
@@ -200,6 +204,11 @@ const RunTracking = () => {
   const [isMusicOpen, setIsMusicOpen] = useState(false);
   const [recoverableRun, setRecoverableRun] = useState<ActiveRunSnapshot | null>(null);
   const [confirmExit, setConfirmExit] = useState(false);
+  const [plannedRun, setPlannedRun] = useState<{ uid: string; workout: Workout } | null>(null);
+  const plannedWorkout = plannedRun && plannedRun.uid === user?.uid ? plannedRun.workout : null;
+  const runningOwner = useRef<string | null>(null);
+  const accountVersion = useRef(0);
+  const runningWorkoutId = useRef<number | undefined>();
   const wakeLockRef = useRef<ScreenWakeLockSentinel | null>(null);
   const simulatedPointRef = useRef(0);
   const isNativeAndroid = Capacitor.getPlatform() === "android";
@@ -209,20 +218,6 @@ const RunTracking = () => {
   const [shoeLoadError, setShoeLoadError] = useState(false);
   const shoeSelectionMade = useRef(false);
   const selectedShoe = shoes.find((shoe) => shoe.id === selectedShoeId);
-  const runningOwner = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (runningOwner.current && runningOwner.current !== user?.uid) {
-      setIsRunning(false);
-      setIsPaused(false);
-      setIsSaving(false);
-      setRecoverableRun(null);
-      setDistance(0);
-      setSeconds(0);
-      setPath([]);
-      runningOwner.current = null;
-    }
-  }, [user?.uid]);
 
   useEffect(() => {
     let cancelled = false;
@@ -241,27 +236,51 @@ const RunTracking = () => {
     return () => { cancelled = true; };
   }, [user?.uid]);
 
+  useEffect(() => {
+    accountVersion.current += 1;
+    // O vínculo pode continuar pendente depois de salvar a atividade,
+    // quando runningOwner já foi limpo. Cada conta começa sem esse bloqueio.
+    setIsRunning(false);
+    setIsPaused(false);
+    setIsSaving(false);
+    setRecoverableRun(null);
+    setPlannedRun(null);
+    setDistance(0);
+    setSeconds(0);
+    setPath([]);
+    setCurrentPos(null);
+    setGpsAccuracy(null);
+    setConfirmExit(false);
+    setIsMusicOpen(false);
+    runningOwner.current = null;
+    runningWorkoutId.current = undefined;
+  }, [user?.uid]);
+
   // Ao abrir a tela, verifica se existe uma corrida que não chegou a ser
   // salva (ex: app foi encerrado pelo Android no meio do treino).
   useEffect(() => {
     if (!user?.uid) return;
+    const uid = user.uid;
+    let live = true;
+    let workoutId = getPlannedRun(uid)?.workoutId;
     try {
       const raw = localStorage.getItem(ACTIVE_RUN_STORAGE_KEY);
-      if (!raw) return;
-      const snapshot = JSON.parse(raw) as ActiveRunSnapshot;
-      if (snapshot?.userId && snapshot.userId !== user.uid) return;
-      if (!snapshot?.userId) { clearActiveRunSnapshot(); return; }
-      if (snapshot && Array.isArray(snapshot.path) && typeof snapshot.distance === "number" && snapshot.distance > 0.01) {
+      const snapshot = raw ? JSON.parse(raw) as ActiveRunSnapshot : null;
+      if (snapshot?.userId === uid && Array.isArray(snapshot.path) && typeof snapshot.distance === "number" && snapshot.distance > 0.01) {
         setRecoverableRun(snapshot);
         shoeSelectionMade.current = true;
         setSelectedShoeId(snapshot.shoeId ?? null);
-      } else {
+        workoutId = snapshot.plannedWorkoutId;
+        if (workoutId) selectPlannedRun(uid, workoutId); else clearPlannedRun(uid);
+      } else if (snapshot && (!snapshot.userId || snapshot.userId === uid)) {
         clearActiveRunSnapshot();
       }
     } catch (error) {
       console.warn("Nao foi possivel ler a corrida salva:", error);
       clearActiveRunSnapshot();
     }
+    if (workoutId) void loadPlannedRun(uid, workoutId).then(workout => { if (live) setPlannedRun({ uid, workout }); }).catch(error => { if (live) { setPlannedRun(null); toast.warning(error instanceof Error ? error.message : "Confira o treino selecionado na agenda."); } });
+    return () => { live = false; };
   }, [user?.uid]);
 
   // Salva um retrato da corrida a cada mudança relevante enquanto ela está
@@ -269,12 +288,12 @@ const RunTracking = () => {
   useEffect(() => {
     if (!isRunning || !user || runningOwner.current !== user.uid) return;
     try {
-      const snapshot: ActiveRunSnapshot = { distance, seconds, path, isSimulating, savedAt: Date.now(), userId: user.uid, shoeId: selectedShoeId };
+      const snapshot: ActiveRunSnapshot = { userId: user.uid, plannedWorkoutId: runningWorkoutId.current, shoeId: selectedShoeId, distance, seconds, path, isSimulating, savedAt: Date.now() };
       localStorage.setItem(ACTIVE_RUN_STORAGE_KEY, JSON.stringify(snapshot));
     } catch (error) {
       console.warn("Nao foi possivel salvar o progresso da corrida:", error);
     }
-  }, [isRunning, distance, seconds, path, isSimulating, user?.uid, selectedShoeId]);
+  }, [isRunning, distance, seconds, path, isSimulating, user, selectedShoeId]);
 
   // Gerenciar Screen Wake Lock para PWA (Não deixar a tela do celular apagar/pausar o app)
   useEffect(() => {
@@ -590,6 +609,7 @@ const RunTracking = () => {
   const handleStart = () => {
     if (!user || loadingShoes || isSaving) return;
     runningOwner.current = user.uid;
+    runningWorkoutId.current = plannedWorkout?.id ?? getPlannedRun(user.uid)?.workoutId;
     const startPoint = !isSimulating ? currentPos : null;
     setDistance(0);
     setSeconds(0);
@@ -604,13 +624,14 @@ const RunTracking = () => {
   const handleResumeRun = () => {
     if (!recoverableRun || isSaving || recoverableRun.userId !== user?.uid || auth.currentUser?.uid !== user?.uid) return;
     runningOwner.current = user.uid;
+    runningWorkoutId.current = recoverableRun.plannedWorkoutId;
+    shoeSelectionMade.current = true;
+    setSelectedShoeId(recoverableRun.shoeId ?? null);
     setDistance(recoverableRun.distance);
     setSeconds(recoverableRun.seconds);
     setPath(recoverableRun.path);
     setCurrentPos(recoverableRun.path[recoverableRun.path.length - 1] ?? null);
     setIsSimulating(recoverableRun.isSimulating);
-    shoeSelectionMade.current = true;
-    setSelectedShoeId(recoverableRun.shoeId ?? null);
     simulatedPointRef.current = recoverableRun.path.length;
     setIsPaused(false);
     setIsRunning(true);
@@ -620,8 +641,10 @@ const RunTracking = () => {
 
   const handleDiscardRun = () => {
     clearActiveRunSnapshot(user?.uid);
+    if (user) clearPlannedRun(user.uid);
+    setPlannedRun(null);
+    setSelectedShoeId(shoes.find(shoe => shoe.isDefault && !shoe.retired)?.id ?? null);
     setRecoverableRun(null);
-    setSelectedShoeId(shoes.find((shoe) => shoe.isDefault && !shoe.retired)?.id ?? null);
     toast.info("Corrida descartada.");
   };
 
@@ -642,12 +665,14 @@ const RunTracking = () => {
 
   const handleFinish = async () => {
     if (!user || isSaving || (runningOwner.current && runningOwner.current !== user.uid)) return;
-    // Congela o GPS e o cronômetro no momento de salvar. Uma falha mantém
-    // a corrida pausada e seu snapshot disponível para uma nova tentativa.
+    const version = accountVersion.current;
+    const isCurrentAccount = () => accountVersion.current === version && auth.currentUser?.uid === user.uid;
+    const selection = runningWorkoutId.current ? { uid: user.uid, workoutId: runningWorkoutId.current } : null;
     setIsPaused(true);
 
     if (distance < MIN_DISTANCE_TO_SAVE_KM) {
       clearActiveRunSnapshot(user.uid);
+      clearPlannedRun(user.uid);
       toast.info("Corrida cancelada — nenhuma distancia percorrida.");
       navigate("/");
       return;
@@ -669,11 +694,21 @@ const RunTracking = () => {
         shoeId: selectedShoeId,
       });
 
-      clearActiveRunSnapshot(user.uid);
-      if (auth.currentUser?.uid !== user.uid) return;
+      if (accountVersion.current === version || auth.currentUser?.uid !== user.uid) {
+        clearActiveRunSnapshot(user.uid);
+        if (selection) clearPlannedRun(user.uid, selection.workoutId);
+      }
+      if (!isCurrentAccount()) return;
       runningOwner.current = null;
       setIsRunning(false);
       setIsPaused(false);
+      if (selection) {
+        try {
+          const workout = plannedWorkout?.id === selection.workoutId ? plannedWorkout : await loadPlannedRun(user.uid, selection.workoutId);
+          await completePlannedRun(user.uid, workout, Number(result.id));
+        } catch { if (isCurrentAccount()) toast.warning("Corrida salva. Não foi possível vinculá-la ao treino; abra a agenda e selecione esta corrida para tentar novamente.", { duration: 8000 }); }
+      }
+      if (!isCurrentAccount()) return;
       if (result.xpUpdateFailed) {
         toast.warning("Corrida salva, mas nao foi possivel atualizar seu XP agora. Tente novamente mais tarde.", { duration: 8000 });
       } else {
@@ -683,24 +718,25 @@ const RunTracking = () => {
         // Uma falha ao consultar o aviso não deve transformar uma corrida
         // já salva em erro nem incentivar que o usuário salve de novo.
         void getShoes().then((items) => {
-          if (auth.currentUser?.uid !== user.uid) return;
+          if (!isCurrentAccount()) return;
           const updated = items.find((shoe) => shoe.id === selectedShoeId);
           if (updated?.status === "worn") toast.warning(`${updated.name}: gasto pelo limite de uso ou pelo desgaste informado. Confira em Meus tênis.`, { duration: 8000 });
           else if (updated?.status === "attention") toast.warning(`${updated.name}: atenção, ${updated.usagePercent.toFixed(0)}% do limite de uso atingido.`, { duration: 8000 });
         }).catch(() => { /* A corrida já está salva; o aviso aparece em Meus tênis. */ });
       }
-      navigate("/");
+      navigate(selection ? "/calendario-treinos" : "/");
     } catch (error) {
-      if (auth.currentUser?.uid !== user.uid) return;
+      if (!isCurrentAccount()) return;
       console.error("Erro ao finalizar corrida:", error);
       toast.error(getSaveErrorMessage(error), { duration: 8000 });
     } finally {
-      if (auth.currentUser?.uid === user.uid) setIsSaving(false);
+      if (isCurrentAccount()) setIsSaving(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col safe-top">
+      {plannedWorkout && <div className="border-b border-primary/20 bg-primary/10 px-6 py-3 text-sm"><p className="font-bold">{plannedWorkout.title}</p><p className="text-xs text-muted-foreground">{plannedWorkout.targetDistanceKm == null ? "Distância livre" : `Meta: ${plannedWorkout.targetDistanceKm} km`}{plannedWorkout.targetDurationMinutes != null ? ` · ${plannedWorkout.targetDurationMinutes} min` : ""}</p></div>}
       {/* Premium Header */}
       <motion.header
         initial={{ opacity: 0, y: -16 }}
@@ -718,7 +754,7 @@ const RunTracking = () => {
           transition={{ duration: 0.25 }}
           className="font-display font-black text-xl tracking-tighter text-purple-500 uppercase drop-shadow-[0_0_18px_rgba(168,85,247,0.35)]"
         >
-          {isRunning ? (isPaused ? "PAUSADO" : isSimulating ? "SIMULANDO..." : "MONITORANDO") : "INICIAR TREINO"}
+          {isSaving ? "FINALIZANDO..." : isRunning ? (isPaused ? "PAUSADO" : isSimulating ? "SIMULANDO..." : "MONITORANDO") : "INICIAR TREINO"}
         </motion.h1>
         {import.meta.env.DEV ? (
           <button
@@ -899,7 +935,7 @@ const RunTracking = () => {
                 whileTap={{ scale: 0.9 }}
                 onClick={handleStart}
                 disabled={loadingShoes || isSaving}
-                className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-[0_14px_44px_rgba(147,51,234,0.48)] border-4 border-background group animate-soft-glow disabled:opacity-50"
+                className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-[0_14px_44px_rgba(147,51,234,0.48)] border-4 border-background group animate-soft-glow"
                 aria-label="Iniciar corrida"
               >
                 <Play size={40} className="text-white fill-current ml-2 group-hover:scale-110 transition-transform" />
