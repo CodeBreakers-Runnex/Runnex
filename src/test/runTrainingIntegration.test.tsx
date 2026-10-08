@@ -5,9 +5,9 @@ import type { ReactNode } from "react";
 import RunTracking from "@/pages/app/RunTracking";
 import { selectPlannedRun } from "@/lib/trainingRunSelection";
 
-const mocks = vi.hoisted(() => ({ save: vi.fn(), load: vi.fn(), complete: vi.fn(), warn: vi.fn(), success: vi.fn(), navigate: vi.fn() }));
-vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: { uid: "ana", displayName: "Ana", providerData: [], photoURL: null } }) }));
-vi.mock("@/config/firebase", () => ({ auth: { currentUser: { uid: "ana" } } }));
+const mocks = vi.hoisted(() => ({ uid: "ana", save: vi.fn(), load: vi.fn(), complete: vi.fn(), warn: vi.fn(), success: vi.fn(), navigate: vi.fn() }));
+vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: { uid: mocks.uid, displayName: mocks.uid, providerData: [], photoURL: null } }) }));
+vi.mock("@/config/firebase", () => ({ auth: { get currentUser() { return { uid: mocks.uid }; } } }));
 vi.mock("@/services/database", () => ({ saveActivity: (...args: unknown[]) => mocks.save(...args) }));
 vi.mock("@/services/plannedRun", () => ({ loadPlannedRun: (...args: unknown[]) => mocks.load(...args), completePlannedRun: (...args: unknown[]) => mocks.complete(...args) }));
 vi.mock("react-router-dom", async () => ({ ...await vi.importActual("react-router-dom"), useNavigate: () => mocks.navigate }));
@@ -16,7 +16,7 @@ vi.mock("react-leaflet", () => ({ MapContainer: ({ children }: { children: React
 vi.mock("sonner", () => ({ toast: { warning: (...args: unknown[]) => mocks.warn(...args), success: (...args: unknown[]) => mocks.success(...args), error: vi.fn(), info: vi.fn() } }));
 const workout = { id: 5, revision: 2, title: "Treino planejado", category: "easy", status: "planned", targetDistanceKm: 5, targetDurationMinutes: 30 };
 beforeEach(() => {
-  vi.clearAllMocks(); localStorage.clear();
+  vi.clearAllMocks(); mocks.uid = "ana"; localStorage.clear();
   mocks.load.mockResolvedValue(workout); mocks.save.mockResolvedValue({ id: "77", xpUpdateFailed: false }); mocks.complete.mockResolvedValue(undefined);
   selectPlannedRun("ana", 5);
   localStorage.setItem("veloxy_active_run_v1", JSON.stringify({ userId: "ana", plannedWorkoutId: 5, distance: 1, seconds: 300, path: [[-23.55, -46.63], [-23.551, -46.631]], isSimulating: true, savedAt: Date.now() }));
@@ -62,5 +62,30 @@ describe("corrida iniciada por treino", () => {
     expect(resume).toBeDisabled();
     expect(JSON.parse(localStorage.getItem("veloxy_active_run_v1")!).seconds).toBe(300);
     await act(async () => { resolve({ id: "77", xpUpdateFailed: false }); });
+  });
+  it("uma resposta antiga não interrompe a corrida retomada pela nova conta", async () => {
+    let resolve!: (result: { id: string; xpUpdateFailed: boolean }) => void;
+    mocks.save.mockImplementation(() => new Promise(done => { resolve = done; }));
+    const app = render(<MemoryRouter><RunTracking /></MemoryRouter>);
+    await screen.findByText("Treino planejado");
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finalizar corrida" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalled());
+    mocks.uid = "bia";
+    mocks.load.mockResolvedValue({ ...workout, id: 8, title: "Treino da Bia" });
+    localStorage.setItem("veloxy_active_run_v1", JSON.stringify({ userId: "bia", plannedWorkoutId: 8, distance: 2, seconds: 600, path: [[-23.55, -46.63]], isSimulating: true }));
+    app.rerender(<MemoryRouter><RunTracking /></MemoryRouter>);
+    await screen.findByText("Treino da Bia");
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    await act(async () => { resolve({ id: "77", xpUpdateFailed: false }); });
+    expect(screen.getByRole("button", { name: "Finalizar corrida" })).toBeEnabled();
+    expect(JSON.parse(localStorage.getItem("veloxy_active_run_v1")!).userId).toBe("bia");
+    expect(mocks.complete).not.toHaveBeenCalled();
+    expect(mocks.navigate).not.toHaveBeenCalled();
+    mocks.save.mockResolvedValue({ id: "88", xpUpdateFailed: false });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Finalizar corrida" })); });
+    expect(mocks.save).toHaveBeenCalledTimes(2);
+    expect(mocks.save.mock.calls[1][0]).toEqual(expect.objectContaining({ userId: "bia", distance: 2 }));
+    expect(mocks.complete).toHaveBeenCalledWith("bia", expect.objectContaining({ id: 8 }), 88);
   });
 });

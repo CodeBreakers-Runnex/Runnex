@@ -208,6 +208,10 @@ const RunTracking = () => {
   const simulatedPointRef = useRef(0);
   const isNativeAndroid = Capacitor.getPlatform() === "android";
 
+  useEffect(() => {
+    if (runningOwner.current && runningOwner.current !== user?.uid) { setIsRunning(false); setIsPaused(false); setIsSaving(false); setRecoverableRun(null); setPlannedRun(null); setDistance(0); setSeconds(0); setPath([]); runningOwner.current = null; }
+  }, [user?.uid]);
+
   // Ao abrir a tela, verifica se existe uma corrida que não chegou a ser
   // salva (ex: app foi encerrado pelo Android no meio do treino).
   useEffect(() => {
@@ -231,10 +235,6 @@ const RunTracking = () => {
     }
     if (workoutId) void loadPlannedRun(uid, workoutId).then(workout => { if (live) setPlannedRun({ uid, workout }); }).catch(error => { if (live) { setPlannedRun(null); toast.warning(error instanceof Error ? error.message : "Confira o treino selecionado na agenda."); } });
     return () => { live = false; };
-  }, [user?.uid]);
-
-  useEffect(() => {
-    if (runningOwner.current && runningOwner.current !== user?.uid) { setIsRunning(false); setIsPaused(false); setRecoverableRun(null); setPlannedRun(null); setDistance(0); setSeconds(0); setPath([]); runningOwner.current = null; }
   }, [user?.uid]);
 
   // Salva um retrato da corrida a cada mudança relevante enquanto ela está
@@ -576,7 +576,7 @@ const RunTracking = () => {
   };
 
   const handleResumeRun = () => {
-    if (!recoverableRun || recoverableRun.userId !== user?.uid) return;
+    if (!recoverableRun || isSaving || recoverableRun.userId !== user?.uid || auth.currentUser?.uid !== user?.uid) return;
     runningOwner.current = user.uid;
     runningWorkoutId.current = recoverableRun.plannedWorkoutId;
     setDistance(recoverableRun.distance);
@@ -616,6 +616,7 @@ const RunTracking = () => {
 
   const handleFinish = async () => {
     if (!user || isSaving || (runningOwner.current && runningOwner.current !== user.uid)) return;
+    const selection = runningWorkoutId.current ? { uid: user.uid, workoutId: runningWorkoutId.current } : null;
     setIsPaused(true);
 
     if (distance < MIN_DISTANCE_TO_SAVE_KM) {
@@ -641,12 +642,12 @@ const RunTracking = () => {
         type: "RUNNING"
       });
 
-      const selection = runningWorkoutId.current ? { uid: user.uid, workoutId: runningWorkoutId.current } : null;
+      clearActiveRunSnapshot(user.uid);
+      if (selection) clearPlannedRun(user.uid, selection.workoutId);
+      if (auth.currentUser?.uid !== user.uid) return;
       runningOwner.current = null;
       setIsRunning(false);
       setIsPaused(false);
-      clearActiveRunSnapshot(user.uid);
-      if (selection) clearPlannedRun(user.uid, selection.workoutId);
       if (selection) {
         try {
           const workout = plannedWorkout?.id === selection.workoutId ? plannedWorkout : await loadPlannedRun(user.uid, selection.workoutId);
@@ -661,10 +662,11 @@ const RunTracking = () => {
       }
       navigate(selection ? "/calendario-treinos" : "/");
     } catch (error) {
+      if (auth.currentUser?.uid !== user.uid) return;
       console.error("Erro ao finalizar corrida:", error);
       toast.error(getSaveErrorMessage(error), { duration: 8000 });
     } finally {
-      setIsSaving(false);
+      if (auth.currentUser?.uid === user.uid) setIsSaving(false);
     }
   };
 
@@ -761,7 +763,7 @@ const RunTracking = () => {
         </div>
 
         {/* Floating Mini Stats Group */}
-        <AnimatePresence>
+        <AnimatePresence key={`stats-${user?.uid}`}>
           {isRunning && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -907,7 +909,7 @@ const RunTracking = () => {
         </div>
       </footer>
 
-      <AnimatePresence>
+      <AnimatePresence key={`recovery-${user?.uid}`}>
         {recoverableRun?.userId === user?.uid && recoverableRun && (
           <>
             <motion.div
@@ -948,7 +950,7 @@ const RunTracking = () => {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
+      <AnimatePresence key={`music-${user?.uid}`}>
         {isMusicOpen && (
           <>
             <motion.div
