@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import ARRAY, DateTime, ForeignKey, Integer, JSON, String
+from sqlalchemy import ARRAY, Boolean, DateTime, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -27,5 +27,10 @@ class Activity(Base):
     route: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
     xp_gained: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    performance_samples: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    heart_rate_samples: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    heart_rate_max_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_simulated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     user = relationship("User", back_populates="activities")

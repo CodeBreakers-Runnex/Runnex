@@ -1,3 +1,5 @@
+import { useRunSamples, type RunPerformance } from "@/hooks/useRunSamples";
+import HeartRateControls from "@/components/performance/HeartRateControls";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FirebaseError } from "firebase/app";
@@ -87,6 +89,8 @@ type ActiveRunSnapshot = {
   path: [number, number][];
   isSimulating: boolean;
   savedAt: number;
+  userId: string;
+  performance?: RunPerformance;
 };
 
 function clearActiveRunSnapshot() {
@@ -185,6 +189,8 @@ const RunTracking = () => {
   const [path, setPath] = useState<[number, number][]>([]);
   const [currentPos, setCurrentPos] = useState<[number, number] | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const performance = useRunSamples(isRunning, isPaused, distance, seconds);
+  const snapshotPerformance = performance.snapshot;
   const [trackingStatus, setTrackingStatus] = useState("Pronto para iniciar");
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [isMusicOpen, setIsMusicOpen] = useState(false);
@@ -197,11 +203,12 @@ const RunTracking = () => {
   // Ao abrir a tela, verifica se existe uma corrida que não chegou a ser
   // salva (ex: app foi encerrado pelo Android no meio do treino).
   useEffect(() => {
+    if (!user) return;
     try {
       const raw = localStorage.getItem(ACTIVE_RUN_STORAGE_KEY);
       if (!raw) return;
       const snapshot = JSON.parse(raw) as ActiveRunSnapshot;
-      if (snapshot && Array.isArray(snapshot.path) && typeof snapshot.distance === "number" && snapshot.distance > 0.01) {
+      if (snapshot && snapshot.userId === user.uid && Array.isArray(snapshot.path) && typeof snapshot.distance === "number" && snapshot.distance > 0.01) {
         setRecoverableRun(snapshot);
       } else {
         clearActiveRunSnapshot();
@@ -210,19 +217,19 @@ const RunTracking = () => {
       console.warn("Nao foi possivel ler a corrida salva:", error);
       clearActiveRunSnapshot();
     }
-  }, []);
+  }, [user]);
 
   // Salva um retrato da corrida a cada mudança relevante enquanto ela está
   // ativa, para poder recuperar depois de um fechamento inesperado do app.
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isRunning || !user) return;
     try {
-      const snapshot: ActiveRunSnapshot = { distance, seconds, path, isSimulating, savedAt: Date.now() };
+      const snapshot: ActiveRunSnapshot = { distance, seconds, path, isSimulating, savedAt: Date.now(), userId: user.uid, performance: snapshotPerformance() };
       localStorage.setItem(ACTIVE_RUN_STORAGE_KEY, JSON.stringify(snapshot));
     } catch (error) {
       console.warn("Nao foi possivel salvar o progresso da corrida:", error);
     }
-  }, [isRunning, distance, seconds, path, isSimulating]);
+  }, [isRunning, distance, seconds, path, isSimulating, user, snapshotPerformance]);
 
   // Gerenciar Screen Wake Lock para PWA (Não deixar a tela do celular apagar/pausar o app)
   useEffect(() => {
@@ -536,6 +543,7 @@ const RunTracking = () => {
   };
 
   const handleStart = () => {
+    performance.reset();
     const startPoint = !isSimulating ? currentPos : null;
     setDistance(0);
     setSeconds(0);
@@ -548,7 +556,8 @@ const RunTracking = () => {
   };
 
   const handleResumeRun = () => {
-    if (!recoverableRun) return;
+    if (!recoverableRun || recoverableRun.userId !== user?.uid) return;
+    performance.restore(recoverableRun.performance);
     setDistance(recoverableRun.distance);
     setSeconds(recoverableRun.seconds);
     setPath(recoverableRun.path);
@@ -591,6 +600,7 @@ const RunTracking = () => {
       return;
     }
 
+    setIsPaused(true);
     setIsSaving(true);
     try {
       const result = await saveActivity({
@@ -603,7 +613,9 @@ const RunTracking = () => {
         pace: getPace(),
         calories: Number(getCalories()),
         route: decimateRoute(path).map(([lat, lng]) => ({ lat, lng })),
-        type: "RUNNING"
+        type: "RUNNING",
+        isSimulated: isSimulating,
+        ...performance.snapshot()
       });
 
       clearActiveRunSnapshot();
@@ -623,6 +635,7 @@ const RunTracking = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col safe-top">
+      <HeartRateControls running={isRunning} reference={recoverableRun?.performance?.heartRateMaxBpm ?? performance.snapshot().heartRateMaxBpm} onReading={performance.recordHeartRate} onBreak={performance.breakHeartRateSegment} />
       {/* Premium Header */}
       <motion.header
         initial={{ opacity: 0, y: -16 }}

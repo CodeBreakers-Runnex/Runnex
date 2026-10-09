@@ -12,6 +12,7 @@ from app.gamification import calculate_run_coins, calculate_xp, get_level_from_x
 from app.listing import MAX_PAGE_SIZE, page_size, visible_to
 from app.models import Activity, User
 from app.rate_limit import rate_limit
+from app.performance import performance_summary
 from app.schemas import ActivityCreate, ActivityOut, SaveActivityResult, ToggleLikeIn
 from app.services.activity_effects import (
     apply_xp_and_km,
@@ -78,6 +79,10 @@ def save_activity(
         likes=[],
         route=[p.model_dump() for p in payload.route] if payload.route else None,
         xp_gained=xp_gained,
+        performance_samples=[{"elapsedSeconds": p.elapsed_seconds, "distanceKm": p.distance_km, "segmentId": p.segment_id} for p in payload.performance_samples] if payload.performance_samples else None,
+        heart_rate_samples=[{"elapsedSeconds": p.elapsed_seconds, "bpm": p.bpm, "segmentId": p.segment_id} for p in payload.heart_rate_samples] if payload.heart_rate_samples else None,
+        heart_rate_max_bpm=payload.heart_rate_max_bpm,
+        is_simulated=payload.is_simulated,
     )
     db.add(activity)
 
@@ -109,6 +114,18 @@ def save_activity(
         db.rollback()
 
     return SaveActivityResult(id=activity.id, xp_update_failed=xp_update_failed)
+
+
+@router.get("/performance/me")
+def get_performance(
+    utc_offset_minutes: int = 0,
+    db: Session = Depends(get_db),
+    current_user: FirebaseUser = Depends(get_current_user),
+):
+    if not -720 <= utc_offset_minutes <= 840:
+        raise HTTPException(status_code=422, detail="Fuso inválido.")
+    rows = db.query(Activity).filter(Activity.user_id == current_user.uid).order_by(desc(Activity.created_at)).all()
+    return performance_summary(rows, datetime.now(timezone.utc), utc_offset_minutes)
 
 
 @router.get("/user/{user_id}", response_model=list[ActivityOut])

@@ -48,6 +48,18 @@ class UserProfileCreate(BaseModel):
     private_profile: bool | None = Field(default=None, validation_alias="privateProfile")
 
 
+class PerformancePoint(BaseModel):
+    segment_id: int = Field(default=0, validation_alias="segmentId", ge=0)
+    elapsed_seconds: float = Field(validation_alias="elapsedSeconds", ge=0, le=86400, allow_inf_nan=False)
+    distance_km: float = Field(validation_alias="distanceKm", ge=0, le=500, allow_inf_nan=False)
+
+
+class HeartRatePoint(BaseModel):
+    segment_id: int = Field(default=0, validation_alias="segmentId", ge=0)
+    elapsed_seconds: float = Field(validation_alias="elapsedSeconds", ge=0, le=86400, allow_inf_nan=False)
+    bpm: int = Field(ge=25, le=250)
+
+
 class ActivityCreate(BaseModel):
     """Espelha validActivityCreate de firestore.rules."""
 
@@ -62,9 +74,30 @@ class ActivityCreate(BaseModel):
     type: str
     route: list[RoutePoint] | None = Field(default=None, max_length=5000)
 
+    performance_samples: list[PerformancePoint] | None = Field(default=None, validation_alias="performanceSamples", max_length=5000)
+    heart_rate_samples: list[HeartRatePoint] | None = Field(default=None, validation_alias="heartRateSamples", max_length=90000)
+    heart_rate_max_bpm: int | None = Field(default=None, validation_alias="heartRateMaxBpm", ge=100, le=250)
+    is_simulated: bool = Field(default=False, validation_alias="isSimulated")
+
     @model_validator(mode="after")
     def _check_plausible(self) -> "ActivityCreate":
         check_run_is_plausible(self.distance, self.duration_seconds, self.route)
+        previous_time, previous_distance, previous_segment = -1.0, -1.0, -1
+        for point in self.performance_samples or []:
+            if point.elapsed_seconds <= previous_time or point.distance_km < previous_distance or point.segment_id < previous_segment:
+                raise ValueError("Os pontos de performance devem avançar no tempo, sem regressão de distância ou segmento.")
+            if point.elapsed_seconds > self.duration_seconds or point.distance_km > self.distance + .02:
+                raise ValueError("Pontos de performance fora dos limites da corrida.")
+            previous_time, previous_distance = point.elapsed_seconds, point.distance_km
+            previous_segment = point.segment_id
+        previous_time, previous_segment = -1.0, -1
+        for point in self.heart_rate_samples or []:
+            if point.elapsed_seconds <= previous_time or point.elapsed_seconds > self.duration_seconds or point.segment_id < previous_segment:
+                raise ValueError("As amostras cardíacas devem ter tempos crescentes dentro da corrida.")
+            previous_time = point.elapsed_seconds
+            previous_segment = point.segment_id
+        if self.heart_rate_samples and self.heart_rate_max_bpm is None:
+            raise ValueError("Informe a FC máxima de referência para calcular as zonas.")
         return self
 
 

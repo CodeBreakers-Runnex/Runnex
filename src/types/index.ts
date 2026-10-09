@@ -48,6 +48,10 @@ export interface ActivityData {
   likes?: string[];
   route?: RoutePoint[];
   xpGained?: number;
+  performanceSamples?: { elapsedSeconds: number; distanceKm: number; segmentId?: number }[];
+  heartRateSamples?: { elapsedSeconds: number; bpm: number; segmentId?: number }[];
+  heartRateMaxBpm?: number;
+  isSimulated?: boolean;
   timestamp?: Timestamp | Date | { seconds: number; nanoseconds?: number };
   createdAtMs?: number;
 }
