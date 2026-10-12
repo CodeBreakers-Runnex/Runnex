@@ -17,6 +17,7 @@ import { Capacitor } from "@capacitor/core";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 
 import { auth, db } from "@/config/firebase";
+import { clearCoachHistory } from "@/lib/coachHistory";
 import { syncGoogleProfilePhoto } from "@/lib/user-photo";
 import { createUserProfile, deleteUserAccount } from "@/services/database";
 
@@ -120,6 +121,10 @@ export async function deleteCurrentAccount(password?: string) {
 
   await reauthenticate(user, password);
   await deleteUserAccount(user.uid);
+
+  // O histórico do treinador fica só no aparelho (localStorage); sem isso a
+  // conversa da conta apagada continuava guardada no celular.
+  clearCoachHistory(user.uid);
 
   // Documento legado do Firestore (joinedGroupIds/enrolledEvents dos
   // grupos/eventos de demonstracao). Best-effort: os dados principais ja

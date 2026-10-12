@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, selectinload
 
-from app.auth import FirebaseUser, decode_firebase_token, get_current_user
+from app.auth import FirebaseUser, decode_firebase_token, get_current_user, require_verified_email
 from app.database import SessionLocal, get_db
 from app.listing import page_size
 from app.models import Group, GroupMember, GroupMessage, GroupPost, GroupPostComment, User
@@ -109,7 +109,7 @@ def list_groups(db: Session = Depends(get_db), _: FirebaseUser = Depends(get_cur
 def create_group(
     payload: GroupCreate,
     db: Session = Depends(get_db),
-    current_user: FirebaseUser = Depends(get_current_user),
+    current_user: FirebaseUser = Depends(require_verified_email),
 ):
     group = Group(
         name=payload.name.strip(),
@@ -264,7 +264,7 @@ async def create_group_post(
     group_id: int,
     payload: GroupPostCreate,
     db: Session = Depends(get_db),
-    current_user: FirebaseUser = Depends(get_current_user),
+    current_user: FirebaseUser = Depends(require_verified_email),
 ):
     _require_member(db, group_id, current_user.uid)
     author = _user_or_404(db, current_user.uid)
@@ -332,6 +332,12 @@ def list_group_post_comments(
     current_user: FirebaseUser = Depends(get_current_user),
 ):
     _require_member(db, group_id, current_user.uid)
+    # Ser membro do grupo da URL nao basta: o post tambem precisa ser deste
+    # grupo, senao um membro do grupo A lia comentarios de posts do grupo B.
+    post = db.query(GroupPost).filter(GroupPost.id == post_id, GroupPost.group_id == group_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Publicacao nao encontrada.")
+
     comments = (
         db.query(GroupPostComment)
         .filter(GroupPostComment.post_id == post_id)
@@ -349,7 +355,7 @@ async def add_group_post_comment(
     post_id: int,
     payload: GroupCommentCreate,
     db: Session = Depends(get_db),
-    current_user: FirebaseUser = Depends(get_current_user),
+    current_user: FirebaseUser = Depends(require_verified_email),
 ):
     _require_member(db, group_id, current_user.uid)
     author = _user_or_404(db, current_user.uid)
@@ -407,7 +413,7 @@ async def send_group_message(
     group_id: int,
     payload: GroupMessageCreate,
     db: Session = Depends(get_db),
-    current_user: FirebaseUser = Depends(get_current_user),
+    current_user: FirebaseUser = Depends(require_verified_email),
 ):
     _require_member(db, group_id, current_user.uid)
     sender = _user_or_404(db, current_user.uid)
@@ -425,10 +431,15 @@ async def send_group_message(
 
 @router.get("/joined/{user_id}", response_model=list[str])
 def get_joined_group_ids(
-    user_id: str, db: Session = Depends(get_db), _: FirebaseUser = Depends(get_current_user)
+    user_id: str, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(get_current_user)
 ):
     """IDs dos grupos reais (Postgres) de que o usuario participa. Usado por
     getUserProfile no frontend para mesclar com joinedGroupIds do Firestore
-    (grupos demo/fallback, que nao tem linha correspondente aqui)."""
+    (grupos demo/fallback, que nao tem linha correspondente aqui).
+
+    So o proprio usuario: o frontend so pede o proprio uid, e liberar para
+    qualquer um expunha em quais grupos um perfil privado esta."""
+    if current_user.uid != user_id:
+        raise HTTPException(status_code=403, detail="So e possivel consultar os proprios grupos.")
     rows = db.query(GroupMember.group_id).filter(GroupMember.user_id == user_id).all()
     return [str(group_id) for (group_id,) in rows]

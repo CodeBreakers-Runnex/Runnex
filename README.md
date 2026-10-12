@@ -172,8 +172,8 @@ FIREBASE_PROJECT_ID
 ## Testes
 
 ```bash
-npm run test                 # frontend: 52 testes (Vitest)
-cd backend && pytest         # backend: 82 testes contra Postgres (ver backend/README.md)
+npm run test                 # frontend: 72 testes (Vitest)
+cd backend && pytest         # backend: 132 testes contra Postgres (ver backend/README.md)
 ```
 
 Frontend cobre o cliente da API, grupos (incluindo o fallback de demonstração e o

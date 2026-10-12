@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.auth import FirebaseUser, get_current_user
+from app.auth import FirebaseUser, require_verified_email
 from app.database import get_db
 from app.models import User
 from app.pet_catalog import PET_SPECIES, STORE_ACCESSORIES, accessory_slot
@@ -36,7 +36,7 @@ def choose_pet(
     user_id: str,
     payload: ChoosePetIn,
     db: Session = Depends(get_db),
-    current_user: FirebaseUser = Depends(get_current_user),
+    current_user: FirebaseUser = Depends(require_verified_email),
 ):
     """Escolha do pet: so pode ser feita uma vez (mesma regra de firestore.rules).
 
@@ -68,7 +68,7 @@ def equip_pet_accessory(
     user_id: str,
     payload: EquipPetAccessoryIn,
     db: Session = Depends(get_db),
-    current_user: FirebaseUser = Depends(get_current_user),
+    current_user: FirebaseUser = Depends(require_verified_email),
 ):
     _require_self(user_id, current_user)
     user = _get_or_404(db, user_id)
@@ -96,13 +96,18 @@ def purchase_pet_accessory(
     user_id: str,
     payload: PurchasePetAccessoryIn,
     db: Session = Depends(get_db),
-    current_user: FirebaseUser = Depends(get_current_user),
+    current_user: FirebaseUser = Depends(require_verified_email),
 ):
-    """Debita RunCoins e desbloqueia o acessorio numa unica transacao (a
-    sessao do SQLAlchemy ja da isolamento por request; o commit no final
-    torna a operacao atomica)."""
+    """Debita RunCoins e desbloqueia o acessorio numa unica transacao.
+
+    A transacao sozinha nao bastava: no READ COMMITTED do Postgres duas
+    compras simultaneas liam o mesmo saldo e as duas passavam. O
+    SELECT ... FOR UPDATE faz a segunda esperar a primeira terminar e ler o
+    saldo ja debitado."""
     _require_self(user_id, current_user)
-    user = _get_or_404(db, user_id)
+    user = db.get(User, user_id, with_for_update=True)
+    if not user:
+        raise HTTPException(status_code=404, detail="Perfil nao encontrado.")
 
     if payload.accessory_id not in STORE_ACCESSORIES:
         raise HTTPException(status_code=400, detail="Acessorio nao esta a venda.")

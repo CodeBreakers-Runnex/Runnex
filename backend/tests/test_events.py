@@ -36,3 +36,11 @@ def test_join_is_idempotent(client, make_user, event_id):
     make_user("ana")
     client.post(f"/events/{event_id}/join")
     assert client.post(f"/events/{event_id}/join").json()["participantsCount"] == 1
+
+
+def test_enrolled_events_only_for_self(client, make_user, event_id):
+    make_user("ana")
+    client.post(f"/events/{event_id}/join")
+    make_user("bruno")
+    assert client.get("/events/enrolled/ana").status_code == 403
+    assert client.get("/events/enrolled/bruno").json() == []

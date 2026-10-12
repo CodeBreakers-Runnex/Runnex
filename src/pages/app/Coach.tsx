@@ -140,6 +140,11 @@ export default function Coach() {
             </button>
           )}
         </div>
+        {/* Fica fixo no topo (não some com a conversa): o treinador responde
+            por regras a partir das corridas, sem avaliação individual. */}
+        <p role="note" className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-snug text-foreground/80">
+          Orientações gerais baseadas nas suas corridas. Não substitui um profissional de educação física ou de saúde.
+        </p>
       </header>
 
       <div className={cn(GLASS_CARD_CLASS, "mx-4 mt-4 flex min-h-0 flex-1 flex-col overflow-hidden lg:mx-6")}>
