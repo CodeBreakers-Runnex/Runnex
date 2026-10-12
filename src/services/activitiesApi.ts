@@ -14,7 +14,9 @@ export function normalizeActivity(docId: string, data: FeedActivity): FeedActivi
   };
 }
 
-function formatPace(totalSeconds: number, totalKm: number) {
+// Arredonda o total de segundos por km ANTES de separar minutos e segundos;
+// arredondar só os segundos podia gerar 5'60".
+export function formatPace(totalSeconds: number, totalKm: number) {
   if (totalKm <= 0 || totalSeconds <= 0) return "0'00\"";
   const secondsPerKm = Math.round(totalSeconds / totalKm);
   const minutes = Math.floor(secondsPerKm / 60);

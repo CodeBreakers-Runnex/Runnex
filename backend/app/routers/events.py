@@ -66,10 +66,14 @@ def join_event(
 
 @router.get("/enrolled/{user_id}", response_model=list[str])
 def get_enrolled_event_ids(
-    user_id: str, db: Session = Depends(get_db), _: FirebaseUser = Depends(get_current_user)
+    user_id: str, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(get_current_user)
 ):
     """IDs dos eventos reais (Postgres) em que o usuario esta inscrito. Usado
     por getUserProfile no frontend para mesclar com enrolledEvents do
-    Firestore (eventos locais/demo, que nao tem linha correspondente aqui)."""
+    Firestore (eventos locais/demo, que nao tem linha correspondente aqui).
+
+    So o proprio usuario, pelo mesmo motivo de /groups/joined/{user_id}."""
+    if current_user.uid != user_id:
+        raise HTTPException(status_code=403, detail="So e possivel consultar as proprias inscricoes.")
     rows = db.query(EventParticipant.event_id).filter(EventParticipant.user_id == user_id).all()
     return [str(event_id) for (event_id,) in rows]

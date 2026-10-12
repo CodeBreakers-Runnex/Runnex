@@ -1,7 +1,7 @@
 {
   "name": "veloxy",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Aplicativo gamificado de corrida com tracking, comunidade e recompensas.",
   "type": "module",
   "scripts": {
@@ -18,15 +18,13 @@
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",
-    "@capacitor-firebase/authentication": "^8.3.0",
-    "@capacitor/android": "^8.4.0",
-    "@capacitor/cli": "^8.4.0",
-    "@capacitor/core": "^8.4.0",
+    "@capacitor-firebase/authentication": "^8.5.2",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@types/leaflet": "^1.9.21",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
-    "firebase": "^12.11.0",
+    "firebase": "^12.19.0",
     "framer-motion": "^12.34.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.462.0",
@@ -40,10 +38,12 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",

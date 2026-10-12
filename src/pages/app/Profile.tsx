@@ -242,11 +242,11 @@ function SettingsModal({
                 </div>
               </SettingsRow>
 
-              <SettingsRow icon={<Shield size={18} />} title="Perfil privado" description="Oculta seu perfil dos rankings públicos.">
+              <SettingsRow icon={<Shield size={18} />} title="Perfil privado" description="Oculta seu perfil e suas corridas do feed, dos rankings e dos grupos.">
                 <ToggleSwitch checked={settings.privateProfile} onChange={updatePrivacy} />
               </SettingsRow>
 
-              <SettingsRow icon={<Ruler size={18} />} title="Unidade de distância" description="Define a unidade preferida para corridas.">
+              <SettingsRow icon={<Ruler size={18} />} title="Unidade de distância" description="Usada nos totais da tela inicial. As demais telas mostram em km.">
                 <div className="flex rounded-2xl bg-background/50 border border-border p-1">
                   {(["km", "mi"] as const).map((unit) => (
                     <button

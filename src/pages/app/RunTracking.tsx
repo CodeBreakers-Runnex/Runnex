@@ -34,7 +34,8 @@ import { toast } from "sonner";
 import { getBestUserPhotoURL } from "@/lib/user-photo";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
-import { decimateRoute, haversineKm } from "@/lib/route";
+import { acceptGpsPoint, decimateRoute, haversineKm } from "@/lib/route";
+import { formatPace } from "@/services/activitiesApi";
 
 const BackgroundGeolocation =
   registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
@@ -74,6 +75,8 @@ const SIMULATED_ROUTE: [number, number][] = [
 // 12 km/h (pace 5'00"/km): ritmo de corrida plausivel para demonstracao.
 const SIMULATED_TICK_MS = 1000;
 const SIMULATED_STEP_KM = 12 / 3600;
+
+const WEAK_GPS_TOAST_INTERVAL_MS = 10_000;
 
 // Snapshot da corrida em andamento, salvo localmente para sobreviver a um
 // fechamento do app pelo sistema operacional (processo morto = serviço de
@@ -191,6 +194,7 @@ const RunTracking = () => {
   const [recoverableRun, setRecoverableRun] = useState<ActiveRunSnapshot | null>(null);
   const [confirmExit, setConfirmExit] = useState(false);
   const wakeLockRef = useRef<ScreenWakeLockSentinel | null>(null);
+  const lastWeakGpsToastRef = useRef(0);
   const simulatedPointRef = useRef(0);
   const isNativeAndroid = Capacitor.getPlatform() === "android";
 
@@ -255,8 +259,9 @@ const RunTracking = () => {
   }, [isRunning, isPaused]);
 
 
-  // Função para calcular distância entre dois pontos (Haversine)
-
+  // Processamento único de um ponto de GPS, usado tanto pelo watcher web
+  // quanto pelo nativo do Android (antes a lógica era duplicada e uma
+  // correção feita num lugar não chegava ao outro).
   const applyGpsPoint = useCallback((
     latitude: number,
     longitude: number,
@@ -268,14 +273,18 @@ const RunTracking = () => {
 
     if (accuracy > 50) {
       setTrackingStatus("Sinal GPS fraco");
-      if (source === "web") {
-        toast.warning("Sinal de GPS fraco. Aguardando uma posicao melhor.");
+      // Um toast por leitura ruim enchia a tela; avisa no máximo a cada ~10 s.
+      const now = Date.now();
+      if (source === "web" && now - lastWeakGpsToastRef.current >= WEAK_GPS_TOAST_INTERVAL_MS) {
+        lastWeakGpsToastRef.current = now;
+        toast.warning("Sinal de GPS fraco. Aguardando uma posição melhor.");
       }
       return;
     }
 
+    // Anti-Cheat: acima de 30 km/h (8.33 m/s) provavelmente é carro/bike.
     if (speed && speed > 8.33) {
-      console.warn("Velocidade incompatÃ­vel com corrida. Trecho ignorado.");
+      console.warn("Velocidade incompatível com corrida. Trecho ignorado.");
       setTrackingStatus("Trecho ignorado por velocidade alta");
       return;
     }
@@ -285,17 +294,9 @@ const RunTracking = () => {
     setTrackingStatus(source === "background" ? "GPS em segundo plano ativo" : "GPS conectado");
 
     setPath(prevPath => {
-      if (prevPath.length > 0) {
-        const lastPoint = prevPath[prevPath.length - 1];
-        const d = haversineKm(lastPoint[0], lastPoint[1], latitude, longitude);
-
-        if (d > 0.005 && d < 0.5) {
-          setDistance(prev => prev + d);
-          return [...prevPath, newPoint];
-        }
-        return prevPath;
-      }
-      return [newPoint];
+      const { path: nextPath, addedKm } = acceptGpsPoint(prevPath, newPoint);
+      if (addedKm > 0) setDistance(prev => prev + addedKm);
+      return nextPath;
     });
   }, []);
 
@@ -364,40 +365,7 @@ const RunTracking = () => {
       watchId = navigator.geolocation.watchPosition(
         (position) => {
           const { latitude, longitude, accuracy, speed } = position.coords;
-          console.log(`GPS Success: Lat ${latitude}, Lng ${longitude}, Acc ${accuracy}m`);
-
-          if (accuracy > 50) {
-            setTrackingStatus("Sinal GPS fraco");
-            toast.warning("Sinal de GPS fraco. Aguardando uma posição melhor.");
-            return;
-          }
-
-          // Anti-Cheat: Se a velocidade exceder 30km/h (8.33 m/s), o cara pode estar num carro/bike
-          if (speed && speed > 8.33) {
-            console.warn("Velocidade incompatível com corrida. Trecho ignorado.");
-            setTrackingStatus("Trecho ignorado por velocidade alta");
-            return;
-          }
-          
-          const newPoint: [number, number] = [latitude, longitude];
-          setCurrentPos(newPoint);
-          setTrackingStatus("GPS conectado");
-
-          setPath(prevPath => {
-            if (prevPath.length > 0) {
-              const lastPoint = prevPath[prevPath.length - 1];
-              const d = haversineKm(lastPoint[0], lastPoint[1], latitude, longitude);
-              
-              // Filtro de Ruído Geográfico:
-              // Limite superior de pulo: mais que 500m (0.5km) entre duas coletas é falha grossa do GPS
-              if (d > 0.005 && d < 0.5) { 
-                setDistance(prev => prev + d);
-                return [...prevPath, newPoint];
-              }
-              return prevPath;
-            }
-            return [newPoint];
-          });
+          applyGpsPoint(latitude, longitude, accuracy, speed, "web");
         },
         (error) => {
           console.error("GPS Error:", error);
@@ -414,7 +382,7 @@ const RunTracking = () => {
     return () => {
       if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
     };
-  }, [isNativeAndroid, isRunning, isPaused, isSimulating]);
+  }, [applyGpsPoint, isNativeAndroid, isRunning, isPaused, isSimulating]);
 
   // Rastreamento GPS nativo no Android. Mantem a corrida ativa com notificacao fixa.
   useEffect(() => {
@@ -479,13 +447,7 @@ const RunTracking = () => {
   }, [applyGpsPoint, isNativeAndroid, isRunning, isPaused, isSimulating]);
 
   // Formatar Ritmo (Pace) - Minutos por km
-  const getPace = () => {
-    if (distance === 0) return "0'00\"";
-    const paceDecimal = (seconds / 60) / distance;
-    const mins = Math.floor(paceDecimal);
-    const secs = Math.round((paceDecimal - mins) * 60);
-    return `${mins}'${secs.toString().padStart(2, '0')}"`;
-  };
+  const getPace = () => formatPace(seconds, distance);
 
   // Simulação de movimento para testes
   useEffect(() => {

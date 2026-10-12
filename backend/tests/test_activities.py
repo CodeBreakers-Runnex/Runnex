@@ -93,3 +93,58 @@ def test_write_endpoints_are_rate_limited(client, login):
     response = client.post("/activities", json=run_payload("ana", km=1.0, seconds=600))
     assert response.status_code == 429
     assert "Retry-After" in response.headers
+
+
+def _group_weekly_km(client, group_id) -> float:
+    return client.get(f"/groups/{group_id}").json()["weeklyKm"]
+
+
+def test_delete_run_refunds_coins_and_group_km(client, make_user):
+    # Regressao P2-01: apagar so recalculava XP/km mensal, entao criar e
+    # apagar corridas em loop gerava RunCoins infinitas e inflava o grupo.
+    make_user("ana")
+    client.post("/users/ana/pet/choose", json={"species": "guepardo", "name": "Flash"})
+    group_id = client.post("/groups", json={"name": "Treino", "city": "SP"}).json()["id"]
+    client.post("/activities", json=run_payload("ana", km=3.0, seconds=1080))
+
+    coins_before = client.get("/users/ana").json()["petCoins"]
+    km_before = _group_weekly_km(client, group_id)
+
+    run_id = client.post("/activities", json=run_payload("ana", km=5.0, seconds=1800)).json()["id"]
+    assert client.get("/users/ana").json()["petCoins"] == coins_before + 5
+    assert _group_weekly_km(client, group_id) == km_before + 5
+
+    assert client.delete(f"/activities/{run_id}").status_code == 200
+    assert client.get("/users/ana").json()["petCoins"] == coins_before
+    assert _group_weekly_km(client, group_id) == km_before
+
+
+def test_delete_run_refund_never_goes_negative(client, make_user):
+    make_user("ana")
+    client.post("/users/ana/pet/choose", json={"species": "lebre", "name": "Pe"})
+    run_id = client.post("/activities", json=run_payload("ana", km=5.0, seconds=1800)).json()["id"]
+    for _ in range(9):
+        client.post("/activities", json=run_payload("ana", km=5.0, seconds=1800))
+    # Gasta as moedas na loja (store-laco custa 40) antes de apagar
+    assert client.post("/users/ana/pet/purchase", json={"accessoryId": "store-laco"}).json()["petCoins"] == 10
+    for other in client.get("/activities/user/ana?limit=100").json():
+        if other["id"] != run_id:
+            client.delete(f"/activities/{other['id']}")
+
+    assert client.get("/users/ana").json()["petCoins"] == 0
+    assert client.delete(f"/activities/{run_id}").status_code == 200
+    assert client.get("/users/ana").json()["petCoins"] == 0
+
+
+def test_delete_all_runs_refunds_total(client, make_user):
+    make_user("ana")
+    client.post("/users/ana/pet/choose", json={"species": "guepardo", "name": "Flash"})
+    group_id = client.post("/groups", json={"name": "Treino", "city": "SP"}).json()["id"]
+    client.post("/activities", json=run_payload("ana", km=5.0, seconds=1800))
+    client.post("/activities", json=run_payload("ana", km=3.0, seconds=1080))
+    assert client.get("/users/ana").json()["petCoins"] == 8
+    assert _group_weekly_km(client, group_id) == 8
+
+    assert client.delete("/activities/user/ana/all").json() == {"deleted_count": 2}
+    assert client.get("/users/ana").json()["petCoins"] == 0
+    assert _group_weekly_km(client, group_id) == 0

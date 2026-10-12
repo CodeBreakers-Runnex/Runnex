@@ -104,3 +104,39 @@ def test_websocket_pushes_new_messages_to_members(client, group, monkeypatch):
     with client.websocket_connect(f"/groups/{group}/ws?token=x") as ws:
         client.post(f"/groups/{group}/messages", json={"text": "Oi"})
         assert ws.receive_json() == {"type": "message_created"}
+
+
+def test_cannot_list_comments_of_another_groups_post(client, group, make_user, login):
+    # Regressao P2-02: a rota checava membro do grupo da URL, mas buscava
+    # comentarios so pelo post_id - membro do grupo A lia posts do grupo B.
+    post = client.post(f"/groups/{group}/posts", json={"text": "So para o grupo"}).json()
+    client.post(f"/groups/{group}/posts/{post['id']}/comments", json={"text": "Segredo"})
+
+    make_user("carla", "Carla")
+    other_group = client.post("/groups", json={"name": "Outro", "city": "RJ"}).json()["id"]
+    response = client.get(f"/groups/{other_group}/posts/{post['id']}/comments")
+    assert response.status_code == 404
+
+    login("ana")
+    assert [c["text"] for c in client.get(f"/groups/{group}/posts/{post['id']}/comments").json()] == ["Segredo"]
+
+
+def test_joined_groups_only_for_self(client, group, login):
+    # P3-01: listar grupos de outro uid expunha onde perfis privados estao.
+    assert client.get("/groups/joined/ana").json() == [str(group)]
+    assert client.get("/groups/joined/bruno").status_code == 403
+
+
+def test_unverified_email_cannot_write_in_groups(client, group, login):
+    # P3-02: conta nao verificada podia postar/conversar chamando a API direto.
+    login("ana", email_verified=False)
+    assert client.post("/groups", json={"name": "Spam", "city": "SP"}).status_code == 403
+    assert client.post(f"/groups/{group}/posts", json={"text": "spam"}).status_code == 403
+    assert client.post(f"/groups/{group}/messages", json={"text": "spam"}).status_code == 403
+
+    login("ana")
+    post_id = client.post(f"/groups/{group}/posts", json={"text": "ok"}).json()["id"]
+    login("ana", email_verified=False)
+    assert client.post(f"/groups/{group}/posts/{post_id}/comments", json={"text": "spam"}).status_code == 403
+    # Leitura continua liberada
+    assert client.get(f"/groups/{group}/posts").status_code == 200

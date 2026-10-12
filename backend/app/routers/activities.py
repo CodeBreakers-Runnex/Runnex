@@ -16,6 +16,7 @@ from app.schemas import ActivityCreate, ActivityOut, SaveActivityResult, ToggleL
 from app.services.activity_effects import (
     apply_xp_and_km,
     get_or_create_user,
+    revert_activity_effects,
     update_weekly_km_for_user_groups,
 )
 
@@ -215,6 +216,8 @@ def delete_activity(
     if not activity or activity.user_id != current_user.uid:
         raise HTTPException(status_code=404, detail="Corrida nao encontrada para este usuario.")
 
+    # Estorna RunCoins e km semanal de grupo na mesma transacao do delete.
+    revert_activity_effects(db, current_user.uid, [activity])
     db.delete(activity)
     db.commit()
 
@@ -231,6 +234,8 @@ def delete_all_user_activities(
     if current_user.uid != user_id:
         raise HTTPException(status_code=403, detail="So e possivel apagar as proprias corridas.")
 
+    activities = db.query(Activity).filter(Activity.user_id == user_id).all()
+    revert_activity_effects(db, user_id, activities)
     count = db.query(Activity).filter(Activity.user_id == user_id).delete()
 
     user = db.get(User, user_id)

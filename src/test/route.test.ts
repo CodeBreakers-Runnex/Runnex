@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decimateRoute, haversineKm, MAX_ROUTE_POINTS, routeLengthKm } from "@/lib/route";
+import { acceptGpsPoint, decimateRoute, haversineKm, MAX_ROUTE_POINTS, routeLengthKm } from "@/lib/route";
 import type { LatLng } from "@/lib/route";
 
 // Tolerância do backend (backend/app/activity_rules.py): a distância
@@ -24,6 +24,72 @@ describe("haversineKm", () => {
 
   it("distância zero para o mesmo ponto", () => {
     expect(haversineKm(-23.55, -46.63, -23.55, -46.63)).toBe(0);
+  });
+});
+
+describe("acceptGpsPoint", () => {
+  // ~0,00009° de latitude ≈ 10 m
+  const start: LatLng = [-23.55, -46.63];
+  const north = (p: LatLng, meters: number): LatLng => [p[0] + meters / 111_195, p[1]];
+
+  it("o primeiro ponto vira o início da rota sem somar distância", () => {
+    expect(acceptGpsPoint([], start)).toEqual({ path: [start], addedKm: 0 });
+  });
+
+  it("ignora ruído abaixo de 5 m", () => {
+    const path = [start];
+    const result = acceptGpsPoint(path, north(start, 3));
+    expect(result.path).toBe(path);
+    expect(result.addedKm).toBe(0);
+  });
+
+  it("aceita um ponto válido e soma a distância", () => {
+    const next = north(start, 20);
+    const result = acceptGpsPoint([start], next);
+    expect(result.path).toEqual([start, next]);
+    expect(result.addedKm).toBeCloseTo(0.02, 4);
+  });
+
+  it("salto acima de 500 m vira âncora sem somar distância", () => {
+    const far = north(start, 800);
+    const result = acceptGpsPoint([start], far);
+    expect(result.path).toEqual([start, far]);
+    expect(result.addedKm).toBe(0);
+  });
+
+  it("depois do salto, os pontos seguintes voltam a ser aceitos e somados", () => {
+    // Era o bug: o último ponto ficava preso antes do salto e tudo era descartado.
+    let path: LatLng[] = [start];
+    let total = 0;
+    const far = north(start, 800);
+    for (const p of [far, north(far, 20), north(far, 40), north(far, 60)]) {
+      const r = acceptGpsPoint(path, p);
+      path = r.path;
+      total += r.addedKm;
+    }
+    expect(path).toHaveLength(5);
+    expect(total).toBeCloseTo(0.06, 4);
+  });
+
+  it("pausa → deslocamento → retomada continua contando a partir do novo lugar", () => {
+    let path: LatLng[] = [];
+    let total = 0;
+    const apply = (p: LatLng) => {
+      const r = acceptGpsPoint(path, p);
+      path = r.path;
+      total += r.addedKm;
+    };
+    // Corre 100 m
+    for (let m = 0; m <= 100; m += 10) apply(north(start, m));
+    // Pausado, anda 2 km até outro lugar e retoma
+    const resume = north(start, 2100);
+    for (let m = 0; m <= 100; m += 10) apply(north(resume, m));
+
+    expect(total).toBeCloseTo(0.2, 3);
+    expect(path.at(-1)).toEqual(north(resume, 100));
+    // A rota salva fica maior que a distância (inclui o salto) e por isso
+    // passa na checagem do backend, que só recusa distância maior que a rota.
+    expect(total).toBeLessThanOrEqual(routeLengthKm(path) * BACKEND_TOLERANCE_FACTOR + BACKEND_TOLERANCE_KM);
   });
 });
 

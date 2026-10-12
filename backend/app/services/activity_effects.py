@@ -13,12 +13,17 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from app.gamification import get_level_from_xp
-from app.models import Group, GroupMember, User
+from app.gamification import calculate_run_coins, get_level_from_xp
+from app.models import Activity, Group, GroupMember, User
 
 
 def _current_month() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m")
+
+
+def _iso_week(moment: datetime) -> str:
+    iso_year, iso_week, _ = moment.isocalendar()
+    return f"{iso_year}-W{iso_week:02d}"
 
 
 def get_or_create_user(db: Session, user_id: str, display_name: str, photo_url: str | None) -> User:
@@ -85,3 +90,39 @@ def update_weekly_km_for_user_groups(db: Session, user_id: str, distance_km: flo
         group.weekly_km_week = current_week
         group.updated_at = now
     db.commit()
+
+
+def revert_activity_effects(db: Session, user_id: str, activities: list[Activity]) -> None:
+    """Desfaz o que POST /activities creditou e o recalculo de XP/km mensal
+    (_recompute_user_totals) nao cobre: RunCoins do pet e km semanal dos
+    grupos. Sem isso, criar e apagar corridas em loop gerava moedas
+    infinitas e inflava o ranking de grupos.
+
+    Chamar ANTES de apagar as corridas (precisa da distancia e da data).
+    Nao ha registro de quanto cada corrida creditou, entao o valor e
+    recalculado com a mesma regra; o piso em 0 cobre moedas ja gastas na
+    loja e grupos cuja semana ja virou. Nao faz commit: fica na mesma
+    transacao do delete."""
+    if not activities:
+        return
+
+    user = db.get(User, user_id)
+    coins = sum(calculate_run_coins(a.distance) for a in activities)
+    if user and coins > 0:
+        user.pet_coins = max(0, (user.pet_coins or 0) - coins)
+
+    # So corridas da semana atual contaram para o weekly_km que esta valendo;
+    # as de semanas anteriores ja "sairam" do placar quando a semana virou.
+    now = datetime.now(timezone.utc)
+    current_week = _iso_week(now)
+    week_km = sum(a.distance for a in activities if a.created_at and _iso_week(a.created_at) == current_week)
+    if week_km <= 0:
+        return
+
+    group_ids = [gm.group_id for gm in db.query(GroupMember).filter(GroupMember.user_id == user_id).all()]
+    if not group_ids:
+        return
+
+    for group in db.query(Group).filter(Group.id.in_(group_ids), Group.weekly_km_week == current_week).all():
+        group.weekly_km = max(0, round((group.weekly_km or 0) - week_km, 2))
+        group.updated_at = now
