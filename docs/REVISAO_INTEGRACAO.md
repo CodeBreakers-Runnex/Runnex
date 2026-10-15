@@ -12,6 +12,8 @@ A revisão `d8a6c3f9012b` une os três heads, sem alterar as revisões já publi
 | Sono | `b72d8e9104c6` |
 | Calendário | `c3a6f14d8209` |
 
+Na beta 2.1, a revisão `e4b7c2a9d150` une `d8a6c3f9012b` ao head de performance `a81f2c4d903e` (recordes, zonas cardíacas e evolução; ver [PERFORMANCE.md](PERFORMANCE.md)). Produção hoje está em `d48faef56a35` e sobe direto para `e4b7c2a9d150` com `alembic upgrade head`.
+
 O deploy usa `alembic upgrade head`, seguido de `alembic check`. A CI com PostgreSQL 16 também verifica a atualização a partir de cada head anterior. Os ciclos de downgrade da CI rodam somente no banco de teste descartável; não são instruções para o deploy.
 
 ## Comportamentos verificados

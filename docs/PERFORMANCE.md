@@ -1,12 +1,12 @@
 # Performance do Runnex
 
-As três branches compartilham uma migração e a API de performance, mas habilitam interfaces independentes:
+Na beta 2.1, as três features de performance foram integradas juntas. Elas compartilham uma migração e a API de performance, mas habilitam interfaces independentes (branch de origem entre parênteses):
 
 - `fix/calculo-recordes`: melhores trechos contínuos de 1, 5, 10, 21,0975 e 42,195 km.
 - `feature/zonas-cardiacas`: sensor BLE, FC média/máxima e Z1–Z5.
 - `feature/evolucao-corredor`: oito semanas/meses, volume e pace ponderado.
 
-Aplicar `alembic upgrade head` antes do novo frontend. A migração `a81f2c4d903e` preserva atividades antigas; os novos campos são opcionais. Todas as branches usam a mesma revisão, evitando múltiplas migrations concorrentes.
+Aplicar `alembic upgrade head` antes do novo frontend. A migração `a81f2c4d903e` preserva atividades antigas; os novos campos são opcionais. A revisão `e4b7c2a9d150` une esse head ao da integração de tênis, sono e calendário (`d8a6c3f9012b`); veja [REVISAO_INTEGRACAO.md](REVISAO_INTEGRACAO.md).
 
 `POST /activities` aceita `performanceSamples`, `heartRateSamples`, `heartRateMaxBpm` e `isSimulated`. Cada amostra possui tempo ativo e `segmentId` opcional. Pausas, recuperação e reconexões separam segmentos. Distância pode permanecer igual durante paradas, mas não pode regredir. Tempos são crescentes, finitos e limitados à duração da corrida.
 

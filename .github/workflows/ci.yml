@@ -61,7 +61,7 @@ jobs:
         run: alembic check
       - name: Módulos existentes atualizam para a migração unificada
         run: |
-          for revision in f6b8c3d9e102 b72d8e9104c6 c3a6f14d8209; do
+          for revision in d48faef56a35 f6b8c3d9e102 b72d8e9104c6 c3a6f14d8209 d8a6c3f9012b a81f2c4d903e; do
             alembic downgrade base
             alembic upgrade "$revision"
             alembic upgrade head
