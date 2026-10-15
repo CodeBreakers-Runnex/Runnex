@@ -25,6 +25,7 @@ import {
   Trash2,
   BarChart3,
   PawPrint,
+  Footprints,
 } from "lucide-react";
 import { createUserProfile, deleteUserActivities, getUserActivities, getUserStats, getUserProfile, UserProfile, UserStats } from "@/services/database";
 import type { FeedActivity } from "@/types";
@@ -676,10 +677,21 @@ const Profile = () => {
       </section>
 
       {/* Progresso: numeros principais, pet, metas e nivel agrupados sob um unico titulo */}
+      <section className="px-6 mt-8 lg:px-0">
+        <button onClick={() => navigate("/calendario-treinos")} className="flex w-full items-center gap-3 rounded-3xl border border-border bg-card p-4 text-left">
+          <Calendar className="text-primary" size={22} /><div className="flex-1"><p className="text-sm font-black">Calendário de treinos</p><p className="mt-1 text-xs text-muted-foreground">Planeje suas corridas e acompanhe sua agenda</p></div><ChevronRight size={18} />
+        </button>
+      </section>
       <section className="px-6 mt-10 lg:px-0">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display font-black text-sm tracking-tighter">SEU PROGRESSO</h3>
         </div>
+
+        <button onClick={() => navigate("/sono")} className="mb-4 flex w-full items-center gap-3 rounded-3xl border border-border bg-card/80 p-4 text-left transition hover:bg-secondary">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Moon size={22} /></div>
+          <div className="flex-1"><p className="text-sm font-black">Sono e recuperação</p><p className="mt-1 text-xs text-muted-foreground">Acompanhe seu descanso junto aos treinos</p></div>
+          <ChevronRight size={18} className="text-muted-foreground" />
+        </button>
 
         <button
           onClick={() => navigate("/pet")}
@@ -772,6 +784,11 @@ const Profile = () => {
         </div>
 
         {/* Entrada: status completo, mesmo padrao visual de linha com chevron */}
+        <button onClick={() => navigate("/tenis")} className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-border bg-card/80 p-5 text-left backdrop-blur-xl">
+          <Footprints size={24} className="shrink-0 text-purple-500" />
+          <div className="flex-1"><h3 className="font-display text-xl font-black">Meus tênis</h3><p className="mt-1 text-xs text-muted-foreground">Quilometragem, desgaste e tênis usados nas corridas.</p></div>
+          <ChevronRight size={20} className="text-muted-foreground" />
+        </button>
         <div className="mt-4">
           <button
             onClick={() => navigate("/stats")}

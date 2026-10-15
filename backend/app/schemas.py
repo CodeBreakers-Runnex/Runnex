@@ -61,6 +61,7 @@ class ActivityCreate(BaseModel):
     calories: int | None = Field(default=None, ge=0)
     type: str
     route: list[RoutePoint] | None = Field(default=None, max_length=5000)
+    shoe_id: int | None = Field(default=None, validation_alias="shoeId", gt=0)
 
     @model_validator(mode="after")
     def _check_plausible(self) -> "ActivityCreate":
@@ -91,6 +92,12 @@ class ActivityOut(BaseModel):
     route: list[dict] | None
     xp_gained: int | None = Field(serialization_alias="xpGained")
     created_at: datetime = Field(serialization_alias="timestamp")
+    shoe_id: str | None = Field(default=None, serialization_alias="shoeId")
+
+    @field_validator("shoe_id", mode="before")
+    @classmethod
+    def _stringify_shoe_id(cls, value: object) -> str | None:
+        return str(value) if value is not None else None
 
 
 class SaveActivityResult(BaseModel):

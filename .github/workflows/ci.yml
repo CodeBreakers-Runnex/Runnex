@@ -59,6 +59,14 @@ jobs:
         run: alembic upgrade head
       - name: Models e migrations em sincronia (falha se faltar migration)
         run: alembic check
+      - name: Módulos existentes atualizam para a migração unificada
+        run: |
+          for revision in f6b8c3d9e102 b72d8e9104c6 c3a6f14d8209; do
+            alembic downgrade base
+            alembic upgrade "$revision"
+            alembic upgrade head
+            alembic check
+          done
       - run: pytest
 
   firestore-rules:

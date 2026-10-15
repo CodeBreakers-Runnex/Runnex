@@ -27,6 +27,7 @@ import type { DistanceUnit } from "@/lib/settings";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import NextWorkoutCard from "@/components/training/NextWorkoutCard";
 
 const KM_TO_MI = 0.621371;
 
@@ -176,6 +177,8 @@ export default function Home() {
           </button>
         </div>
       </header>
+
+      <section className="px-6 pt-5"><NextWorkoutCard /></section>
 
       {loading ? (
         <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4">

@@ -12,6 +12,7 @@ class Activity(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.uid", ondelete="CASCADE"), nullable=False)
+    shoe_id: Mapped[int | None] = mapped_column(ForeignKey("shoes.id", name="fk_activities_shoe_id", ondelete="SET NULL"), nullable=True, index=True)
 
     user_name: Mapped[str] = mapped_column(String, nullable=False)
     user_avatar: Mapped[str | None] = mapped_column(String, nullable=True)
