@@ -1,3 +1,5 @@
+import { useRunSamples, type RunPerformance } from "@/hooks/useRunSamples";
+import HeartRateControls from "@/components/performance/HeartRateControls";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FirebaseError } from "firebase/app";
@@ -100,6 +102,7 @@ type ActiveRunSnapshot = {
   path: [number, number][];
   isSimulating: boolean;
   savedAt: number;
+  performance?: RunPerformance;
 };
 
 function clearActiveRunSnapshot(uid?: string) {
@@ -202,6 +205,8 @@ const RunTracking = () => {
   const [path, setPath] = useState<[number, number][]>([]);
   const [currentPos, setCurrentPos] = useState<[number, number] | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const performance = useRunSamples(isRunning, isPaused, distance, seconds);
+  const snapshotPerformance = performance.snapshot;
   const [trackingStatus, setTrackingStatus] = useState("Pronto para iniciar");
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [isMusicOpen, setIsMusicOpen] = useState(false);
@@ -292,12 +297,12 @@ const RunTracking = () => {
   useEffect(() => {
     if (!isRunning || !user || runningOwner.current !== user.uid) return;
     try {
-      const snapshot: ActiveRunSnapshot = { userId: user.uid, plannedWorkoutId: runningWorkoutId.current, shoeId: selectedShoeId, distance, seconds, path, isSimulating, savedAt: Date.now() };
+      const snapshot: ActiveRunSnapshot = { userId: user.uid, plannedWorkoutId: runningWorkoutId.current, shoeId: selectedShoeId, distance, seconds, path, isSimulating, savedAt: Date.now(), performance: snapshotPerformance() };
       localStorage.setItem(ACTIVE_RUN_STORAGE_KEY, JSON.stringify(snapshot));
     } catch (error) {
       console.warn("Nao foi possivel salvar o progresso da corrida:", error);
     }
-  }, [isRunning, distance, seconds, path, isSimulating, user, selectedShoeId]);
+  }, [isRunning, distance, seconds, path, isSimulating, user, selectedShoeId, snapshotPerformance]);
 
   // Gerenciar Screen Wake Lock para PWA (Não deixar a tela do celular apagar/pausar o app)
   useEffect(() => {
@@ -572,6 +577,7 @@ const RunTracking = () => {
     if (!user || loadingShoes || isSaving) return;
     runningOwner.current = user.uid;
     runningWorkoutId.current = plannedWorkout?.id ?? getPlannedRun(user.uid)?.workoutId;
+    performance.reset();
     const startPoint = !isSimulating ? currentPos : null;
     setDistance(0);
     setSeconds(0);
@@ -589,6 +595,7 @@ const RunTracking = () => {
     runningWorkoutId.current = recoverableRun.plannedWorkoutId;
     shoeSelectionMade.current = true;
     setSelectedShoeId(recoverableRun.shoeId ?? null);
+    performance.restore(recoverableRun.performance);
     setDistance(recoverableRun.distance);
     setSeconds(recoverableRun.seconds);
     setPath(recoverableRun.path);
@@ -640,6 +647,7 @@ const RunTracking = () => {
       return;
     }
 
+    setIsPaused(true);
     setIsSaving(true);
     try {
       const result = await saveActivity({
@@ -654,6 +662,8 @@ const RunTracking = () => {
         route: decimateRoute(path).map(([lat, lng]) => ({ lat, lng })),
         type: "RUNNING",
         shoeId: selectedShoeId,
+        isSimulated: isSimulating,
+        ...performance.snapshot()
       });
 
       if (accountVersion.current === version || auth.currentUser?.uid !== user.uid) {
@@ -699,6 +709,7 @@ const RunTracking = () => {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col safe-top">
       {plannedWorkout && <div className="border-b border-primary/20 bg-primary/10 px-6 py-3 text-sm"><p className="font-bold">{plannedWorkout.title}</p><p className="text-xs text-muted-foreground">{plannedWorkout.targetDistanceKm == null ? "Distância livre" : `Meta: ${plannedWorkout.targetDistanceKm} km`}{plannedWorkout.targetDurationMinutes != null ? ` · ${plannedWorkout.targetDurationMinutes} min` : ""}</p></div>}
+      <HeartRateControls running={isRunning} reference={recoverableRun?.performance?.heartRateMaxBpm ?? performance.snapshot().heartRateMaxBpm} onReading={performance.recordHeartRate} onBreak={performance.breakHeartRateSegment} />
       {/* Premium Header */}
       <motion.header
         initial={{ opacity: 0, y: -16 }}
