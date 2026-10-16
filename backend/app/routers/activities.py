@@ -12,13 +12,17 @@ from app.gamification import calculate_run_coins, calculate_xp, get_level_from_x
 from app.listing import MAX_PAGE_SIZE, page_size, visible_to
 from app.models import Activity, User
 from app.rate_limit import rate_limit
+from app.performance import performance_summary
 from app.schemas import ActivityCreate, ActivityOut, SaveActivityResult, ToggleLikeIn
+from app.schemas_shoe import ActivityShoeInput
+from app.services.shoes import owned_shoe
 from app.services.activity_effects import (
     apply_xp_and_km,
     get_or_create_user,
     revert_activity_effects,
     update_weekly_km_for_user_groups,
 )
+from app.services.training import clear_activity_links
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 
@@ -66,8 +70,12 @@ def save_activity(
 
     xp_gained = calculate_xp(payload.distance, payload.duration_seconds)
 
+    if payload.shoe_id is not None:
+        owned_shoe(db, payload.shoe_id, current_user.uid, require_active=True)
+
     activity = Activity(
         user_id=payload.user_id,
+        shoe_id=payload.shoe_id,
         user_name=payload.user_name,
         user_avatar=payload.user_avatar,
         distance=payload.distance,
@@ -79,6 +87,10 @@ def save_activity(
         likes=[],
         route=[p.model_dump() for p in payload.route] if payload.route else None,
         xp_gained=xp_gained,
+        performance_samples=[{"elapsedSeconds": p.elapsed_seconds, "distanceKm": p.distance_km, "segmentId": p.segment_id} for p in payload.performance_samples] if payload.performance_samples else None,
+        heart_rate_samples=[{"elapsedSeconds": p.elapsed_seconds, "bpm": p.bpm, "segmentId": p.segment_id} for p in payload.heart_rate_samples] if payload.heart_rate_samples else None,
+        heart_rate_max_bpm=payload.heart_rate_max_bpm,
+        is_simulated=payload.is_simulated,
     )
     db.add(activity)
 
@@ -110,6 +122,18 @@ def save_activity(
         db.rollback()
 
     return SaveActivityResult(id=activity.id, xp_update_failed=xp_update_failed)
+
+
+@router.get("/performance/me")
+def get_performance(
+    utc_offset_minutes: int = 0,
+    db: Session = Depends(get_db),
+    current_user: FirebaseUser = Depends(get_current_user),
+):
+    if not -720 <= utc_offset_minutes <= 840:
+        raise HTTPException(status_code=422, detail="Fuso inválido.")
+    rows = db.query(Activity).filter(Activity.user_id == current_user.uid).order_by(desc(Activity.created_at)).all()
+    return performance_summary(rows, datetime.now(timezone.utc), utc_offset_minutes)
 
 
 @router.get("/user/{user_id}", response_model=list[ActivityOut])
@@ -183,6 +207,24 @@ def get_feed(
     return q.limit(page_size(limit)).all()
 
 
+@router.put("/{activity_id}/shoe", response_model=ActivityOut, dependencies=[Depends(rate_limit("activities:shoe", 60, 60))])
+def assign_activity_shoe(
+    activity_id: int,
+    payload: ActivityShoeInput,
+    db: Session = Depends(get_db),
+    current_user: FirebaseUser = Depends(require_verified_email),
+):
+    activity = db.query(Activity).filter(Activity.id == activity_id, Activity.user_id == current_user.uid).with_for_update().first()
+    if not activity:
+        raise HTTPException(status_code=404, detail="Corrida não encontrada para este usuário.")
+    if payload.shoe_id is not None and payload.shoe_id != activity.shoe_id:
+        owned_shoe(db, payload.shoe_id, current_user.uid, require_active=True)
+    activity.shoe_id = payload.shoe_id
+    db.commit()
+    db.refresh(activity)
+    return activity
+
+
 @router.post("/{activity_id}/like", dependencies=[Depends(rate_limit("activities:like", 60, 60))])
 def toggle_like(
     activity_id: int,
@@ -212,12 +254,14 @@ def delete_activity(
     db: Session = Depends(get_db),
     current_user: FirebaseUser = Depends(get_current_user),
 ):
-    activity = db.get(Activity, activity_id)
+    activity = db.query(Activity).filter(Activity.id == activity_id).with_for_update().first()
     if not activity or activity.user_id != current_user.uid:
         raise HTTPException(status_code=404, detail="Corrida nao encontrada para este usuario.")
 
     # Estorna RunCoins e km semanal de grupo na mesma transacao do delete.
     revert_activity_effects(db, current_user.uid, [activity])
+    clear_activity_links(db, current_user.uid, [activity_id])
+    db.flush()
     db.delete(activity)
     db.commit()
 
@@ -234,8 +278,10 @@ def delete_all_user_activities(
     if current_user.uid != user_id:
         raise HTTPException(status_code=403, detail="So e possivel apagar as proprias corridas.")
 
-    activities = db.query(Activity).filter(Activity.user_id == user_id).all()
-    revert_activity_effects(db, user_id, activities)
+    rows = db.query(Activity).filter(Activity.user_id == user_id).order_by(Activity.id).with_for_update().all()
+    revert_activity_effects(db, user_id, rows)
+    clear_activity_links(db, user_id, [row.id for row in rows])
+    db.flush()
     count = db.query(Activity).filter(Activity.user_id == user_id).delete()
 
     user = db.get(User, user_id)
@@ -258,7 +304,9 @@ def _recompute_user_totals(db: Session, user_id: str) -> None:
     total_xp = 0
     monthly_km = 0.0
     for activity in remaining:
-        activity_xp = activity.xp_gained or calculate_xp(activity.distance, activity.duration_seconds)
+        # xp_gained=0 e legitimo (corrida importada do relogio nao da XP); so
+        # recalcula quando o valor nunca foi gravado.
+        activity_xp = activity.xp_gained if activity.xp_gained is not None else calculate_xp(activity.distance, activity.duration_seconds)
         total_xp += activity_xp
         if activity.created_at and activity.created_at.strftime("%Y-%m") == current_month:
             monthly_km += activity.distance

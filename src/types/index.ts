@@ -48,8 +48,37 @@ export interface ActivityData {
   likes?: string[];
   route?: RoutePoint[];
   xpGained?: number;
+  performanceSamples?: { elapsedSeconds: number; distanceKm: number; segmentId?: number }[];
+  heartRateSamples?: { elapsedSeconds: number; bpm: number; segmentId?: number }[];
+  heartRateMaxBpm?: number;
+  isSimulated?: boolean;
   timestamp?: Timestamp | Date | { seconds: number; nanoseconds?: number };
   createdAtMs?: number;
+  shoeId?: string | null;
+}
+
+// ═══ TÊNIS ═══
+export type ShoeStatus = "good" | "attention" | "worn" | "retired";
+
+export interface ShoeInput {
+  name: string;
+  brand: string | null;
+  model: string | null;
+  purchaseDate: string | null;
+  initialKm: number;
+  limitKm: number;
+  isDefault: boolean;
+  manuallyWorn: boolean;
+  retired: boolean;
+}
+
+export interface RunningShoe extends ShoeInput {
+  id: string;
+  totalKm: number;
+  remainingKm: number;
+  usagePercent: number;
+  runsCount: number;
+  status: ShoeStatus;
 }
 
 export interface RoutePoint {

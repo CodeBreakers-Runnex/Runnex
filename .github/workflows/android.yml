@@ -1,0 +1,38 @@
+name: Android
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android (build e testes)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: android-actions/setup-android@v3
+        with:
+          # O pacote legado "tools" não é mais fornecido pelo sdkmanager.
+          packages: platform-tools
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_API_URL: https://example.invalid
+      - run: npx cap sync android
+      - name: Compilar APK e executar testes Android
+        run: bash gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+        working-directory: android
