@@ -784,6 +784,11 @@ const Profile = () => {
           </p>
         </div>
 
+        <button onClick={() => navigate("/dispositivos")} className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-border bg-card/80 p-5 text-left backdrop-blur-xl">
+          <Watch size={24} className="shrink-0 text-purple-500" />
+          <div className="flex-1"><h3 className="font-display text-xl font-black">Dispositivos conectados</h3><p className="mt-1 text-xs text-muted-foreground">Conectar Health Connect e importar corridas do relógio.</p></div>
+          <ChevronRight size={20} className="text-muted-foreground" />
+        </button>
         {/* Entrada: status completo, mesmo padrao visual de linha com chevron */}
         <button onClick={() => navigate("/tenis")} className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-border bg-card/80 p-5 text-left backdrop-blur-xl">
           <Footprints size={24} className="shrink-0 text-purple-500" />
