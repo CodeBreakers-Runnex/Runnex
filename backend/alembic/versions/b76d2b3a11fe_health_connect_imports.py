@@ -26,5 +26,5 @@ def upgrade():
     op.create_index("ix_health_imports_user_id", "health_imports", ["user_id"])
 
 def downgrade():
-    op.drop_index("ix_health_imports_user", table_name="health_imports")
+    op.drop_index("ix_health_imports_user_id", table_name="health_imports")
     op.drop_table("health_imports")
