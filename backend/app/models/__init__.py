@@ -7,6 +7,7 @@ from app.models.shoe import Shoe
 from app.models.user import User
 from app.models.sleep import RecoveryPreferences, SleepSession, SleepCheckIn, SleepImportExclusion
 from app.models.training import PlannedWorkout
+from app.models.health_import import HealthImport
 
 __all__ = [
     "User",
@@ -26,4 +27,5 @@ __all__ = [
     "SleepCheckIn",
     "SleepImportExclusion",
     "PlannedWorkout",
+    "HealthImport",
 ]
