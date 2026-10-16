@@ -23,7 +23,7 @@ def upgrade():
         sa.UniqueConstraint("user_id", "source", "external_id", name="uq_health_import_identity"),
         sa.UniqueConstraint("activity_id", name="uq_health_import_activity"),
     )
-    op.create_index("ix_health_imports_user", "health_imports", ["user_id"])
+    op.create_index("ix_health_imports_user_id", "health_imports", ["user_id"])
 
 def downgrade():
     op.drop_index("ix_health_imports_user", table_name="health_imports")
