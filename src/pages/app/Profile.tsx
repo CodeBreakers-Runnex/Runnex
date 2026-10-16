@@ -26,6 +26,7 @@ import {
   BarChart3,
   PawPrint,
   Footprints,
+  Watch,
 } from "lucide-react";
 import { createUserProfile, deleteUserActivities, getUserActivities, getUserStats, getUserProfile, UserProfile, UserStats } from "@/services/database";
 import type { FeedActivity } from "@/types";
