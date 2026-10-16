@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import activities, chatbot, events, groups, pet, products, shoes, users
 from app.routers import recovery
 from app.routers import training
+from app.routers import health_imports
 
 app = FastAPI(title="Veloxy API")
 
@@ -34,6 +35,7 @@ app.include_router(products.router)
 app.include_router(chatbot.router)
 app.include_router(recovery.router)
 app.include_router(training.router)
+app.include_router(health_imports.router)
 
 
 @app.get("/health")

@@ -304,7 +304,9 @@ def _recompute_user_totals(db: Session, user_id: str) -> None:
     total_xp = 0
     monthly_km = 0.0
     for activity in remaining:
-        activity_xp = activity.xp_gained or calculate_xp(activity.distance, activity.duration_seconds)
+        # xp_gained=0 e legitimo (corrida importada do relogio nao da XP); so
+        # recalcula quando o valor nunca foi gravado.
+        activity_xp = activity.xp_gained if activity.xp_gained is not None else calculate_xp(activity.distance, activity.duration_seconds)
         total_xp += activity_xp
         if activity.created_at and activity.created_at.strftime("%Y-%m") == current_month:
             monthly_km += activity.distance
