@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.gamification import calculate_run_coins, get_level_from_xp
 from app.models import Activity, Group, GroupMember, User
+from app.models.health_import import HealthImport
 
 
 def _current_month() -> str:
@@ -102,7 +103,18 @@ def revert_activity_effects(db: Session, user_id: str, activities: list[Activity
     Nao ha registro de quanto cada corrida creditou, entao o valor e
     recalculado com a mesma regra; o piso em 0 cobre moedas ja gastas na
     loja e grupos cuja semana ja virou. Nao faz commit: fica na mesma
-    transacao do delete."""
+    transacao do delete.
+
+    Corridas importadas do Health Connect nunca creditaram moedas nem km de
+    grupo (routers/health_imports.py), entao ficam fora do estorno."""
+    if activities:
+        imported = {
+            row.activity_id
+            for row in db.query(HealthImport.activity_id).filter(
+                HealthImport.activity_id.in_([a.id for a in activities])
+            )
+        }
+        activities = [a for a in activities if a.id not in imported]
     if not activities:
         return
 

@@ -53,7 +53,8 @@ export default function ConnectedDevices() {
       since.setDate(since.getDate() - 30);
       const data = await readHealthConnectRuns(since);
       setRuns(data);
-      const eligible = data.filter(run => run.distanceMeters > 0);
+      // Mesmo minimo do backend (routers/health_imports.py): uma sessao curta nao derruba o lote.
+      const eligible = data.filter(run => run.distanceMeters >= 100);
       let created = 0;
       let duplicates = 0;
       for (let index = 0; index < eligible.length; index += 100) {
@@ -89,7 +90,7 @@ export default function ConnectedDevices() {
         </div>}
         {syncResult && <p role="status" className="mt-3 text-sm text-green-500">{syncResult}</p>}
         {error && <p role="alert" className="mt-3 text-sm text-red-400">{error}</p>}
-        <p className="mt-4 text-xs text-muted-foreground">Corridas com distância válida podem ser importadas para o histórico. Importações não geram XP.</p>
+        <p className="mt-4 text-xs text-muted-foreground">Corridas a partir de 100 m podem ser importadas para o histórico. Importações não geram XP.</p>
         <ul className="mt-4 space-y-2">{runs.map(run => <li className="rounded-lg border border-border p-3 text-sm" key={run.source + run.id}><div>{new Date(run.startedAt).toLocaleString("pt-BR")}</div><div>{(run.distanceMeters / 1000).toFixed(2)} km · {run.source}</div></li>)}</ul>
       </section>
     </main>

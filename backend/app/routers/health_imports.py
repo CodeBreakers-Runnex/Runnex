@@ -19,7 +19,8 @@ class ImportedRun(BaseModel):
     source: str = Field(min_length=1, max_length=255)
     started_at: datetime
     ended_at: datetime
-    distance_meters: float = Field(gt=0, le=500000)
+    # Minimo de 100 m: abaixo disso nao e corrida e o ritmo dividiria por zero.
+    distance_meters: float = Field(ge=100, le=500000)
 
     @model_validator(mode="after")
     def validate_run(self):
