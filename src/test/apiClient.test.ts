@@ -98,4 +98,85 @@ describe("apiClient", () => {
     expect(error.status).toBe(502);
     expect(error.message).toBe("Erro na API do Veloxy.");
   });
+  describe("pedidos repetidos", () => {
+    it("GETs iguais ao mesmo tempo viram uma chamada só", async () => {
+      const { api } = await loadClient();
+      fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, { n: 1 })));
+
+      const [a, b] = await Promise.all([api.get("/users/ana"), api.get("/users/ana")]);
+      expect(a).toEqual({ n: 1 });
+      expect(b).toEqual({ n: 1 });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("sem cacheMs, um GET depois do outro vai ao servidor de novo", async () => {
+      const { api } = await loadClient();
+      fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, [])));
+
+      await api.get("/activities/feed");
+      await api.get("/activities/feed");
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("com cacheMs reaproveita a resposta e entrega cópias independentes", async () => {
+      const { api } = await loadClient();
+      fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, { tags: ["a"] })));
+
+      const first = await api.get<{ tags: string[] }>("/users/ana", { cacheMs: 10_000 });
+      first.tags.push("alterado");
+      const second = await api.get<{ tags: string[] }>("/users/ana", { cacheMs: 10_000 });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(second.tags).toEqual(["a"]);
+    });
+
+    it("o cache expira", async () => {
+      vi.useFakeTimers();
+      try {
+        const { api } = await loadClient();
+        fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, {})));
+
+        await api.get("/users/ana", { cacheMs: 10_000 });
+        vi.advanceTimersByTime(10_001);
+        await api.get("/users/ana", { cacheMs: 10_000 });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("qualquer escrita descarta o cache", async () => {
+      const { api } = await loadClient();
+      fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, {})));
+
+      await api.get("/users/ana", { cacheMs: 10_000 });
+      await api.post("/activities", { distance: 5 });
+      await api.get("/users/ana", { cacheMs: 10_000 });
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it("GET com erro não fica guardado", async () => {
+      const { api } = await loadClient();
+      fetchMock
+        .mockResolvedValueOnce(jsonResponse(500, { detail: "falhou" }))
+        .mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+
+      await captureError(api.get("/users/ana", { cacheMs: 10_000 }));
+      await expect(api.get("/users/ana", { cacheMs: 10_000 })).resolves.toEqual({ ok: true });
+    });
+
+    it("contas diferentes não compartilham cache", async () => {
+      const { api } = await loadClient();
+      fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, [])));
+      const previous = mockAuth.currentUser;
+
+      mockAuth.currentUser = { uid: "ana", getIdToken: vi.fn().mockResolvedValue("t1") } as never;
+      await api.get("/activities/feed", { cacheMs: 10_000 });
+      mockAuth.currentUser = { uid: "bia", getIdToken: vi.fn().mockResolvedValue("t2") } as never;
+      await api.get("/activities/feed", { cacheMs: 10_000 });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      mockAuth.currentUser = previous;
+    });
+  });
 });

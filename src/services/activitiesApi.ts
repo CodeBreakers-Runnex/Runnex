@@ -1,4 +1,4 @@
-import { api, ApiError } from "@/services/apiClient";
+import { api, ApiError, OWN_DATA_CACHE_MS } from "@/services/apiClient";
 import { toDateSafe } from "@/lib/feed-utils";
 import type { ActivityData, FeedActivity } from "@/types";
 
@@ -241,7 +241,7 @@ export const toggleLike = async (activityId: string, userId: string, isLiked: bo
 // dedicado de contagem ainda; volume de corridas por usuário é pequeno).
 export const getUserStats = async (userId: string) => {
   try {
-    const rawActivities = await api.get<FeedActivity[]>(`/activities/user/${userId}?limit=100000`);
+    const rawActivities = await api.get<FeedActivity[]>(`/activities/user/${userId}?limit=100000`, { cacheMs: OWN_DATA_CACHE_MS });
     const activities = rawActivities
       .map((activity) => normalizeActivity(activity.id, activity))
       .sort((a, b) => {
