@@ -21,7 +21,7 @@ const RunHistoryRow = ({ run, dateLabel, onSelect, onDelete, deleting = false, c
 
   return (
     <div
-      className={`w-full rounded-2xl bg-card/80 backdrop-blur-xl border p-4 text-left transition ${
+      className={`w-full rounded-2xl bg-card border p-4 text-left transition ${
         confirmDelete ? "border-red-500/40 bg-red-500/5" : "border-border"
       }`}
     >

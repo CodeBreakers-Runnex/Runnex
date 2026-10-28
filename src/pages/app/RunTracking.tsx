@@ -715,9 +715,9 @@ const RunTracking = () => {
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
-        className="px-6 py-4 flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-2xl z-40 border-b border-border/60 shadow-[0_16px_34px_rgba(0,0,0,0.28)]"
+        className="px-6 py-4 flex items-center justify-between sticky top-0 bg-background z-40 border-b border-border/60 shadow-[0_16px_34px_rgba(0,0,0,0.28)]"
       >
-        <button onClick={handleBack} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-muted-foreground active:scale-95 transition-transform" aria-label="Voltar">
+        <button onClick={handleBack} className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground active:scale-95 transition-transform" aria-label="Voltar">
           <ArrowLeft size={20} />
         </button>
         <motion.h1
@@ -732,7 +732,7 @@ const RunTracking = () => {
         {import.meta.env.DEV ? (
           <button
             onClick={() => setIsSimulating(!isSimulating)}
-            className={`text-[10px] font-black px-3 py-2 rounded-xl border transition-colors ${isSimulating ? 'bg-purple-600 border-purple-400 text-white' : 'bg-card/80 backdrop-blur-xl border-border text-muted-foreground'}`}
+            className={`text-[10px] font-black px-3 py-2 rounded-xl border transition-colors ${isSimulating ? 'bg-purple-600 border-purple-400 text-white' : 'bg-card border-border text-muted-foreground'}`}
           >
             {isSimulating ? "OFF" : "SIMULAR"}
           </button>
@@ -896,7 +896,7 @@ const RunTracking = () => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsMusicOpen(true)}
-                className="w-16 h-16 rounded-2xl bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
+                className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
                 aria-label="Abrir musica"
               >
                 <Music size={24} />
@@ -924,7 +924,7 @@ const RunTracking = () => {
                 whileTap={{ scale: 0.9 }}
                 onClick={handleFinish}
                 disabled={isSaving}
-                className="w-16 h-16 rounded-2xl bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-red-500 disabled:opacity-50 active:scale-95 transition-transform"
+                className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center text-red-500 disabled:opacity-50 active:scale-95 transition-transform"
                 aria-label="Finalizar corrida"
               >
                 {isSaving ? <Loader2 className="animate-spin" /> : <Square size={24} className="fill-current" />}
@@ -953,7 +953,7 @@ const RunTracking = () => {
                 transition={{ type: "spring", stiffness: 360, damping: 22, delay: 0.12 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsMusicOpen(true)}
-                className="w-16 h-16 rounded-2xl bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
+                className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
               >
                 <Music size={24} />
               </motion.button>
@@ -1027,7 +1027,7 @@ const RunTracking = () => {
                   </div>
                   <button
                     onClick={() => setIsMusicOpen(false)}
-                    className="bg-card/80 backdrop-blur-xl border border-border flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground"
+                    className="bg-card border border-border flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground"
                     aria-label="Fechar musica"
                   >
                     <X size={18} />
@@ -1045,7 +1045,7 @@ const RunTracking = () => {
                     <button
                       key={item.label}
                       onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
-                      className="bg-card/80 backdrop-blur-xl border border-border flex items-center justify-between rounded-2xl px-4 py-4 text-left text-sm font-black"
+                      className="bg-card border border-border flex items-center justify-between rounded-2xl px-4 py-4 text-left text-sm font-black"
                     >
                       {item.label}
                       <ExternalLink size={16} className="text-purple-500" />

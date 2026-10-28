@@ -114,7 +114,7 @@ const Dashboard = () => {
   return (
     <div className="app-shell pb-24 safe-top">
       {/* Header */}
-      <header className="bg-card/80 backdrop-blur-xl border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+      <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-input overflow-hidden">
           {user?.photoURL ? (
             <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />

@@ -57,7 +57,7 @@ export default function DeleteAccountSection({ user }: { user: User }) {
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="settings-danger-action w-full rounded-2xl border border-border bg-card/80 backdrop-blur-xl p-4 text-left text-muted-foreground transition"
+        className="settings-danger-action w-full rounded-2xl border border-border bg-card p-4 text-left text-muted-foreground transition"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center">

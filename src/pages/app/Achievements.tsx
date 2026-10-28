@@ -46,11 +46,11 @@ export default function Achievements() {
 
   return (
     <div className="app-shell pb-24 safe-top">
-      <header className="bg-card/80 backdrop-blur-xl border-b border-border sticky top-0 z-40 px-5 py-4">
+      <header className="bg-card border-b border-border sticky top-0 z-40 px-5 py-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card border border-border text-muted-foreground"
             aria-label="Voltar"
           >
             <ArrowLeft size={18} />
