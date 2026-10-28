@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Excluir conta do Runnex</title>
+  <meta name="description" content="Como excluir sua conta do Runnex e quais dados são apagados.">
+  <!-- Página estática, sem JavaScript: o link de exclusão de conta exigido
+       pelo Google Play precisa abrir para qualquer pessoa, sem login e sem
+       depender do app. Mantenha o texto alinhado com a seção 20 da política
+       (src/content/legalContent.ts) e com backend/app/services/account_deletion.py. -->
+  <style>
+    :root {
+      --bg: #000; --card: #121212; --border: #2a2a2a; --text: #f5f5f5;
+      --muted: #a3a3a3; --primary: #a855f7; --danger: #f87171;
+    }
+    @media (prefers-color-scheme: light) {
+      :root { --bg: #f6f6f8; --card: #fff; --border: #e5e5e5; --text: #111; --muted: #555; --primary: #7e22ce; --danger: #b91c1c; }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 680px; margin: 0 auto; padding: 40px 16px 64px; }
+    .brand { color: var(--primary); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; }
+    h1 { font-size: 28px; line-height: 1.2; margin: 8px 0 12px; }
+    h2 { font-size: 19px; margin: 0 0 8px; }
+    p, li { color: var(--text); }
+    .lead { color: var(--muted); margin: 0 0 28px; }
+    section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+    ol, ul { padding-left: 22px; margin: 8px 0 0; }
+    li + li { margin-top: 6px; }
+    .warn { color: var(--danger); font-weight: 600; }
+    a { color: var(--primary); }
+    footer { color: var(--muted); font-size: 14px; margin-top: 28px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">Runnex</div>
+    <h1>Como excluir sua conta do Runnex</h1>
+    <p class="lead">O Runnex é um aplicativo de corrida da equipe CodeBreakers, de Campinas-SP. Você pode excluir sua conta e seus dados a qualquer momento, pelo aplicativo ou por e-mail.</p>
+
+    <section>
+      <h2>Pelo aplicativo (na hora)</h2>
+      <ol>
+        <li>Abra o Runnex e entre na sua conta.</li>
+        <li>Toque em <strong>Perfil</strong> e depois no ícone de engrenagem (<strong>Configurações</strong>).</li>
+        <li>Toque em <strong>Excluir minha conta</strong>.</li>
+        <li>Digite <strong>EXCLUIR</strong> e confirme com a sua senha, ou com a sua conta Google se entrou com ela.</li>
+      </ol>
+      <p class="warn">A exclusão é imediata e não pode ser desfeita.</p>
+    </section>
+
+    <section>
+      <h2>Sem o aplicativo (por e-mail)</h2>
+      <p>Envie um e-mail para <a href="mailto:runnexoficial@gmail.com?subject=Excluir%20minha%20conta%20do%20Runnex">runnexoficial@gmail.com</a> com o assunto <strong>"Excluir minha conta do Runnex"</strong>, a partir do mesmo e-mail cadastrado no Runnex. Respondemos e concluímos a exclusão em até 15 dias.</p>
+    </section>
+
+    <section>
+      <h2>O que é apagado</h2>
+      <ul>
+        <li>Seu login, perfil e foto</li>
+        <li>Todas as suas corridas, com percurso e frequência cardíaca</li>
+        <li>Registros de sono e avaliações diárias</li>
+        <li>Tênis e treinos planejados</li>
+        <li>Pet, RunCoins, XP e conquistas</li>
+        <li>Memória do treinador virtual</li>
+        <li>Suas publicações, comentários e mensagens nos grupos</li>
+        <li>Suas curtidas, sua participação em grupos e os eventos salvos</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>O que continua</h2>
+      <ul>
+        <li>Grupos que você criou passam para o membro mais antigo, com as publicações das outras pessoas. Um grupo sem outros membros é apagado.</li>
+        <li>Registros técnicos de erros e de acesso mantidos pelos provedores de hospedagem (Google Firebase e Render) são apagados nos prazos desses provedores.</li>
+        <li>Dados guardados no seu celular (preferências e corrida em andamento) somem ao desinstalar o app ou limpar os dados dele.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Quer apagar só uma parte?</h2>
+      <ul>
+        <li><strong>Corridas:</strong> Perfil &gt; Configurações &gt; Apagar minhas corridas (também zera XP e quilometragem).</li>
+        <li><strong>Sono:</strong> na tela Sono e recuperação, apague os dados de sono.</li>
+      </ul>
+    </section>
+
+    <footer>
+      Mais detalhes na <a href="/termos-e-privacidade">Política de Privacidade do Runnex</a>. Dúvidas: <a href="mailto:runnexoficial@gmail.com">runnexoficial@gmail.com</a>.
+    </footer>
+  </main>
+</body>
+</html>
