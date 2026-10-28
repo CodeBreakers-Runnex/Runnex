@@ -36,7 +36,7 @@ def test_export_has_all_own_data_and_nothing_from_others(client, scenario):
     assert [run["distance"] for run in tables["activities"]] == [7]
     assert tables["activities"][0]["route"]
     assert [shoe["name"] for shoe in tables["shoes"]] == ["Tênis da Ana"]
-    assert [member["group_id"] for member in tables["group_members"]] == [scenario["group"]]
+    assert [str(member["group_id"]) for member in tables["group_members"]] == [str(scenario["group"])]
     assert [comment["text"] for comment in tables["comments"]] == ["Boa!"]
     assert [message["text"] for message in tables["messages"]] == ["Oi"]
     assert data["likes"]["activities"] == [int(scenario["bruno_run"])]
