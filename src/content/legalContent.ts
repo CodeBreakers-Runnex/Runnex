@@ -1,13 +1,14 @@
 // Identifica a versão dos termos aceita por cada usuário no cadastro.
 // Atualize junto com a data em "Última atualização" abaixo.
-export const LEGAL_VERSION = "2026-10-01";
+export const LEGAL_VERSION = "2026-10-28";
 
 // Cada afirmação deste texto foi conferida com o código em 01/10/2026
+// (revisada em 28/10/2026: início e fim da rota ocultos para outros usuários)
 // (o que é coletado, onde fica e quem vê). Ao mudar o que o app coleta ou
 // mostra a outros usuários, atualize o texto e LEGAL_VERSION juntos.
 export const legalContent = `
 TERMOS DE USO E POLÍTICA DE PRIVACIDADE — RUNNEX
-Última atualização: 01/10/2026
+Última atualização: 28/10/2026
 
 O Runnex é um aplicativo de corrida desenvolvido como projeto acadêmico pela equipe CodeBreakers, de Campinas-SP, disponível para Android e na web. Este documento tem duas partes: os Termos de Uso (regras de uso do aplicativo) e a Política de Privacidade (quais dados coletamos, para quê, quem vê e quais são os seus direitos).
 Ao criar uma conta, você declara ter lido e aceitado as duas partes. Se não concordar, não utilize o aplicativo.
@@ -107,7 +108,7 @@ Na tela de eventos, a opção "Usar minha localização" usa a sua posição ape
 Seus dados não são vendidos nem usados para publicidade.
 
 17. QUEM PODE VER SEUS DADOS
-• Perfil público (padrão): seu nome, foto, nível, estatísticas e suas corridas, incluindo o traçado completo do percurso no mapa, aparecem no feed, no ranking e no seu perfil para outros usuários do aplicativo;
+• Perfil público (padrão): seu nome, foto, nível, estatísticas e suas corridas, incluindo o traçado do percurso no mapa, aparecem no feed, no ranking e no seu perfil para outros usuários do aplicativo. Para proteger lugares como a sua casa, outros usuários não veem os primeiros nem os últimos 200 metros do percurso; corridas com menos de 400 metros aparecem sem traçado. Só você vê o percurso completo;
 • Perfil privado: seu perfil e suas corridas ficam visíveis apenas para você e você não aparece nos rankings;
 • Grupos: o que você publica em um grupo (publicações, comentários, mensagens), com seu nome e foto, é visto pelos membros daquele grupo, mesmo com o perfil privado;
 • Seus dados de cadastro (e-mail) não são exibidos a outros usuários.
