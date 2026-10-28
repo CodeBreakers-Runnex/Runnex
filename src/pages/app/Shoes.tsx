@@ -27,6 +27,7 @@ import ShoeStatusBadge from "@/components/ShoeStatusBadge";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { toDateSafe } from "@/lib/feed-utils";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
 const km = (value: number) =>
   value.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
@@ -63,6 +64,7 @@ function ShoeForm({
   const [values, setValues] = useState<ShoeInput>(() =>
     shoe ? shoeInput(shoe) : { ...emptyShoe, isDefault: firstShoe },
   );
+  useBackHandler(true, () => { if (!busy) onClose(); });
   const set = <K extends keyof ShoeInput>(key: K, value: ShoeInput[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
   const inputClass =

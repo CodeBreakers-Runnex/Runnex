@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Loader2, X } from "lucide-react";
 import { localDateTimeValue } from "@/lib/sleep";
+import { useBackHandler } from "@/hooks/useBackHandler";
 import type { SleepInput, SleepSession } from "@/types/sleep";
 
 const field = "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm";
@@ -17,6 +18,7 @@ export default function SleepEntryForm({ record, busy, onSave, onClose }: {
   const [hours, setHours] = useState(record?.sleepSeconds != null ? String(record.sleepSeconds / 3600) : "");
   const [kind, setKind] = useState<"main" | "nap">(record?.kind ?? "main");
   const [error, setError] = useState("");
+  useBackHandler(true, () => { if (!busy) onClose(); });
 
   async function submit(event: FormEvent) {
     event.preventDefault();

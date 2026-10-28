@@ -43,6 +43,7 @@ import { getBestUserPhotoURL } from "@/lib/user-photo";
 import { formatCardDate, toDateSafe } from "@/lib/feed-utils";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
 type GroupTab = "feed" | "chat";
 
@@ -544,6 +545,7 @@ function GroupOptionsModal({ open, onClose, group, onLeave, leaving }: {
   onLeave: () => void;
   leaving: boolean;
 }) {
+  useBackHandler(open, () => { if (!leaving) onClose(); });
   return (
     <AnimatePresence>
       {open && (

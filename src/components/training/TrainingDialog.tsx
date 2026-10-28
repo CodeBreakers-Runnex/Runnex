@@ -1,8 +1,11 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 
+import { useBackHandler } from "@/hooks/useBackHandler";
+
 export default function TrainingDialog({ title, children, onClose, busy = false }: { title: string; children: ReactNode; onClose: () => void; busy?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
   const label = useId();
+  useBackHandler(true, () => { if (!busy) onClose(); });
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;

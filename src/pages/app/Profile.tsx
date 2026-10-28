@@ -41,6 +41,7 @@ import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import RunHistoryRow from "@/components/RunHistoryRow";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
 type Theme = "dark" | "light";
 
@@ -145,6 +146,7 @@ function SettingsModal({
   onPrivacyChange: (value: boolean) => Promise<void>;
 }) {
   const navigate = useNavigate();
+  useBackHandler(open, onClose);
   const [settings, setSettings] = useState<SettingsState>(getStoredSettings);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletingRuns, setDeletingRuns] = useState(false);
@@ -338,6 +340,7 @@ function EditProfileModal({
   const [photoURL, setPhotoURL] = useState(initialData.photoURL);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [weeklyGoalKm, setWeeklyGoalKm] = useState(initialData.weeklyGoalKm.toString());
+  useBackHandler(open, () => { if (!saving && !uploadingPhoto) onClose(); });
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
