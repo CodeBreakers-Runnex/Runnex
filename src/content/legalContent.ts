@@ -2,10 +2,11 @@
 // Atualize junto com a data em "Última atualização" abaixo.
 export const LEGAL_VERSION = "2026-10-28";
 
-// Cada afirmação deste texto foi conferida com o código em 01/10/2026
-// (revisada em 28/10/2026: início e fim da rota ocultos para outros usuários)
-// (o que é coletado, onde fica e quem vê). Ao mudar o que o app coleta ou
-// mostra a outros usuários, atualize o texto e LEGAL_VERSION juntos.
+// Cada afirmação deste texto foi conferida com o código em 28/10/2026
+// (o que é coletado, onde fica e quem vê), incluindo rota com início e fim
+// ocultos, frequência cardíaca, sono, Health Connect, tênis e treinos.
+// Ao mudar o que o app coleta ou mostra a outros usuários, atualize o texto e
+// LEGAL_VERSION juntos.
 export const legalContent = `
 TERMOS DE USO E POLÍTICA DE PRIVACIDADE — RUNNEX
 Última atualização: 28/10/2026
@@ -24,6 +25,9 @@ PARTE I — TERMOS DE USO
 • Lista de eventos esportivos de terceiros, com opção de salvar o evento e abrir o site oficial do organizador;
 • Pet virtual que evolui com os seus treinos e ganha acessórios comprados com RunCoins, a moeda interna do aplicativo;
 • Treinador virtual, que responde dúvidas sobre corrida com base em regras pré-definidas e nas suas próprias corridas;
+• Leitura de sensor de frequência cardíaca por Bluetooth durante a corrida, com zonas de treino;
+• Agenda de treinos planejados e controle da quilometragem dos seus tênis;
+• Registro de sono e recuperação, com importação opcional do Health Connect (Android);
 • Atalho para abrir playlists de corrida em aplicativos de música. O Runnex não se conecta à sua conta nesses aplicativos nem troca dados com eles.
 
 2. CONTA
@@ -86,14 +90,18 @@ O controlador dos dados é a equipe CodeBreakers, responsável pelo Runnex. Dúv
 14. QUAIS DADOS COLETAMOS
 a) Cadastro: nome de usuário e e-mail. A senha é guardada pelo Firebase Authentication (Google) de forma protegida; o Runnex nunca tem acesso a ela. No login com Google, recebemos nome, e-mail e foto da conta Google.
 b) Perfil (opcional): foto, bio, cidade, meta semanal e a configuração de perfil público ou privado.
-c) Corridas: distância, duração, ritmo, calorias estimadas, data e hora e o traçado do percurso (sequência de pontos de latitude e longitude).
+c) Corridas: distância, duração, ritmo, calorias estimadas, data e hora, o traçado do percurso (sequência de pontos de latitude e longitude), a distância percorrida ao longo do tempo (para calcular recordes por trecho) e o tênis usado, se você escolher um.
 d) Comunidade: grupos dos quais participa, publicações e fotos publicadas nos grupos, comentários, mensagens de chat, curtidas e eventos salvos.
 e) Gamificação: XP, nível, RunCoins, espécie e nome do pet e acessórios.
 f) Treinador virtual: para manter o contexto da conversa, o servidor guarda o ritmo e a distância que você informar, seu objetivo, seu nível e as respostas que você ensinar a ele. O histórico das mensagens fica apenas no seu aparelho.
 g) Aceite destes termos: a versão aceita e a data do aceite.
 h) Dados técnicos: registros de erros e de requisições gerados pelo servidor e pelos provedores de hospedagem, e uma contagem temporária de requisições por usuário, mantida apenas em memória, para limitar abusos.
+i) Tênis e treinos: nome, marca, modelo, data de compra, quilometragem inicial e limite de uso de cada tênis; treinos planejados (título, tipo, anotações, data e horário, distância ou tempo alvo, situação) e a corrida vinculada a cada um.
+j) Frequência cardíaca (opcional): se você conectar um sensor por Bluetooth durante a corrida, guardamos os batimentos por minuto ao longo da corrida e a frequência cardíaca máxima de referência que você informar, para calcular as zonas de treino.
+k) Sono e recuperação (opcional, com autorização própria na tela de sono): início, fim e duração de cada período de sono, se foi noite ou cochilo, de onde veio o registro (anotação manual ou o app de origem no Health Connect), suas avaliações diárias de qualidade do sono e cansaço, sua meta de sono e seu fuso horário.
+l) Health Connect (opcional, só no Android): com a sua permissão no sistema, o Runnex lê registros de sono, exercícios e distância. O sono entra no item k; corridas com distância viram corridas no Runnex, com data, duração e distância, sem traçado. O Runnex não grava nada no Health Connect.
 
-O Runnex NÃO coleta: contatos do aparelho, dados de pagamento, dados de sensores de saúde ou de passos, nem a sua localização fora de uma corrida em andamento. O aplicativo não usa ferramentas de publicidade, de análise de comportamento ou de rastreamento.
+O Runnex NÃO coleta: contatos do aparelho, dados de pagamento, passos, nem a sua localização fora de uma corrida em andamento. Frequência cardíaca, sono e dados do Health Connect só são coletados se você ativar esses recursos. O aplicativo não usa ferramentas de publicidade, de análise de comportamento ou de rastreamento.
 
 15. LOCALIZAÇÃO
 A localização só é registrada enquanto uma corrida está em andamento, inclusive com o aplicativo em segundo plano. Nesse caso, o Android exibe uma notificação fixa informando que a corrida está sendo registrada. O acesso depende da sua permissão no sistema e pode ser revogado a qualquer momento nas configurações do aparelho.
@@ -103,6 +111,7 @@ Na tela de eventos, a opção "Usar minha localização" usa a sua posição ape
 16. PARA QUE USAMOS E COM QUAL BASE LEGAL
 • Criar e manter sua conta, registrar corridas, calcular estatísticas, XP, ranking, pet e respostas do treinador: execução do serviço que você contratou ao criar a conta (art. 7º, V, da LGPD);
 • Exibir suas corridas e seu perfil para outros usuários quando o perfil é público: seu consentimento, que pode ser retirado a qualquer momento tornando o perfil privado (art. 7º, I);
+• Frequência cardíaca, sono e dados do Health Connect são dados de saúde, considerados sensíveis pela LGPD. Eles são tratados com o seu consentimento específico (art. 11, I), dado ao conectar o sensor, ao autorizar o registro de sono na tela de sono ou ao permitir o Health Connect no Android. Você pode retirar esse consentimento a qualquer momento, desconectando o sensor, revogando a permissão ou apagando os dados de sono na própria tela;
 • Prevenir fraudes, abusos e ataques (verificação das corridas, limite de requisições e registros técnicos): legítimo interesse em manter o serviço seguro (art. 7º, IX);
 • Registrar a versão dos termos aceita: comprovar o seu aceite.
 Seus dados não são vendidos nem usados para publicidade.
@@ -111,14 +120,16 @@ Seus dados não são vendidos nem usados para publicidade.
 • Perfil público (padrão): seu nome, foto, nível, estatísticas e suas corridas, incluindo o traçado do percurso no mapa, aparecem no feed, no ranking e no seu perfil para outros usuários do aplicativo. Para proteger lugares como a sua casa, outros usuários não veem os primeiros nem os últimos 200 metros do percurso; corridas com menos de 400 metros aparecem sem traçado. Só você vê o percurso completo;
 • Perfil privado: seu perfil e suas corridas ficam visíveis apenas para você e você não aparece nos rankings;
 • Grupos: o que você publica em um grupo (publicações, comentários, mensagens), com seu nome e foto, é visto pelos membros daquele grupo, mesmo com o perfil privado;
-• Seus dados de cadastro (e-mail) não são exibidos a outros usuários.
-Atenção: como corridas costumam começar e terminar perto de casa, o traçado público pode indicar onde você mora ou trabalha. Se isso for uma preocupação, use o perfil privado.
+• Seus dados de cadastro (e-mail) não são exibidos a outros usuários;
+• Frequência cardíaca, sono, check-ins, tênis e treinos planejados são visíveis apenas para você, mesmo com o perfil público.
+Atenção: mesmo sem o início e o fim, o traçado público ainda mostra por onde você corre e pode indicar a região onde mora ou trabalha. Se isso for uma preocupação, use o perfil privado.
 
 18. COM QUEM COMPARTILHAMOS
 Os dados são tratados por provedores que operam a infraestrutura do Runnex, apenas para essa finalidade:
 • Google Firebase: autenticação (login, senha e confirmação de e-mail), hospedagem do site e um registro auxiliar de preferências da conta;
 • Render: servidor do aplicativo e banco de dados onde ficam perfil, corridas, grupos, pet e memória do treinador.
 Esses provedores podem armazenar dados em servidores fora do Brasil. Nesses casos, a transferência internacional ocorre para a execução do serviço e sob as garantias contratuais dos próprios provedores (art. 33 da LGPD).
+Health Connect: o Runnex apenas lê, no seu aparelho, os dados que você autorizar; o uso dessas informações segue a Política de Permissões do Health Connect, incluindo os requisitos de uso limitado. Os dados lidos não são usados para publicidade, não são vendidos e não são repassados a terceiros além dos provedores acima.
 O atalho para aplicativos de música apenas abre o aplicativo ou site escolhido; nenhum dado seu é enviado a eles. Os eventos são de terceiros, e a inscrição ocorre no site do organizador, sob a política de privacidade dele.
 
 19. DADOS GUARDADOS NO SEU APARELHO
@@ -126,13 +137,15 @@ O aplicativo guarda no próprio aparelho: tema, unidade de distância e outras p
 
 20. POR QUANTO TEMPO GUARDAMOS
 Os dados ficam guardados enquanto a sua conta existir.
+• Registros de sono, check-ins e a lista de registros que você pediu para não importar de novo são apagados automaticamente 90 dias depois;
 • "Apagar minhas corridas" apaga todas as suas corridas e zera seu XP e sua quilometragem;
-• "Excluir minha conta" apaga, de forma permanente, seu login, perfil, corridas, pet, memória do treinador, publicações, comentários, mensagens, curtidas, participação em grupos e eventos salvos. Grupos criados por você passam para o membro mais antigo e só são apagados se ficarem vazios;
+• Na tela de sono, apagar os dados de sono remove todos os registros e check-ins e retira a sua autorização;
+• "Excluir minha conta" apaga, de forma permanente, seu login, perfil, corridas (com frequência cardíaca), pet, memória do treinador, tênis, treinos planejados, sono e check-ins, publicações, comentários, mensagens, curtidas, participação em grupos e eventos salvos. Grupos criados por você passam para o membro mais antigo e só são apagados se ficarem vazios;
 • Registros técnicos mantidos pelos provedores de hospedagem são apagados conforme os prazos desses provedores.
 
 21. SEUS DIREITOS
 Pela LGPD (art. 18), você pode: confirmar se tratamos seus dados; acessar seus dados; corrigir dados incompletos ou desatualizados; pedir a portabilidade; pedir a eliminação; saber com quem os dados são compartilhados; e retirar o consentimento.
-• No próprio aplicativo: editar o perfil, tornar o perfil privado, apagar suas corridas e excluir a conta;
+• No próprio aplicativo: editar o perfil, tornar o perfil privado, apagar suas corridas, apagar seus dados de sono e excluir a conta;
 • Por e-mail (runnexoficial@gmail.com): pedir uma cópia dos seus dados ou qualquer outro direito acima. Responderemos em até 15 dias.
 Você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD).
 
