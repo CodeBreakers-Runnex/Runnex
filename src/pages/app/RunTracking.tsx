@@ -43,6 +43,7 @@ import { loadPlannedRun, completePlannedRun } from "@/services/plannedRun";
 import { auth } from "@/config/firebase";
 import type { Workout } from "@/types/training";
 import { getShoes } from "@/services/shoesApi";
+import { enqueueRun, isRetryableSaveError, newClientId, type QueuedRunPayload } from "@/services/offlineRuns";
 import type { RunningShoe } from "@/types";
 import ShoeStatusBadge from "@/components/ShoeStatusBadge";
 
@@ -215,6 +216,7 @@ const RunTracking = () => {
   const [plannedRun, setPlannedRun] = useState<{ uid: string; workout: Workout } | null>(null);
   const plannedWorkout = plannedRun && plannedRun.uid === user?.uid ? plannedRun.workout : null;
   const runningOwner = useRef<string | null>(null);
+  const finishClientId = useRef<string | null>(null);
   const accountVersion = useRef(0);
   const runningWorkoutId = useRef<number | undefined>();
   const wakeLockRef = useRef<ScreenWakeLockSentinel | null>(null);
@@ -577,6 +579,7 @@ const RunTracking = () => {
     if (!user || loadingShoes || isSaving) return;
     runningOwner.current = user.uid;
     runningWorkoutId.current = plannedWorkout?.id ?? getPlannedRun(user.uid)?.workoutId;
+    finishClientId.current = null;
     performance.reset();
     const startPoint = !isSimulating ? currentPos : null;
     setDistance(0);
@@ -649,22 +652,49 @@ const RunTracking = () => {
 
     setIsPaused(true);
     setIsSaving(true);
+    // O mesmo id em toda tentativa desta corrida: se a resposta se perder e
+    // ela for reenviada pela fila offline, o backend não duplica.
+    finishClientId.current ??= newClientId();
+    const payload: QueuedRunPayload = {
+      userId: user.uid,
+      userName: user.displayName || "Corredor",
+      userAvatar: getBestUserPhotoURL(user),
+      distance: Number(distance.toFixed(2)),
+      time: formatTime(seconds),
+      durationSeconds: seconds,
+      pace: getPace(),
+      calories: Number(getCalories()),
+      route: decimateRoute(path).map(([lat, lng]) => ({ lat, lng })),
+      type: "RUNNING",
+      shoeId: selectedShoeId,
+      isSimulated: isSimulating,
+      ...performance.snapshot(),
+      clientId: finishClientId.current,
+      finishedAt: new Date().toISOString(),
+    };
+
+    // Guarda no celular e encerra a corrida; OfflineRunSync envia depois.
+    const queueForLater = () => {
+      if (!enqueueRun(user.uid, payload, selection?.workoutId ?? null)) return false;
+      finishClientId.current = null;
+      clearActiveRunSnapshot(user.uid);
+      if (selection) clearPlannedRun(user.uid, selection.workoutId);
+      runningOwner.current = null;
+      setIsRunning(false);
+      setIsPaused(false);
+      toast.info("Sem conexão com o servidor. A corrida ficou guardada no celular e será enviada sozinha quando a internet voltar.", { duration: 8000 });
+      navigate(selection ? "/calendario-treinos" : "/");
+      return true;
+    };
+
+    if (typeof navigator !== "undefined" && navigator.onLine === false && queueForLater()) {
+      setIsSaving(false);
+      return;
+    }
+
     try {
-      const result = await saveActivity({
-        userId: user.uid,
-        userName: user.displayName || "Corredor",
-        userAvatar: getBestUserPhotoURL(user),
-        distance: Number(distance.toFixed(2)),
-        time: formatTime(seconds),
-        durationSeconds: seconds,
-        pace: getPace(),
-        calories: Number(getCalories()),
-        route: decimateRoute(path).map(([lat, lng]) => ({ lat, lng })),
-        type: "RUNNING",
-        shoeId: selectedShoeId,
-        isSimulated: isSimulating,
-        ...performance.snapshot()
-      });
+      const result = await saveActivity(payload);
+      finishClientId.current = null;
 
       if (accountVersion.current === version || auth.currentUser?.uid !== user.uid) {
         clearActiveRunSnapshot(user.uid);
@@ -700,6 +730,7 @@ const RunTracking = () => {
     } catch (error) {
       if (!isCurrentAccount()) return;
       console.error("Erro ao finalizar corrida:", error);
+      if (isRetryableSaveError(error) && queueForLater()) return;
       toast.error(getSaveErrorMessage(error), { duration: 8000 });
     } finally {
       if (isCurrentAccount()) setIsSaving(false);

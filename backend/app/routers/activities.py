@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import desc, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.activity_rules import MAX_DURATION_PER_DAY_SECONDS
@@ -38,6 +39,12 @@ def save_activity(
 ):
     if current_user.uid != payload.user_id:
         raise HTTPException(status_code=403, detail="userId nao corresponde ao usuario autenticado.")
+
+    # Fila offline: o mesmo clientId chegando de novo (a resposta anterior se
+    # perdeu na rede) devolve a corrida ja salva em vez de duplicar XP e km.
+    existing = _activity_by_client_id(db, payload.user_id, payload.client_id)
+    if existing is not None:
+        return SaveActivityResult(id=existing.id, xp_update_failed=False)
 
     # Velocidade e rota ja foram checadas no schema (activity_rules); aqui
     # fica o que depende do banco: ninguem corre mais de 24h em 24h.
@@ -91,12 +98,26 @@ def save_activity(
         heart_rate_samples=[{"elapsedSeconds": p.elapsed_seconds, "bpm": p.bpm, "segmentId": p.segment_id} for p in payload.heart_rate_samples] if payload.heart_rate_samples else None,
         heart_rate_max_bpm=payload.heart_rate_max_bpm,
         is_simulated=payload.is_simulated,
+        client_id=payload.client_id,
     )
+    finished_at = _plausible_finished_at(payload.finished_at)
+    if finished_at is not None:
+        activity.created_at = finished_at
     db.add(activity)
 
     try:
         db.commit()
         db.refresh(activity)
+    except IntegrityError as exc:
+        # Dois envios do mesmo clientId ao mesmo tempo: o segundo perde a
+        # corrida no indice unico e devolve o que o primeiro gravou.
+        db.rollback()
+        existing = _activity_by_client_id(db, payload.user_id, payload.client_id)
+        if existing is not None:
+            return SaveActivityResult(id=existing.id, xp_update_failed=False)
+        print("ERRO AO SALVAR ATIVIDADE:")
+        print(traceback.format_exc(), flush=True)
+        raise HTTPException(status_code=500, detail="Erro ao salvar atividade.") from exc
     except Exception as exc:
         db.rollback()
         print("ERRO AO SALVAR ATIVIDADE:")
@@ -122,6 +143,29 @@ def save_activity(
         db.rollback()
 
     return SaveActivityResult(id=activity.id, xp_update_failed=xp_update_failed)
+
+
+# Uma corrida da fila offline pode subir dias depois; mais que isso, ou uma
+# hora no futuro (relogio do celular errado), cai para a hora do envio.
+MAX_OFFLINE_AGE = timedelta(days=14)
+MAX_CLOCK_SKEW = timedelta(minutes=5)
+
+
+def _plausible_finished_at(finished_at: datetime | None) -> datetime | None:
+    if finished_at is None:
+        return None
+    if finished_at.tzinfo is None:
+        finished_at = finished_at.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    if now - MAX_OFFLINE_AGE <= finished_at <= now + MAX_CLOCK_SKEW:
+        return min(finished_at, now)
+    return None
+
+
+def _activity_by_client_id(db: Session, user_id: str, client_id: str | None) -> Activity | None:
+    if not client_id:
+        return None
+    return db.query(Activity).filter(Activity.user_id == user_id, Activity.client_id == client_id).first()
 
 
 @router.get("/performance/me")
