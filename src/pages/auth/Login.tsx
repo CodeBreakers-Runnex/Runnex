@@ -104,6 +104,19 @@ export default function Login() {
     setForgotPasswordOpen,
   ] = useState(false);
 
+  // Campos vazios no último envio: ficam em vermelho e tremem (mesmo
+  // comportamento do cadastro). O vermelho some quando o campo é preenchido.
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [shakeRound, setShakeRound] = useState(0);
+  const isMissing = (id: string, value: string) => missingFields.includes(id) && !value.trim();
+  const shakeProps = (id: string, value: string) => ({
+    animate: isMissing(id, value) ? `shake${shakeRound}` : "rest",
+    variants: {
+      [`shake${shakeRound}`]: { x: [0, -8, 8, -5, 5, -2, 0], transition: { duration: 0.4 } },
+      rest: { x: 0 },
+    },
+  });
+
   /* ================================
      REDIRECIONAMENTO
   ================================ */
@@ -129,13 +142,17 @@ export default function Login() {
   ) {
     e.preventDefault();
 
-    if (!email || !senha) {
-      toast.error(
-        "Preencha email e senha",
-      );
-
+    if (!email.trim() || !senha) {
+      const empty = [
+        !email.trim() && "login-email",
+        !senha && "login-password",
+      ].filter(Boolean) as string[];
+      setMissingFields(empty);
+      setShakeRound((round) => round + 1);
+      document.getElementById(empty[0])?.focus();
       return;
     }
+    setMissingFields([]);
 
     try {
       setLoading(true);
@@ -321,15 +338,17 @@ export default function Login() {
               variants={itemVariants}
             >
 
-              <label className="text-sm text-foreground/80 mb-2 block font-medium">
+              <label htmlFor="login-email" className={cn("text-sm mb-2 block font-medium transition-colors", isMissing("login-email", email) ? "text-red-400" : "text-foreground/80")}>
                 Email
               </label>
 
-              <div className="relative">
+              <motion.div className="relative" {...shakeProps("login-email", email)}>
 
-                <Mail className="absolute left-4 top-3.5 text-muted-foreground w-5 h-5" />
+                <Mail className={cn("absolute left-4 top-3.5 w-5 h-5", isMissing("login-email", email) ? "text-red-400" : "text-muted-foreground")} />
 
                 <input
+                  id="login-email"
+                  aria-invalid={isMissing("login-email", email)}
                   type="email"
                   placeholder="Digite seu email"
                   value={email}
@@ -340,10 +359,10 @@ export default function Login() {
                   }
                   disabled={loading}
                   autoComplete="email"
-                  className="w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-4 text-foreground text-sm outline-none focus:border-purple-500 transition disabled:opacity-60"
+                  className={cn("w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-4 text-foreground text-sm outline-none focus:border-purple-500 transition disabled:opacity-60", isMissing("login-email", email) && "border-red-500 bg-red-500/5 focus:border-red-500")}
                 />
 
-              </div>
+              </motion.div>
 
             </motion.div>
 
@@ -353,15 +372,17 @@ export default function Login() {
               variants={itemVariants}
             >
 
-              <label className="text-sm text-foreground/80 mb-2 block font-medium">
+              <label htmlFor="login-password" className={cn("text-sm mb-2 block font-medium transition-colors", isMissing("login-password", senha) ? "text-red-400" : "text-foreground/80")}>
                 Senha
               </label>
 
-              <div className="relative">
+              <motion.div className="relative" {...shakeProps("login-password", senha)}>
 
-                <Lock className="absolute left-4 top-3.5 text-muted-foreground w-5 h-5" />
+                <Lock className={cn("absolute left-4 top-3.5 w-5 h-5", isMissing("login-password", senha) ? "text-red-400" : "text-muted-foreground")} />
 
                 <input
+                  id="login-password"
+                  aria-invalid={isMissing("login-password", senha)}
                   type={
                     mostrarSenha
                       ? "text"
@@ -376,7 +397,7 @@ export default function Login() {
                   }
                   disabled={loading}
                   autoComplete="current-password"
-                  className="w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-11 text-foreground text-sm outline-none focus:border-purple-500 transition disabled:opacity-60"
+                  className={cn("w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-11 text-foreground text-sm outline-none focus:border-purple-500 transition disabled:opacity-60", isMissing("login-password", senha) && "border-red-500 bg-red-500/5 focus:border-red-500")}
                 />
 
                 {/* MOSTRAR / ESCONDER SENHA */}
@@ -453,7 +474,7 @@ export default function Login() {
 
                 </button>
 
-              </div>
+              </motion.div>
 
             </motion.div>
 
