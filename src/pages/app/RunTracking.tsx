@@ -43,8 +43,10 @@ import { loadPlannedRun, completePlannedRun } from "@/services/plannedRun";
 import { auth } from "@/config/firebase";
 import type { Workout } from "@/types/training";
 import { getShoes } from "@/services/shoesApi";
+import { enqueueRun, isRetryableSaveError, newClientId, type QueuedRunPayload } from "@/services/offlineRuns";
 import type { RunningShoe } from "@/types";
 import ShoeStatusBadge from "@/components/ShoeStatusBadge";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
 const BackgroundGeolocation =
   registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
@@ -215,6 +217,7 @@ const RunTracking = () => {
   const [plannedRun, setPlannedRun] = useState<{ uid: string; workout: Workout } | null>(null);
   const plannedWorkout = plannedRun && plannedRun.uid === user?.uid ? plannedRun.workout : null;
   const runningOwner = useRef<string | null>(null);
+  const finishClientId = useRef<string | null>(null);
   const accountVersion = useRef(0);
   const runningWorkoutId = useRef<number | undefined>();
   const wakeLockRef = useRef<ScreenWakeLockSentinel | null>(null);
@@ -577,6 +580,7 @@ const RunTracking = () => {
     if (!user || loadingShoes || isSaving) return;
     runningOwner.current = user.uid;
     runningWorkoutId.current = plannedWorkout?.id ?? getPlannedRun(user.uid)?.workoutId;
+    finishClientId.current = null;
     performance.reset();
     const startPoint = !isSimulating ? currentPos : null;
     setDistance(0);
@@ -627,6 +631,12 @@ const RunTracking = () => {
     navigate("/");
   };
 
+  // Botão voltar do Android. A ordem importa: o último registrado é atendido primeiro.
+  useBackHandler(true, handleBack);
+  // O aviso de corrida não finalizada exige escolher Continuar ou Descartar.
+  useBackHandler(Boolean(recoverableRun), () => undefined);
+  useBackHandler(isMusicOpen, () => setIsMusicOpen(false));
+
   // Corrida sem distancia real (iniciou sem querer e parou logo em seguida)
   // nao deve tentar salvar: o backend rejeita distance<=0 e isso aparecia
   // para quem so queria cancelar como se fosse um erro de verdade.
@@ -649,22 +659,49 @@ const RunTracking = () => {
 
     setIsPaused(true);
     setIsSaving(true);
+    // O mesmo id em toda tentativa desta corrida: se a resposta se perder e
+    // ela for reenviada pela fila offline, o backend não duplica.
+    finishClientId.current ??= newClientId();
+    const payload: QueuedRunPayload = {
+      userId: user.uid,
+      userName: user.displayName || "Corredor",
+      userAvatar: getBestUserPhotoURL(user),
+      distance: Number(distance.toFixed(2)),
+      time: formatTime(seconds),
+      durationSeconds: seconds,
+      pace: getPace(),
+      calories: Number(getCalories()),
+      route: decimateRoute(path).map(([lat, lng]) => ({ lat, lng })),
+      type: "RUNNING",
+      shoeId: selectedShoeId,
+      isSimulated: isSimulating,
+      ...performance.snapshot(),
+      clientId: finishClientId.current,
+      finishedAt: new Date().toISOString(),
+    };
+
+    // Guarda no celular e encerra a corrida; OfflineRunSync envia depois.
+    const queueForLater = () => {
+      if (!enqueueRun(user.uid, payload, selection?.workoutId ?? null)) return false;
+      finishClientId.current = null;
+      clearActiveRunSnapshot(user.uid);
+      if (selection) clearPlannedRun(user.uid, selection.workoutId);
+      runningOwner.current = null;
+      setIsRunning(false);
+      setIsPaused(false);
+      toast.info("Sem conexão com o servidor. A corrida ficou guardada no celular e será enviada sozinha quando a internet voltar.", { duration: 8000 });
+      navigate(selection ? "/calendario-treinos" : "/");
+      return true;
+    };
+
+    if (typeof navigator !== "undefined" && navigator.onLine === false && queueForLater()) {
+      setIsSaving(false);
+      return;
+    }
+
     try {
-      const result = await saveActivity({
-        userId: user.uid,
-        userName: user.displayName || "Corredor",
-        userAvatar: getBestUserPhotoURL(user),
-        distance: Number(distance.toFixed(2)),
-        time: formatTime(seconds),
-        durationSeconds: seconds,
-        pace: getPace(),
-        calories: Number(getCalories()),
-        route: decimateRoute(path).map(([lat, lng]) => ({ lat, lng })),
-        type: "RUNNING",
-        shoeId: selectedShoeId,
-        isSimulated: isSimulating,
-        ...performance.snapshot()
-      });
+      const result = await saveActivity(payload);
+      finishClientId.current = null;
 
       if (accountVersion.current === version || auth.currentUser?.uid !== user.uid) {
         clearActiveRunSnapshot(user.uid);
@@ -700,6 +737,7 @@ const RunTracking = () => {
     } catch (error) {
       if (!isCurrentAccount()) return;
       console.error("Erro ao finalizar corrida:", error);
+      if (isRetryableSaveError(error) && queueForLater()) return;
       toast.error(getSaveErrorMessage(error), { duration: 8000 });
     } finally {
       if (isCurrentAccount()) setIsSaving(false);
@@ -707,17 +745,16 @@ const RunTracking = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col safe-top">
+    <div className="h-[100dvh] overflow-y-auto bg-background text-foreground flex flex-col safe-top">
       {plannedWorkout && <div className="border-b border-primary/20 bg-primary/10 px-6 py-3 text-sm"><p className="font-bold">{plannedWorkout.title}</p><p className="text-xs text-muted-foreground">{plannedWorkout.targetDistanceKm == null ? "Distância livre" : `Meta: ${plannedWorkout.targetDistanceKm} km`}{plannedWorkout.targetDurationMinutes != null ? ` · ${plannedWorkout.targetDurationMinutes} min` : ""}</p></div>}
-      <HeartRateControls running={isRunning} reference={recoverableRun?.performance?.heartRateMaxBpm ?? performance.snapshot().heartRateMaxBpm} onReading={performance.recordHeartRate} onBreak={performance.breakHeartRateSegment} />
       {/* Premium Header */}
       <motion.header
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
-        className="px-6 py-4 flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-2xl z-40 border-b border-border/60 shadow-[0_16px_34px_rgba(0,0,0,0.28)]"
+        className="px-4 py-2.5 flex items-center justify-between sticky top-0 bg-background z-40 border-b border-border/60 shadow-[0_16px_34px_rgba(0,0,0,0.28)]"
       >
-        <button onClick={handleBack} className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-muted-foreground active:scale-95 transition-transform" aria-label="Voltar">
+        <button onClick={handleBack} className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground active:scale-95 transition-transform" aria-label="Voltar">
           <ArrowLeft size={20} />
         </button>
         <motion.h1
@@ -732,7 +769,7 @@ const RunTracking = () => {
         {import.meta.env.DEV ? (
           <button
             onClick={() => setIsSimulating(!isSimulating)}
-            className={`text-[10px] font-black px-3 py-2 rounded-xl border transition-colors ${isSimulating ? 'bg-purple-600 border-purple-400 text-white' : 'bg-card/80 backdrop-blur-xl border-border text-muted-foreground'}`}
+            className={`text-[10px] font-black px-3 py-2 rounded-xl border transition-colors ${isSimulating ? 'bg-purple-600 border-purple-400 text-white' : 'bg-card border-border text-muted-foreground'}`}
           >
             {isSimulating ? "OFF" : "SIMULAR"}
           </button>
@@ -741,18 +778,21 @@ const RunTracking = () => {
         )}
       </motion.header>
 
-      <section className="mx-6 mt-4 rounded-2xl border border-border bg-card/80 p-4" aria-label="Tênis da corrida">
-        <div className="flex items-center justify-between gap-3">
-          <label htmlFor="run-shoe" className="text-sm font-bold">Tênis da corrida</label>
-          {!isRunning && <button type="button" onClick={() => navigate("/tenis")} className="text-xs font-bold text-primary">Meus tênis</button>}
-        </div>
-        <select id="run-shoe" value={selectedShoeId ?? ""} disabled={loadingShoes || isSaving || (isRunning && !isPaused)} onChange={(e) => { shoeSelectionMade.current = true; setSelectedShoeId(e.target.value || null); }} className="mt-2 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm disabled:opacity-60">
+      <HeartRateControls running={isRunning} reference={recoverableRun?.performance?.heartRateMaxBpm ?? performance.snapshot().heartRateMaxBpm} onReading={performance.recordHeartRate} onBreak={performance.breakHeartRateSegment} />
+
+      <section className="mx-4 mt-2 rounded-2xl border border-border bg-card px-3 py-2.5" aria-label="Tênis da corrida">
+        <div className="flex items-center gap-2">
+          <label htmlFor="run-shoe" className="shrink-0 text-xs font-bold">Tênis</label>
+        <select id="run-shoe" value={selectedShoeId ?? ""} disabled={loadingShoes || isSaving || (isRunning && !isPaused)} onChange={(e) => { shoeSelectionMade.current = true; setSelectedShoeId(e.target.value || null); }} className="min-w-0 flex-1 rounded-xl border border-input bg-background px-2 py-1.5 text-sm disabled:opacity-60">
           <option value="">{loadingShoes ? "Carregando tênis..." : "Sem tênis vinculado"}</option>
           {shoes.filter((shoe) => !shoe.retired || shoe.id === selectedShoeId).map((shoe) => <option key={shoe.id} value={shoe.id} disabled={shoe.retired}>{shoe.name}{shoe.isDefault ? " (padrão)" : ""}{shoe.retired ? " (aposentado)" : ""}</option>)}
           {selectedShoeId && !selectedShoe && <option value={selectedShoeId}>Tênis salvo com o treino</option>}
         </select>
+          {selectedShoe && <span className="shrink-0 text-[11px] text-muted-foreground">{selectedShoe.totalKm.toLocaleString("pt-BR")}/{selectedShoe.limitKm.toLocaleString("pt-BR")} km</span>}
+          {!isRunning && <button type="button" onClick={() => navigate("/tenis")} className="shrink-0 text-xs font-bold text-primary">Meus tênis</button>}
+        </div>
         {shoeLoadError && <p className="mt-2 text-xs text-amber-500">Não foi possível carregar os tênis. Você pode continuar sem vínculo e associá-lo depois em Meus tênis.</p>}
-        {selectedShoe && <div className="mt-2 flex flex-wrap items-center gap-2"><ShoeStatusBadge status={selectedShoe.status} /><span className="text-xs text-muted-foreground">{selectedShoe.totalKm.toLocaleString("pt-BR")} / {selectedShoe.limitKm.toLocaleString("pt-BR")} km</span></div>}
+        {selectedShoe && selectedShoe.status !== "good" && <div className="mt-2"><ShoeStatusBadge status={selectedShoe.status} /></div>}
         {selectedShoe && (selectedShoe.status === "attention" || selectedShoe.status === "worn" || selectedShoe.retired) && <p className="mt-2 text-xs text-amber-500">{selectedShoe.retired ? "Tênis aposentado. Pause e escolha outro tênis para salvar a corrida." : "Confira o desgaste deste tênis antes do treino."}</p>}
         {isRunning && <p className="mt-2 text-xs text-muted-foreground">Pause a corrida para corrigir o tênis escolhido.</p>}
       </section>
@@ -762,8 +802,7 @@ const RunTracking = () => {
         initial={{ opacity: 0, y: 18, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.55, ease: [0.2, 0.8, 0.2, 1], delay: 0.08 }}
-        className={cn(GLASS_CARD_CLASS, "flex-1 relative mx-6 mt-6 overflow-hidden shadow-inner group")}
-        style={{ minHeight: '350px' }}
+        className={cn(GLASS_CARD_CLASS, "flex-1 relative mx-4 mt-3 min-h-[180px] overflow-hidden shadow-inner group")}
       >
         <MapContainer 
           center={[-23.5505, -46.6333]} // Padrão SP
@@ -803,7 +842,7 @@ const RunTracking = () => {
           )}
         </MapContainer>
 
-        <div className="absolute bottom-5 left-6 right-6 z-[1002] flex items-center justify-between rounded-2xl bg-card/80 backdrop-blur-xl border border-border px-4 py-3">
+        <div className="absolute bottom-3 left-3 right-3 z-[1002] flex items-center justify-between rounded-2xl bg-card/80 backdrop-blur-xl border border-border px-3 py-2">
           <div className="flex items-center gap-2">
             <span className={`h-2.5 w-2.5 rounded-full ${isPaused ? "bg-yellow-400" : currentPos ? "bg-green-400 animate-status-pulse" : isRunning ? "bg-purple-400 animate-status-pulse" : "bg-zinc-600"}`} />
             <span className="text-[9px] font-black uppercase tracking-widest text-foreground/80">
@@ -822,10 +861,10 @@ const RunTracking = () => {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="absolute top-6 left-6 right-6 grid grid-cols-2 gap-3 z-[1002]"
+              className="absolute top-3 left-3 right-3 grid grid-cols-2 gap-2 z-[1002]"
             >
-                <div className={cn(GLASS_CARD_CLASS, "p-4 flex items-center gap-3")}>
-                    <div className="w-10 h-10 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                <div className={cn(GLASS_CARD_CLASS, "p-2.5 flex items-center gap-2.5")}>
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
                         <MapIcon size={18} />
                     </div>
                     <div>
@@ -833,8 +872,8 @@ const RunTracking = () => {
                         <p className="text-sm font-black font-display leading-none">{getPace()}</p>
                     </div>
                 </div>
-                <div className={cn(GLASS_CARD_CLASS, "p-4 flex items-center gap-3")}>
-                    <div className="w-10 h-10 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-400">
+                <div className={cn(GLASS_CARD_CLASS, "p-2.5 flex items-center gap-2.5")}>
+                    <div className="w-8 h-8 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400">
                         <Zap size={18} />
                     </div>
                     <div>
@@ -848,25 +887,25 @@ const RunTracking = () => {
       </motion.div>
 
       {/* Primary Running Stats Card */}
-      <section className="px-6 py-8">
+      <section className="px-4 pt-3">
         <motion.div 
             layout
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.14 }}
-            className={cn(GLASS_CARD_CLASS, "p-8")}
+            className={cn(GLASS_CARD_CLASS, "px-4 py-3")}
         >
-          <div className="text-center mb-10">
+          <div className="text-center mb-3">
             <motion.p
               key={isRunning ? "running" : "idle"}
               initial={{ scale: 0.8 }}
               animate={{ scale: [0.96, 1.03, 1] }}
               transition={{ duration: 0.32 }}
-              className="text-7xl font-display font-black text-purple-500 tracking-tighter drop-shadow-[0_0_24px_rgba(168,85,247,0.35)]"
+              className="text-5xl font-display font-black text-purple-500 tracking-tighter drop-shadow-[0_0_24px_rgba(168,85,247,0.35)]"
             >
               {distance.toFixed(2)}
             </motion.p>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-2">DISTÂNCIA TOTAL (KM)</p>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1">DISTÂNCIA TOTAL (KM)</p>
           </div>
 
           <div className="grid grid-cols-3 divide-x divide-border">
@@ -887,7 +926,7 @@ const RunTracking = () => {
       </section>
 
       {/* Control Actions Section */}
-      <footer className="px-6 pb-12 safe-bottom">
+      <footer className="px-4 pt-3 pb-4 safe-bottom">
         <div className="flex items-center justify-center gap-8">
           {!isRunning ? (
             <>
@@ -896,7 +935,7 @@ const RunTracking = () => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsMusicOpen(true)}
-                className="w-16 h-16 rounded-2xl bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
+                className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
                 aria-label="Abrir musica"
               >
                 <Music size={24} />
@@ -908,12 +947,12 @@ const RunTracking = () => {
                 whileTap={{ scale: 0.9 }}
                 onClick={handleStart}
                 disabled={loadingShoes || isSaving}
-                className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-[0_14px_44px_rgba(147,51,234,0.48)] border-4 border-background group animate-soft-glow"
+                className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-[0_14px_44px_rgba(147,51,234,0.48)] border-4 border-background group animate-soft-glow"
                 aria-label="Iniciar corrida"
               >
-                <Play size={40} className="text-white fill-current ml-2 group-hover:scale-110 transition-transform" />
+                <Play size={34} className="text-white fill-current ml-2 group-hover:scale-110 transition-transform" />
               </motion.button>
-              <div className="w-16 h-16" aria-hidden="true" />
+              <div className="w-14 h-14" aria-hidden="true" />
             </>
           ) : (
             <>
@@ -924,7 +963,7 @@ const RunTracking = () => {
                 whileTap={{ scale: 0.9 }}
                 onClick={handleFinish}
                 disabled={isSaving}
-                className="w-16 h-16 rounded-2xl bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-red-500 disabled:opacity-50 active:scale-95 transition-transform"
+                className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-red-500 disabled:opacity-50 active:scale-95 transition-transform"
                 aria-label="Finalizar corrida"
               >
                 {isSaving ? <Loader2 className="animate-spin" /> : <Square size={24} className="fill-current" />}
@@ -937,13 +976,13 @@ const RunTracking = () => {
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsPaused(!isPaused)}
                 disabled={isSaving}
-                className="w-24 h-24 rounded-full bg-zinc-100 flex items-center justify-center shadow-[0_16px_42px_rgba(255,255,255,0.16)] border-4 border-background group active:scale-95 transition-transform"
+                className="w-20 h-20 rounded-full bg-zinc-100 flex items-center justify-center shadow-[0_16px_42px_rgba(255,255,255,0.16)] border-4 border-background group active:scale-95 transition-transform"
                 aria-label={isPaused ? "Retomar corrida" : "Pausar corrida"}
               >
                 {isPaused ? (
-                  <Play size={40} className="text-black fill-current ml-2" />
+                  <Play size={34} className="text-black fill-current ml-2" />
                 ) : (
-                  <Pause size={40} className="text-black fill-current" />
+                  <Pause size={34} className="text-black fill-current" />
                 )}
               </motion.button>
 
@@ -953,7 +992,7 @@ const RunTracking = () => {
                 transition={{ type: "spring", stiffness: 360, damping: 22, delay: 0.12 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsMusicOpen(true)}
-                className="w-16 h-16 rounded-2xl bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
+                className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
               >
                 <Music size={24} />
               </motion.button>
@@ -978,7 +1017,7 @@ const RunTracking = () => {
                 exit={{ opacity: 0, y: 28, scale: 0.96 }}
                 className={cn(GLASS_CARD_CLASS, "pointer-events-auto w-full max-w-md p-6")}
               >
-                <p className="text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground">Veloxy</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground">Runnex</p>
                 <h2 className="mt-1 font-display text-xl font-black text-purple-500 uppercase">Corrida nao finalizada</h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                   Encontramos {recoverableRun.distance.toFixed(2)} km de uma corrida que nao chegou a ser salva. Quer continuar de onde parou ou descartar?
@@ -1027,14 +1066,14 @@ const RunTracking = () => {
                   </div>
                   <button
                     onClick={() => setIsMusicOpen(false)}
-                    className="bg-card/80 backdrop-blur-xl border border-border flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground"
+                    className="bg-card border border-border flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground"
                     aria-label="Fechar musica"
                   >
                     <X size={18} />
                   </button>
                 </div>
                 <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                  Abra sua playlist antes ou durante a corrida. O Veloxy continua acompanhando o treino quando você voltar para o app.
+                  Abra sua playlist antes ou durante a corrida. O Runnex continua acompanhando o treino quando você voltar para o app.
                 </p>
                 <div className="grid gap-3">
                   {[
@@ -1045,7 +1084,7 @@ const RunTracking = () => {
                     <button
                       key={item.label}
                       onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
-                      className="bg-card/80 backdrop-blur-xl border border-border flex items-center justify-between rounded-2xl px-4 py-4 text-left text-sm font-black"
+                      className="bg-card border border-border flex items-center justify-between rounded-2xl px-4 py-4 text-left text-sm font-black"
                     >
                       {item.label}
                       <ExternalLink size={16} className="text-purple-500" />

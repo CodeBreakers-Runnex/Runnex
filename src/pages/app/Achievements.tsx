@@ -10,6 +10,7 @@ import { ACHIEVEMENTS } from "@/lib/achievements";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
+import ScreenTitle from "@/components/ScreenTitle";
 export default function Achievements() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -46,19 +47,16 @@ export default function Achievements() {
 
   return (
     <div className="app-shell pb-24 safe-top">
-      <header className="bg-card/80 backdrop-blur-xl border-b border-border sticky top-0 z-40 px-5 py-4">
+      <header className="bg-card border-b border-border sticky top-0 z-40 px-5 py-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card border border-border text-muted-foreground"
             aria-label="Voltar"
           >
             <ArrowLeft size={18} />
           </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Perfil</p>
-            <h1 className="font-display text-xl font-black">Conquistas</h1>
-          </div>
+          <ScreenTitle title="Conquistas" className="flex-1" />
           {!loading && !loadError && (
             <div className="rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-2 text-xs font-black text-purple-300">
               {unlockedCount}/{ACHIEVEMENTS.length}

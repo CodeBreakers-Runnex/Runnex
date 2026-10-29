@@ -41,7 +41,10 @@ import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import RunHistoryRow from "@/components/RunHistoryRow";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
+import ExportDataButton from "@/components/ExportDataButton";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
+import ScreenTitle from "@/components/ScreenTitle";
 type Theme = "dark" | "light";
 
 const THEME_STORAGE_KEY = "veloxy-theme";
@@ -96,7 +99,7 @@ function SettingsRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-border p-4">
+    <div className="flex items-center justify-between gap-4 rounded-2xl bg-card border border-border p-4">
       <div className="flex items-center gap-3 min-w-0">
         <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
           {icon}
@@ -145,6 +148,7 @@ function SettingsModal({
   onPrivacyChange: (value: boolean) => Promise<void>;
 }) {
   const navigate = useNavigate();
+  useBackHandler(open, onClose);
   const [settings, setSettings] = useState<SettingsState>(getStoredSettings);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletingRuns, setDeletingRuns] = useState(false);
@@ -206,7 +210,7 @@ function SettingsModal({
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Veloxy</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Runnex</p>
                 <h2 className="font-display text-2xl font-black text-purple-500">CONFIGURAÇÕES</h2>
               </div>
               <button onClick={onClose} className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground" aria-label="Fechar">
@@ -215,7 +219,7 @@ function SettingsModal({
             </div>
 
             <div className="max-h-[calc(82svh-7rem)] overflow-y-auto no-scrollbar space-y-3 pb-1">
-              <SettingsRow icon={theme === "light" ? <Sun size={18} /> : <Moon size={18} />} title="Tema do app" description="Escolha como o Veloxy aparece na tela.">
+              <SettingsRow icon={theme === "light" ? <Sun size={18} /> : <Moon size={18} />} title="Tema do app" description="Escolha como o Runnex aparece na tela.">
                 <div className="relative flex rounded-2xl bg-background/50 border border-border p-1">
                   {(["dark", "light"] as Theme[]).map((option) => (
                     <button
@@ -285,7 +289,7 @@ function SettingsModal({
                   className={`settings-danger-action w-full rounded-2xl border p-4 text-left transition disabled:opacity-60 ${
                     confirmDelete
                       ? "border-red-500/60 bg-red-500/10 text-red-400"
-                      : "border-border bg-card/80 backdrop-blur-xl text-muted-foreground"
+                      : "border-border bg-card text-muted-foreground"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -304,7 +308,10 @@ function SettingsModal({
                 </button>
                 {user && (
                   <div className="mt-3">
-                    <DeleteAccountSection user={user} />
+                    <ExportDataButton />
+                    <div className="mt-3">
+                      <DeleteAccountSection user={user} />
+                    </div>
                   </div>
                 )}
               </div>
@@ -338,6 +345,7 @@ function EditProfileModal({
   const [photoURL, setPhotoURL] = useState(initialData.photoURL);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [weeklyGoalKm, setWeeklyGoalKm] = useState(initialData.weeklyGoalKm.toString());
+  useBackHandler(open, () => { if (!saving && !uploadingPhoto) onClose(); });
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -606,21 +614,19 @@ const Profile = () => {
   return (
     <div className="app-shell pb-24 safe-top">
       {/* Header */}
-      <header className="bg-card/80 backdrop-blur-xl border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
-        <h1 className="font-display font-black text-2xl tracking-tighter text-purple-500">
-          VELOXY PROFILE
-        </h1>
+      <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+        <ScreenTitle title="Perfil" />
         <div className="flex gap-2">
             <button
                 onClick={() => setEditOpen(true)}
-                className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-muted-foreground active:scale-95 transition-transform"
+                className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground active:scale-95 transition-transform"
                 aria-label="Editar perfil"
             >
                 <Pencil size={18} />
             </button>
             <button
               onClick={() => setSettingsOpen(true)}
-              className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-muted-foreground active:scale-95 transition-transform"
+              className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground active:scale-95 transition-transform"
               aria-label="Configurações"
             >
                 <Settings size={20} />
@@ -642,7 +648,7 @@ const Profile = () => {
             <button
                 type="button"
                 onClick={() => setEditOpen(true)}
-                className="block w-32 h-32 cursor-pointer relative group overflow-hidden rounded-3xl bg-card/80 backdrop-blur-xl border border-border"
+                className="block w-32 h-32 cursor-pointer relative group overflow-hidden rounded-3xl bg-card border border-border"
                 aria-label="Alterar foto de perfil"
             >
                 {profile?.photoURL || user?.photoURL ? (
@@ -668,7 +674,7 @@ const Profile = () => {
         >
           {displayName}
         </motion.h2>
-        <div className="mt-3 flex items-center gap-1.5 rounded-full bg-card/80 backdrop-blur-xl border border-border px-3 py-1.5 text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+        <div className="mt-3 flex items-center gap-1.5 rounded-full bg-card border border-border px-3 py-1.5 text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
             <MapPin size={12} className="text-purple-500" />
             {profile?.location || "São Paulo, SP"}
         </div>
@@ -696,7 +702,7 @@ const Profile = () => {
 
         <button
           onClick={() => navigate("/pet")}
-          className="mb-4 flex w-full items-center gap-3 rounded-3xl bg-card/80 backdrop-blur-xl border border-border p-4 text-left active:scale-[0.98] transition-transform"
+          className="mb-4 flex w-full items-center gap-3 rounded-3xl bg-card border border-border p-4 text-left active:scale-[0.98] transition-transform"
         >
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-500/10 border border-purple-500/20 text-2xl">
             {petSpeciesInfo?.emoji || <PawPrint className="text-purple-500" size={20} />}
@@ -784,13 +790,13 @@ const Profile = () => {
           </p>
         </div>
 
-        <button onClick={() => navigate("/dispositivos")} className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-border bg-card/80 p-5 text-left backdrop-blur-xl">
+        <button onClick={() => navigate("/dispositivos")} className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-5 text-left">
           <Watch size={24} className="shrink-0 text-purple-500" />
           <div className="flex-1"><h3 className="font-display text-xl font-black">Dispositivos conectados</h3><p className="mt-1 text-xs text-muted-foreground">Conectar Health Connect e importar corridas do relógio.</p></div>
           <ChevronRight size={20} className="text-muted-foreground" />
         </button>
         {/* Entrada: status completo, mesmo padrao visual de linha com chevron */}
-        <button onClick={() => navigate("/tenis")} className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-border bg-card/80 p-5 text-left backdrop-blur-xl">
+        <button onClick={() => navigate("/tenis")} className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-5 text-left">
           <Footprints size={24} className="shrink-0 text-purple-500" />
           <div className="flex-1"><h3 className="font-display text-xl font-black">Meus tênis</h3><p className="mt-1 text-xs text-muted-foreground">Quilometragem, desgaste e tênis usados nas corridas.</p></div>
           <ChevronRight size={20} className="text-muted-foreground" />
@@ -798,7 +804,7 @@ const Profile = () => {
         <div className="mt-4">
           <button
             onClick={() => navigate("/stats")}
-            className="bg-card/80 backdrop-blur-xl border border-border w-full rounded-3xl p-5 text-left transition active:scale-[0.98]"
+            className="bg-card border border-border w-full rounded-3xl p-5 text-left transition active:scale-[0.98]"
           >
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -872,7 +878,7 @@ const Profile = () => {
         <h3 className="mb-4 font-display font-black text-sm tracking-tighter">CONTA</h3>
         <button
             onClick={handleLogout}
-            className="w-full bg-card/80 backdrop-blur-xl border border-border py-4 rounded-xl text-[10px] font-black tracking-widest text-muted-foreground hover:text-red-500 hover:border-red-500/30 transition-all flex items-center justify-center gap-2"
+            className="w-full bg-card border border-border py-4 rounded-xl text-[10px] font-black tracking-widest text-muted-foreground hover:text-red-500 hover:border-red-500/30 transition-all flex items-center justify-center gap-2"
         >
             <LogOut size={16} />
             SAIR DA CONTA

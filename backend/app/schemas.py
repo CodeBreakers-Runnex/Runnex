@@ -79,6 +79,10 @@ class ActivityCreate(BaseModel):
     heart_rate_samples: list[HeartRatePoint] | None = Field(default=None, validation_alias="heartRateSamples", max_length=90000)
     heart_rate_max_bpm: int | None = Field(default=None, validation_alias="heartRateMaxBpm", ge=100, le=250)
     is_simulated: bool = Field(default=False, validation_alias="isSimulated")
+    # Fila offline: id gerado no celular (reenvio não duplica) e hora em que a
+    # corrida terminou (ela pode subir horas depois).
+    client_id: str | None = Field(default=None, validation_alias="clientId", min_length=8, max_length=64, pattern=r"^[A-Za-z0-9-]+$")
+    finished_at: datetime | None = Field(default=None, validation_alias="finishedAt")
 
     @model_validator(mode="after")
     def _check_plausible(self) -> "ActivityCreate":
@@ -131,6 +135,29 @@ class ActivityOut(BaseModel):
     @classmethod
     def _stringify_shoe_id(cls, value: object) -> str | None:
         return str(value) if value is not None else None
+
+
+class WeeklyDay(BaseModel):
+    day: str
+    km: float
+
+
+class UserStatsOut(BaseModel):
+    """GET /activities/stats/me. Campos ja em camelCase: o app usa direto."""
+
+    totalKm: float
+    runsCount: int
+    totalSeconds: int
+    totalCalories: int
+    currentStreak: int
+    weeklyTotalKm: float
+    weeklyData: list[WeeklyDay]
+    hasHourLongRun: bool
+    hasSub10kRun: bool
+    dawnRunsCount: int
+    nightRunsCount: int
+    bestActivity: ActivityOut | None
+    lastActivity: ActivityOut | None
 
 
 class SaveActivityResult(BaseModel):

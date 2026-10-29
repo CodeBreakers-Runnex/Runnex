@@ -82,6 +82,19 @@ export default function Register() {
 
   const [loading, setLoading] = useState(false);
 
+  // Campos que estavam vazios no último envio: ficam em vermelho e tremem,
+  // em vez de um aviso em texto. O vermelho some quando o campo é preenchido.
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [shakeRound, setShakeRound] = useState(0);
+  const isMissing = (id: string, value: string) => missingFields.includes(id) && !value.trim();
+  const shakeProps = (id: string, value: string) => ({
+    animate: isMissing(id, value) ? `shake${shakeRound}` : "rest",
+    variants: {
+      [`shake${shakeRound}`]: { x: [0, -8, 8, -5, 5, -2, 0], transition: { duration: 0.4 } },
+      rest: { x: 0 },
+    },
+  });
+
   async function handleRegister(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -96,9 +109,23 @@ export default function Register() {
       !password ||
       !confirmPassword
     ) {
-      toast.error("Preencha todos os campos.");
+      const empty = (
+        [
+          ["username", usernameTrimmed],
+          ["email", normalizedEmail],
+          ["confirmEmail", normalizedConfirmEmail],
+          ["password", password],
+          ["confirmPassword", confirmPassword],
+        ] as const
+      )
+        .filter(([, value]) => !value)
+        .map(([id]) => id as string);
+      setMissingFields(empty);
+      setShakeRound((round) => round + 1);
+      document.getElementById(empty[0])?.focus();
       return;
     }
+    setMissingFields([]);
 
     if (usernameTrimmed.length < 3) {
       toast.error("O nome de usuário deve ter pelo menos 3 caracteres.");
@@ -285,7 +312,7 @@ export default function Register() {
             >
               <motion.img
                 src={logo}
-                alt="Logo Veloxy"
+                alt="Logo Runnex"
                 className="w-24 h-24 sm:w-28 sm:h-28 object-contain mb-2 drop-shadow-2xl"
                 whileHover={{
                   scale: 1.06,
@@ -303,7 +330,7 @@ export default function Register() {
               </h1>
 
               <p className="text-muted-foreground mt-2 text-sm text-center">
-                Comece sua jornada com a Veloxy
+                Comece sua jornada com o Runnex
               </p>
             </motion.div>
 
@@ -312,13 +339,13 @@ export default function Register() {
               <motion.div variants={itemVariants}>
                 <label
                   htmlFor="username"
-                  className="text-sm text-foreground/80 mb-2 block font-medium"
+                  className={cn("text-sm mb-2 block font-medium transition-colors", isMissing("username", username) ? "text-red-400" : "text-foreground/80")}
                 >
                   Nome de usuário
                 </label>
 
-                <div className="relative">
-                  <User className="absolute left-4 top-3.5 text-muted-foreground w-5 h-5" />
+                <motion.div className="relative" {...shakeProps("username", username)}>
+                  <User className={cn("absolute left-4 top-3.5 w-5 h-5", isMissing("username", username) ? "text-red-400" : "text-muted-foreground")} />
 
                   <input
                     id="username"
@@ -331,14 +358,15 @@ export default function Register() {
                     }
                     disabled={loading}
                     autoComplete="username"
-                    className="w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-4 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-purple-500 transition disabled:opacity-60"
+                    aria-invalid={isMissing("username", username)}
+                    className={cn("w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-4 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-purple-500 transition disabled:opacity-60", isMissing("username", username) && "border-red-500 bg-red-500/5 focus:border-red-500")}
                   />
 
 
                   <span className="absolute bottom-2 right-3 text-xs text-muted-foreground">
                     {username.length}/30
                   </span>
-                </div>
+                </motion.div>
 
                 <p className="text-xs text-muted-foreground mt-2">
                   Apenas letras e números, sem símbolos.
@@ -349,13 +377,13 @@ export default function Register() {
               <motion.div variants={itemVariants}>
                 <label
                   htmlFor="email"
-                  className="text-sm text-foreground/80 mb-2 block font-medium"
+                  className={cn("text-sm mb-2 block font-medium transition-colors", isMissing("email", email) ? "text-red-400" : "text-foreground/80")}
                 >
                   Email
                 </label>
 
-                <div className="relative">
-                  <Mail className="absolute left-4 top-3.5 text-muted-foreground w-5 h-5" />
+                <motion.div className="relative" {...shakeProps("email", email)}>
+                  <Mail className={cn("absolute left-4 top-3.5 w-5 h-5", isMissing("email", email) ? "text-red-400" : "text-muted-foreground")} />
                   <input
                     id="email"
                     type="email"
@@ -364,22 +392,23 @@ export default function Register() {
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
                     autoComplete="email"
-                    className="w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-4 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-purple-500 transition disabled:opacity-60"
+                    aria-invalid={isMissing("email", email)}
+                    className={cn("w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-4 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-purple-500 transition disabled:opacity-60", isMissing("email", email) && "border-red-500 bg-red-500/5 focus:border-red-500")}
                   />
-                </div>
+                </motion.div>
               </motion.div>
 
               {/* Confirmar email */}
               <motion.div variants={itemVariants}>
                 <label
                   htmlFor="confirmEmail"
-                  className="text-sm text-foreground/80 mb-2 block font-medium"
+                  className={cn("text-sm mb-2 block font-medium transition-colors", isMissing("confirmEmail", confirmEmail) ? "text-red-400" : "text-foreground/80")}
                 >
                   Confirmar email
                 </label>
 
-                <div className="relative">
-                  <Mail className="absolute left-4 top-3.5 text-muted-foreground w-5 h-5" />
+                <motion.div className="relative" {...shakeProps("confirmEmail", confirmEmail)}>
+                  <Mail className={cn("absolute left-4 top-3.5 w-5 h-5", isMissing("confirmEmail", confirmEmail) ? "text-red-400" : "text-muted-foreground")} />
 
                   <input
                     id="confirmEmail"
@@ -389,23 +418,24 @@ export default function Register() {
                     onChange={(e) => setConfirmEmail(e.target.value)}
                     disabled={loading}
                     autoComplete="email"
-                    className="w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-4 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-purple-500 transition disabled:opacity-60"
+                    aria-invalid={isMissing("confirmEmail", confirmEmail)}
+                    className={cn("w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-4 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-purple-500 transition disabled:opacity-60", isMissing("confirmEmail", confirmEmail) && "border-red-500 bg-red-500/5 focus:border-red-500")}
                   />
 
-                </div>
+                </motion.div>
               </motion.div>
 
               {/* Senha */}
               <motion.div variants={itemVariants}>
                 <label
                   htmlFor="password"
-                  className="text-sm text-foreground/80 mb-2 block font-medium"
+                  className={cn("text-sm mb-2 block font-medium transition-colors", isMissing("password", password) ? "text-red-400" : "text-foreground/80")}
                 >
                   Senha
                 </label>
 
-                <div className="relative">
-                  <Lock className="absolute left-4 top-3.5 text-muted-foreground w-5 h-5" />
+                <motion.div className="relative" {...shakeProps("password", password)}>
+                  <Lock className={cn("absolute left-4 top-3.5 w-5 h-5", isMissing("password", password) ? "text-red-400" : "text-muted-foreground")} />
 
                   <input
                     id="password"
@@ -415,7 +445,8 @@ export default function Register() {
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
                     autoComplete="new-password"
-                    className="w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-11 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-purple-500 transition disabled:opacity-60"
+                    aria-invalid={isMissing("password", password)}
+                    className={cn("w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-11 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-purple-500 transition disabled:opacity-60", isMissing("password", password) && "border-red-500 bg-red-500/5 focus:border-red-500")}
                   />
 
                   <button
@@ -479,7 +510,7 @@ export default function Register() {
                       )}
                     </AnimatePresence>
                   </button>
-                </div>
+                </motion.div>
 
                 <p className="text-xs text-muted-foreground mt-2">
                   Use pelo menos 6 caracteres, com letras e números. Para
@@ -491,13 +522,13 @@ export default function Register() {
               <motion.div variants={itemVariants}>
                 <label
                   htmlFor="confirmPassword"
-                  className="text-sm text-foreground/80 mb-2 block font-medium"
+                  className={cn("text-sm mb-2 block font-medium transition-colors", isMissing("confirmPassword", confirmPassword) ? "text-red-400" : "text-foreground/80")}
                 >
                   Confirmar senha
                 </label>
 
-                <div className="relative">
-                  <Lock className="absolute left-4 top-3.5 text-muted-foreground w-5 h-5" />
+                <motion.div className="relative" {...shakeProps("confirmPassword", confirmPassword)}>
+                  <Lock className={cn("absolute left-4 top-3.5 w-5 h-5", isMissing("confirmPassword", confirmPassword) ? "text-red-400" : "text-muted-foreground")} />
 
                   <input
                     id="confirmPassword"
@@ -507,7 +538,8 @@ export default function Register() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={loading}
                     autoComplete="new-password"
-                    className="w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-11 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-purple-500 transition disabled:opacity-60"
+                    aria-invalid={isMissing("confirmPassword", confirmPassword)}
+                    className={cn("w-full bg-secondary border border-input rounded-xl py-3 pl-11 pr-11 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-purple-500 transition disabled:opacity-60", isMissing("confirmPassword", confirmPassword) && "border-red-500 bg-red-500/5 focus:border-red-500")}
                   />
 
                   <button
@@ -575,7 +607,7 @@ export default function Register() {
                       )}
                     </AnimatePresence>
                   </button>
-                </div>
+                </motion.div>
               </motion.div>
 
               {/* Botão cadastrar */}

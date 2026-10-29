@@ -96,6 +96,6 @@ describe("apiClient", () => {
 
     const error = await captureError(api.get("/feed"));
     expect(error.status).toBe(502);
-    expect(error.message).toBe("Erro na API do Veloxy.");
+    expect(error.message).toBe("Erro na API do Runnex.");
   });
 });

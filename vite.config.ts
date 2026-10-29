@@ -22,8 +22,8 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Veloxy",
-        short_name: "Veloxy",
+        name: "Runnex",
+        short_name: "Runnex",
         description: "Tracking de Corrida Gamificado",
         theme_color: "#000000",
         background_color: "#000000",

@@ -36,7 +36,9 @@ import { toast } from "sonner";
 import { formatCardDate } from "@/lib/feed-utils";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
+import ScreenTitle from "@/components/ScreenTitle";
 type SocialTab = "feed" | "leaderboard" | "groups" | "events";
 
 const RANKING_STEP = 100;
@@ -78,6 +80,7 @@ function GroupCreateModal({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  useBackHandler(open, () => { if (!creating) onClose(); });
 
   useEffect(() => {
     if (open) {
@@ -117,7 +120,7 @@ function GroupCreateModal({
                   <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">Comunidade</p>
                   <h2 className="font-display text-2xl font-black text-purple-500">CRIAR GRUPO</h2>
                 </div>
-                <button onClick={onClose} className="h-10 w-10 rounded-full bg-card/80 backdrop-blur-xl border border-border flex items-center justify-center text-muted-foreground" aria-label="Fechar">
+                <button onClick={onClose} className="h-10 w-10 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground" aria-label="Fechar">
                   <X size={18} />
                 </button>
               </div>
@@ -379,14 +382,11 @@ export default function Social() {
 
   return (
     <div className="app-shell pb-28 safe-top">
-      <header className="bg-card/80 backdrop-blur-xl border-b border-border sticky top-0 z-50 px-5 py-4">
+      <header className="bg-card border-b border-border sticky top-0 z-50 px-5 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <SafeAvatar src={userPhotoURL} name={displayName} alt="Perfil" className="h-11 w-11 rounded-full border border-purple-500/30 bg-card" />
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground/70">Veloxy</p>
-              <h1 className="font-display text-2xl font-black tracking-tighter text-purple-500">SOCIAL</h1>
-            </div>
+            <ScreenTitle title="Social" />
           </div>
 
           <div className="rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-right">
@@ -401,7 +401,7 @@ export default function Social() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`relative flex flex-col items-center gap-1 rounded-2xl px-2 py-3 text-[9px] font-black uppercase transition ${
-                activeTab === tab.id ? "bg-purple-600 text-white" : "bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+                activeTab === tab.id ? "bg-purple-600 text-white" : "bg-card border border-border text-muted-foreground"
               }`}
             >
               <tab.icon size={16} />
@@ -454,7 +454,7 @@ export default function Social() {
                 <button
                   onClick={() => setRankingLimit((value) => Math.min(value + RANKING_STEP, RANKING_CAP))}
                   disabled={rankingLoading}
-                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-card/80 backdrop-blur-xl border border-border py-4 text-xs font-black uppercase tracking-widest text-foreground/80 disabled:opacity-60"
+                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-card border border-border py-4 text-xs font-black uppercase tracking-widest text-foreground/80 disabled:opacity-60"
                 >
                   {rankingLoading ? <Loader2 size={14} className="animate-spin text-purple-500" /> : <ChevronDown size={14} className="text-purple-500" />}
                   Ver mais
@@ -491,7 +491,7 @@ export default function Social() {
                         key={group.id}
                         onClick={() => setSelectedGroupId(group.id)}
                         className={`min-w-[180px] rounded-2xl p-4 text-left transition ${
-                          selectedGroupId === group.id ? "border border-purple-500/50 bg-purple-500/15" : "bg-card/80 backdrop-blur-xl border border-border"
+                          selectedGroupId === group.id ? "border border-purple-500/50 bg-purple-500/15" : "bg-card border border-border"
                         }`}
                       >
                         <p className="truncate font-display text-lg font-black">{group.name}</p>
@@ -513,7 +513,7 @@ export default function Social() {
                               {selectedGroup.tag}
                             </div>
                             <h3 className="font-display text-2xl font-black">{selectedGroup.name}</h3>
-                            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{selectedGroup.description || "Grupo de corrida no Veloxy."}</p>
+                            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{selectedGroup.description || "Grupo de corrida no Runnex."}</p>
                           </div>
                           <Users size={28} className="text-purple-500" />
                         </div>
@@ -625,7 +625,7 @@ function AthleteRow({
   compact?: boolean;
 }) {
   return (
-    <div className={`flex items-center gap-4 rounded-2xl ${compact ? "p-3 bg-card/80 backdrop-blur-xl border border-border" : "p-4"} ${active ? "border border-purple-500/35 bg-purple-500/10" : "bg-card/80 backdrop-blur-xl border border-border"}`}>
+    <div className={`flex items-center gap-4 rounded-2xl ${compact ? "p-3 bg-card border border-border" : "p-4"} ${active ? "border border-purple-500/35 bg-purple-500/10" : "bg-card border border-border"}`}>
       <div className="w-8 text-center font-display text-xl font-black text-purple-400">{index + 1}</div>
       <SafeAvatar src={athlete.photoURL} name={athlete.displayName || "Atleta"} className="h-11 w-11 rounded-2xl bg-card" />
       <div className="min-w-0 flex-1">

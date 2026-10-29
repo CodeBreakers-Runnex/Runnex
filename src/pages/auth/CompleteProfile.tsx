@@ -59,7 +59,7 @@ export default function CompleteProfile() {
         onboarded: true,
       });
 
-      toast.success(`Bem-vindo ao Veloxy, ${username}! 🏃‍♂️`);
+      toast.success(`Bem-vindo ao Runnex, ${username}! 🏃‍♂️`);
       navigate("/");
     } catch (err) {
       console.error(err);
@@ -118,7 +118,7 @@ export default function CompleteProfile() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <img src={logo} alt="Veloxy" className="w-24 h-20 object-contain" />
+        <img src={logo} alt="Runnex" className="w-24 h-20 object-contain" />
       </motion.div>
 
       {/* Title */}
@@ -132,7 +132,7 @@ export default function CompleteProfile() {
           Quase lá! 🎉
         </h1>
         <p className="text-gray-400 text-sm max-w-xs">
-          Complete seu perfil para personalizar sua experiência no Veloxy
+          Complete seu perfil para personalizar sua experiência no Runnex
         </p>
       </motion.div>
 

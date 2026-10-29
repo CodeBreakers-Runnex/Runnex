@@ -1,6 +1,5 @@
 import { api, ApiError } from "@/services/apiClient";
-import { toDateSafe } from "@/lib/feed-utils";
-import type { ActivityData, FeedActivity } from "@/types";
+import type { ActivityData, FeedActivity, UserStats } from "@/types";
 
 // Fase 1: os 3 chamadores passam objetos já tipados vindos da API (não mais
 // dados brutos de documento do Firestore), por isso o parâmetro aceita
@@ -24,136 +23,10 @@ export function formatPace(totalSeconds: number, totalKm: number) {
   return `${minutes}'${seconds.toString().padStart(2, "0")}"`;
 }
 
-function dayKeyFromDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function calculateCurrentStreak(activeDays: Set<string>) {
-  if (activeDays.size === 0) return 0;
-
-  const cursor = new Date();
-  let key = dayKeyFromDate(cursor);
-
-  if (!activeDays.has(key)) {
-    cursor.setDate(cursor.getDate() - 1);
-    key = dayKeyFromDate(cursor);
-  }
-
-  let streak = 0;
-  while (activeDays.has(key)) {
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-    key = dayKeyFromDate(cursor);
-  }
-
-  return streak;
-}
-
-function buildEmptyWeekMap(): Record<string, number> {
-  const weekMap: Record<string, number> = {};
-  const today = new Date();
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    weekMap[dayKeyFromDate(d)] = 0;
-  }
-  return weekMap;
-}
-
-function buildWeeklyData(weekMap: Record<string, number>) {
-  const DAY_LABELS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
-  return Object.entries(weekMap).map(([dateStr, km]) => {
-    const d = new Date(dateStr + "T12:00:00");
-    return { day: DAY_LABELS[d.getDay()], km: Number(km.toFixed(2)) };
-  });
-}
-
 function formatTotalTime(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
-
-type ActivityTotals = {
-  totalKm: number;
-  runsCount: number;
-  totalSeconds: number;
-  totalCalories: number;
-  lastActivity: (ActivityData & { id: string }) | null;
-  bestActivity: FeedActivity | null;
-  hasHourLongRun: boolean;
-  hasSub10kRun: boolean;
-};
-
-// Uma unica passada pelas atividades (ja ordenadas da mais recente para a
-// mais antiga) para os totais simples e os flags de conquista baseados em
-// uma corrida so (1h+, sub-10K).
-function computeActivityTotals(activities: FeedActivity[]): ActivityTotals {
-  let totalKm = 0;
-  let runsCount = 0;
-  let totalSeconds = 0;
-  let totalCalories = 0;
-  let lastActivity: (ActivityData & { id: string }) | null = null;
-  let bestActivity: FeedActivity | null = null;
-  let hasHourLongRun = false;
-  let hasSub10kRun = false;
-
-  activities.forEach((activity) => {
-    const distance = Number(activity.distance || 0);
-    const durationSeconds = Number(activity.durationSeconds || 0);
-
-    totalKm += distance;
-    totalSeconds += durationSeconds;
-    totalCalories += Number(activity.calories || 0);
-    runsCount += 1;
-
-    // Primeira iteração = mais recente (ordenado desc)
-    if (!lastActivity) lastActivity = activity;
-    if (!bestActivity || distance > bestActivity.distance) bestActivity = activity;
-
-    if (durationSeconds >= 3600) hasHourLongRun = true;
-    if (distance >= 10 && durationSeconds > 0 && durationSeconds <= 3600) hasSub10kRun = true;
-  });
-
-  return { totalKm, runsCount, totalSeconds, totalCalories, lastActivity, bestActivity, hasHourLongRun, hasSub10kRun };
-}
-
-type CalendarStats = {
-  activeDays: Set<string>;
-  weekMap: Record<string, number>;
-  dawnRunsCount: number;
-  nightRunsCount: number;
-};
-
-// Segunda passada, separada da de totais simples porque depende de
-// data/hora de cada atividade (streak, grafico semanal, conquistas de
-// amanhecer/noite) em vez de so somar valores.
-function computeCalendarStats(activities: FeedActivity[]): CalendarStats {
-  const activeDays = new Set<string>();
-  const weekMap = buildEmptyWeekMap();
-  let dawnRunsCount = 0;
-  let nightRunsCount = 0;
-
-  activities.forEach((activity) => {
-    if (!activity.timestamp && typeof activity.createdAtMs !== "number") return;
-
-    const activityDate = toDateSafe(activity.timestamp) ?? new Date(activity.createdAtMs || 0);
-    const dateKey = dayKeyFromDate(activityDate);
-    activeDays.add(dateKey);
-    if (dateKey in weekMap) {
-      weekMap[dateKey] += Number(activity.distance || 0);
-    }
-
-    // Amanhecer: 4h-7h. Noite: 20h-4h. Usado pelas conquistas "10 amanheceres"/"10 noites".
-    const hour = activityDate.getHours();
-    if (hour >= 4 && hour < 7) dawnRunsCount += 1;
-    else if (hour >= 20 || hour < 4) nightRunsCount += 1;
-  });
-
-  return { activeDays, weekMap, dawnRunsCount, nightRunsCount };
 }
 
 // Salvar uma nova atividade (corrida)
@@ -236,40 +109,49 @@ export const toggleLike = async (activityId: string, userId: string, isLiked: bo
   void userId; // mantido na assinatura: quem curte é sempre o usuario autenticado no backend
 };
 
-// Buscar estatísticas completas do usuário — Fase 1: activities vem do
-// backend próprio. limit=100000 pede "todas" (backend não tem endpoint
-// dedicado de contagem ainda; volume de corridas por usuário é pequeno).
-export const getUserStats = async (userId: string) => {
-  try {
-    const rawActivities = await api.get<FeedActivity[]>(`/activities/user/${userId}?limit=100000`);
-    const activities = rawActivities
-      .map((activity) => normalizeActivity(activity.id, activity))
-      .sort((a, b) => {
-        const dateA = toDateSafe(a.timestamp)?.getTime() ?? a.createdAtMs ?? 0;
-        const dateB = toDateSafe(b.timestamp)?.getTime() ?? b.createdAtMs ?? 0;
-        return dateB - dateA;
-      });
+// Resposta de GET /activities/stats/me: números brutos, o app só formata.
+type UserStatsResponse = {
+  totalKm: number;
+  runsCount: number;
+  totalSeconds: number;
+  totalCalories: number;
+  currentStreak: number;
+  weeklyTotalKm: number;
+  weeklyData: { day: string; km: number }[];
+  hasHourLongRun: boolean;
+  hasSub10kRun: boolean;
+  dawnRunsCount: number;
+  nightRunsCount: number;
+  bestActivity: FeedActivity | null;
+  lastActivity: FeedActivity | null;
+};
 
-    const totals = computeActivityTotals(activities);
-    const calendar = computeCalendarStats(activities);
-    const weeklyData = buildWeeklyData(calendar.weekMap);
-    const weeklyTotalKm = weeklyData.reduce((sum, day) => sum + day.km, 0);
+// Estatísticas do usuário logado. O servidor soma o histórico inteiro
+// (antes o app baixava todas as corridas com limit=100000). O fuso vai junto
+// para a sequência, o gráfico da semana e as conquistas de horário.
+export const getUserStats = async (userId: string): Promise<UserStats> => {
+  void userId; // o backend sempre usa o usuário autenticado
+  try {
+    const utcOffsetMinutes = -new Date().getTimezoneOffset();
+    const stats = await api.get<UserStatsResponse>(`/activities/stats/me?utc_offset_minutes=${utcOffsetMinutes}`);
+    const normalize = (activity: FeedActivity | null) =>
+      activity ? normalizeActivity(activity.id, activity) : null;
 
     return {
-      totalKm: totals.totalKm.toFixed(1),
-      runsCount: totals.runsCount,
-      totalTime: formatTotalTime(totals.totalSeconds),
-      totalCalories: Math.round(totals.totalCalories),
-      averagePace: formatPace(totals.totalSeconds, totals.totalKm),
-      currentStreak: calculateCurrentStreak(calendar.activeDays),
-      weeklyTotalKm: Number(weeklyTotalKm.toFixed(2)),
-      bestActivity: totals.bestActivity,
-      lastActivity: totals.lastActivity,
-      weeklyData,
-      hasHourLongRun: totals.hasHourLongRun,
-      hasSub10kRun: totals.hasSub10kRun,
-      dawnRunsCount: calendar.dawnRunsCount,
-      nightRunsCount: calendar.nightRunsCount,
+      totalKm: stats.totalKm.toFixed(1),
+      runsCount: stats.runsCount,
+      totalTime: formatTotalTime(stats.totalSeconds),
+      totalCalories: Math.round(stats.totalCalories),
+      averagePace: formatPace(stats.totalSeconds, stats.totalKm),
+      currentStreak: stats.currentStreak,
+      weeklyTotalKm: stats.weeklyTotalKm,
+      bestActivity: normalize(stats.bestActivity),
+      lastActivity: normalize(stats.lastActivity),
+      weeklyData: stats.weeklyData,
+      hasHourLongRun: stats.hasHourLongRun,
+      hasSub10kRun: stats.hasSub10kRun,
+      dawnRunsCount: stats.dawnRunsCount,
+      nightRunsCount: stats.nightRunsCount,
     };
   } catch (error) {
     console.error("Erro ao buscar estatísticas:", error);

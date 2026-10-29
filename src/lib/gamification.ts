@@ -1,5 +1,5 @@
 /**
- * Lógica de Gamificação do Veloxy
+ * Lógica de Gamificação do Runnex
  */
 
 export interface LevelInfo {

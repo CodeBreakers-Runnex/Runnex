@@ -40,7 +40,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new ApiError(response.status, getErrorDetail(body.detail) || "Erro na API do Veloxy.");
+    throw new ApiError(response.status, getErrorDetail(body.detail) || "Erro na API do Runnex.");
   }
 
   if (response.status === 204) return undefined as T;

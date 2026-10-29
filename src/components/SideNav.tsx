@@ -22,8 +22,8 @@ export default function SideNav() {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed inset-y-0 left-0 z-[1000] hidden w-64 flex-col border-r border-border bg-card/80 px-4 py-8 backdrop-blur-xl lg:flex">
-      <p className="px-3 font-display text-2xl font-black tracking-tighter text-primary">VELOXY</p>
+    <nav className="fixed inset-y-0 left-0 z-[1000] hidden w-64 flex-col border-r border-border bg-card px-4 py-8 lg:flex">
+      <p className="px-3 font-display text-2xl font-black tracking-tighter text-primary">RUNNEX</p>
 
       <button
         onClick={() => navigate("/run")}

@@ -11,6 +11,7 @@ from app.models import User
 from app.rate_limit import rate_limit
 from app.schemas import UserProfileCreate, UserProfileOut
 from app.services.account_deletion import delete_account
+from app.data_export import export_user_data
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -18,6 +19,16 @@ router = APIRouter(prefix="/users", tags=["users"])
 # Rotas com path estatico (by-ids, ranking/global) precisam vir ANTES de
 # /{user_id} — senao o FastAPI casa "by-ids" e "ranking" como se fossem um
 # user_id literal, ja que rotas sao resolvidas na ordem de declaracao.
+
+
+@router.get("/me/export", dependencies=[Depends(rate_limit("users:export", 5, 3600))])
+def export_my_data(
+    db: Session = Depends(get_db),
+    current_user: FirebaseUser = Depends(get_current_user),
+):
+    """Todos os dados do proprio usuario guardados no Postgres, em JSON
+    (LGPD: acesso e portabilidade). O app junta os dados da conta Firebase."""
+    return export_user_data(db, current_user.uid, datetime.now(timezone.utc))
 
 
 @router.get("/by-ids", response_model=list[UserProfileOut])
