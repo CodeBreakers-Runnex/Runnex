@@ -23,6 +23,7 @@ import { getBestUserPhotoURL } from "@/lib/user-photo";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
+import ScreenTitle from "@/components/ScreenTitle";
 const FEED_LIMIT = 10;
 const PULL_THRESHOLD = 70;
 
@@ -184,7 +185,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
                 fallbackClassName="text-xs font-bold text-purple-500"
               />
             </button>
-            <h1 className="font-display font-black text-2xl tracking-tighter text-purple-500">RUNNEX</h1>
+            <ScreenTitle title="Feed" className="text-center" />
 
             <button
               onClick={handleBellClick}

@@ -24,6 +24,7 @@ import { toDateSafe } from "@/lib/feed-utils";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
+import ScreenTitle from "@/components/ScreenTitle";
 type StatsResult = {
   totalKm: string;
   runsCount: number;
@@ -123,9 +124,7 @@ const Dashboard = () => {
           )}
         </div>
 
-        <h1 className="font-display font-black text-2xl tracking-tighter text-purple-500">
-          RUNNEX STATS
-        </h1>
+        <ScreenTitle title="Estatísticas" />
 
         <motion.button
           whileTap={{ scale: 0.9 }}

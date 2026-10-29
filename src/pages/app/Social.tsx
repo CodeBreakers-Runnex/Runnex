@@ -38,6 +38,7 @@ import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { useBackHandler } from "@/hooks/useBackHandler";
 
+import ScreenTitle from "@/components/ScreenTitle";
 type SocialTab = "feed" | "leaderboard" | "groups" | "events";
 
 const RANKING_STEP = 100;
@@ -385,10 +386,7 @@ export default function Social() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <SafeAvatar src={userPhotoURL} name={displayName} alt="Perfil" className="h-11 w-11 rounded-full border border-purple-500/30 bg-card" />
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground/70">Runnex</p>
-              <h1 className="font-display text-2xl font-black tracking-tighter text-purple-500">SOCIAL</h1>
-            </div>
+            <ScreenTitle title="Social" />
           </div>
 
           <div className="rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-right">

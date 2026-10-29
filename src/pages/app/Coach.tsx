@@ -17,6 +17,7 @@ import {
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
+import ScreenTitle from "@/components/ScreenTitle";
 // Atalhos para o que o treinador responde com os dados do próprio app.
 const SUGGESTIONS = [
   "Minhas estatísticas",
@@ -124,10 +125,7 @@ export default function Coach() {
           >
             <ArrowLeft size={18} />
           </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Runnex</p>
-            <h1 className="font-display text-xl font-black">Treinador</h1>
-          </div>
+          <ScreenTitle title="Treinador" className="flex-1" />
           {messages.length > 0 && (
             <button
               onClick={handleClear}

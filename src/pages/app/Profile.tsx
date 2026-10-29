@@ -44,6 +44,7 @@ import DeleteAccountSection from "@/components/DeleteAccountSection";
 import ExportDataButton from "@/components/ExportDataButton";
 import { useBackHandler } from "@/hooks/useBackHandler";
 
+import ScreenTitle from "@/components/ScreenTitle";
 type Theme = "dark" | "light";
 
 const THEME_STORAGE_KEY = "veloxy-theme";
@@ -614,9 +615,7 @@ const Profile = () => {
     <div className="app-shell pb-24 safe-top">
       {/* Header */}
       <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
-        <h1 className="font-display font-black text-2xl tracking-tighter text-purple-500">
-          RUNNEX PROFILE
-        </h1>
+        <ScreenTitle title="Perfil" />
         <div className="flex gap-2">
             <button
                 onClick={() => setEditOpen(true)}

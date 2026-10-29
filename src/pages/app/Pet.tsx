@@ -28,6 +28,7 @@ import {
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
+import ScreenTitle from "@/components/ScreenTitle";
 // Animacao de "vivo" do pet, uma por humor: feliz pula mais e mais rapido,
 // cansado balanca devagar, triste quase nao se mexe (cabisbaixo).
 const PET_IDLE_ANIMATION: Record<PetMood, { y: number[]; rotate: number[]; duration: number }> = {
@@ -280,10 +281,7 @@ export default function Pet() {
           >
             <ArrowLeft size={18} />
           </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Seu pet</p>
-            <h1 className="truncate font-display text-xl font-black">{profile.petName}</h1>
-          </div>
+          <ScreenTitle title={profile.petName || "Pet"} className="flex-1" />
           <div className="flex items-center gap-1.5 rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-2 text-xs font-black text-purple-300">
             🪙 {(profile.petCoins || 0).toLocaleString("pt-BR")}
           </div>

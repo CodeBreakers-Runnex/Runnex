@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { toDateSafe } from "@/lib/feed-utils";
 import { useBackHandler } from "@/hooks/useBackHandler";
 
+import ScreenTitle from "@/components/ScreenTitle";
 const km = (value: number) =>
   value.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 const errorMessage = (error: unknown) =>
@@ -364,12 +365,7 @@ export default function Shoes() {
         >
           <ArrowLeft size={20} />
         </button>
-        <div className="flex-1">
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">
-            Equipamentos
-          </p>
-          <h1 className="font-display text-2xl font-black">Meus tênis</h1>
-        </div>
+        <ScreenTitle title="Meus tênis" className="flex-1" />
         <button
           disabled={loading || !!error || busy || !!assigning}
           onClick={() => {

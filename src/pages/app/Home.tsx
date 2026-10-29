@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import NextWorkoutCard from "@/components/training/NextWorkoutCard";
 import { useBackHandler } from "@/hooks/useBackHandler";
 
+import ScreenTitle from "@/components/ScreenTitle";
 const KM_TO_MI = 0.621371;
 
 function formatDistance(km: number, unit: DistanceUnit) {
@@ -158,12 +159,7 @@ export default function Home() {
               fallbackClassName="text-xs font-black text-purple-500"
             />
           </button>
-          <div className="text-center">
-            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground/70">Runnex</p>
-            <h1 className="font-display text-2xl font-black tracking-tighter text-purple-500">
-              INICIO
-            </h1>
-          </div>
+          <ScreenTitle title="Início" className="text-center" />
           <button
             onClick={() => navigate("/pet")}
             className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border bg-card ${

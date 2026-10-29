@@ -13,6 +13,7 @@ import { toDateSafe } from "@/lib/feed-utils";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
+import ScreenTitle from "@/components/ScreenTitle";
 const categories = ["Proximos", "Perto", "Inscrito", "Passados"];
 const distanceFilters = ["Todos", "5K", "10K", "21K", "42K"];
 const radiusFilters = [
@@ -195,9 +196,7 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
           )}
         </div>
         
-        <h1 className="font-display font-black text-2xl tracking-tighter text-purple-500">
-          RUNNEX EVENTS
-        </h1>
+        <ScreenTitle title="Eventos" />
         
         <button className="w-10 h-10 rounded-full bg-card flex items-center justify-center border border-border text-muted-foreground" aria-label="Ver calendário de eventos">
           <Calendar size={18} />

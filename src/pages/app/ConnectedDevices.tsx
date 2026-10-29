@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "@/services/apiClient";
 import { healthConnectPermissions, healthConnectStatus, readHealthConnectRuns, requestHealthConnectAccess, type HealthRun } from "@/services/healthConnect";
 
+import ScreenTitle from "@/components/ScreenTitle";
 export default function ConnectedDevices() {
   const [available, setAvailable] = useState(false);
   const [granted, setGranted] = useState(false);
@@ -78,7 +79,7 @@ export default function ConnectedDevices() {
   return (
     <main className="mx-auto max-w-2xl p-6 text-foreground">
       <Link to="/profile" className="text-sm text-purple-400">← Voltar ao perfil</Link>
-      <h1 className="mt-6 text-2xl font-bold">Dispositivos conectados</h1>
+      <ScreenTitle title="Dispositivos" className="mt-6" />
       <p className="mt-2 text-muted-foreground">Leia corridas de relógios e aplicativos que compartilham dados com o Health Connect.</p>
       <section className="mt-6 rounded-2xl border border-border bg-card p-5">
         <h2 className="font-semibold">Android Health Connect</h2>
