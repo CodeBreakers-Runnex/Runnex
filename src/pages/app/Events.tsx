@@ -186,7 +186,7 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
   return (
     <div className={`${embedded ? "min-h-0 pb-4" : "app-shell pb-24 safe-top"}`}>
       {/* Header */}
-      {!embedded && <header className="bg-card/80 backdrop-blur-xl border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+      {!embedded && <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-input overflow-hidden">
           {user?.photoURL ? (
             <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
@@ -220,7 +220,7 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
               className={`px-6 py-2 rounded-full text-[10px] font-black tracking-widest transition-all ${
                 activeTab === c
                   ? "bg-purple-600 text-white"
-                  : "bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+                  : "bg-card border border-border text-muted-foreground"
               }`}
             >
               {c.toUpperCase()}
@@ -232,12 +232,12 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
           <button
             onClick={requestLocation}
             disabled={locationLoading}
-            className="bg-card/80 backdrop-blur-xl border border-border flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground disabled:opacity-60"
+            className="bg-card border border-border flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground disabled:opacity-60"
           >
             {locationLoading ? <Loader2 size={14} className="animate-spin text-purple-500" /> : <Navigation size={14} className="text-purple-500" />}
             {userCoords ? "Localizacao ativa" : "Usar minha localizacao"}
           </button>
-          <div className="bg-card/80 backdrop-blur-xl border border-border flex min-h-12 items-center justify-center rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest text-purple-400">
+          <div className="bg-card border border-border flex min-h-12 items-center justify-center rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest text-purple-400">
             {filteredEvents.length} eventos
           </div>
         </div>
@@ -248,7 +248,7 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
               key={distance}
               onClick={() => setSelectedDistance(distance)}
               className={`rounded-full px-4 py-2 text-[9px] font-black uppercase tracking-widest transition ${
-                selectedDistance === distance ? "bg-purple-600 text-white" : "bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+                selectedDistance === distance ? "bg-purple-600 text-white" : "bg-card border border-border text-muted-foreground"
               }`}
             >
               {distance}
@@ -263,7 +263,7 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
                 key={radius.label}
                 onClick={() => setSelectedRadius(radius.value)}
                 className={`rounded-full px-4 py-2 text-[9px] font-black uppercase tracking-widest transition ${
-                  selectedRadius === radius.value ? "bg-purple-600 text-white" : "bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+                  selectedRadius === radius.value ? "bg-purple-600 text-white" : "bg-card border border-border text-muted-foreground"
                 }`}
               >
                 {radius.label}
@@ -285,7 +285,7 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
               <div className="absolute bottom-8 left-8 right-8 text-white">
                   <div className="flex items-center gap-2 mb-3">
                       <div className="bg-purple-600 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase shadow-lg shadow-purple-600/30">EM BREVE</div>
-                      <div className="bg-black/50 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase">Geral</div>
+                      <div className="bg-black/50 border border-white/10 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase">Geral</div>
                   </div>
                   <h2 className="font-display font-black text-2xl tracking-tighter uppercase mb-2 leading-none">{events[0].title}</h2>
                   <div className="flex items-center gap-4 text-white/70 text-[10px] font-bold uppercase tracking-widest">
@@ -327,7 +327,7 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
                <div className="flex items-center gap-5">
                   <div className="w-24 h-24 rounded-2xl overflow-hidden border border-border relative flex-shrink-0">
                       <EventImage src={event.image} className="w-full h-full object-cover" />
-                      <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md p-1.5 rounded-xl border border-white/10">
+                      <div className="absolute top-2 left-2 bg-black/60 p-1.5 rounded-xl border border-white/10">
                           <Tag size={12} className="text-purple-500" />
                       </div>
                       {(isLocal || typeof distanceKm === "number") && (

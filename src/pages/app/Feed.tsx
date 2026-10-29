@@ -168,7 +168,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
       </AnimatePresence>
 
       {!embedded && (
-      <div className="bg-card/80 backdrop-blur-xl border-b border-border sticky top-0 z-40">
+      <div className="bg-card border-b border-border sticky top-0 z-40">
         <header className="px-6 py-4 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <button
@@ -188,7 +188,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
 
             <button
               onClick={handleBellClick}
-              className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-xl border border-border text-muted-foreground flex items-center justify-center relative active:scale-95 transition-transform"
+              className="w-10 h-10 rounded-full bg-card border border-border text-muted-foreground flex items-center justify-center relative active:scale-95 transition-transform"
               aria-label="Ver curtidas recebidas"
             >
               <Bell size={20} />
@@ -290,7 +290,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
                       layout
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-4 bg-card/80 backdrop-blur-xl border border-border rounded-2xl px-4 py-3"
+                      className="flex items-center gap-4 bg-card border border-border rounded-2xl px-4 py-3"
                     >
                       <div className="w-11 h-11 rounded-full bg-secondary border border-input overflow-hidden flex items-center justify-center flex-shrink-0">
                         <SafeAvatar
@@ -330,7 +330,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
                       layout
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-4 bg-card/80 backdrop-blur-xl border border-border rounded-2xl px-4 py-3"
+                      className="flex items-center gap-4 bg-card border border-border rounded-2xl px-4 py-3"
                     >
                       <div className="w-10 h-10 rounded-full bg-secondary border border-input overflow-hidden flex items-center justify-center flex-shrink-0">
                         <SafeAvatar
@@ -390,7 +390,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
                         onClick={() => setQuery(athlete.name)}
                         className="flex flex-col items-center gap-1.5 min-w-[68px]"
                       >
-                        <div className="w-14 h-14 rounded-2xl bg-card/80 backdrop-blur-xl border border-border overflow-hidden flex items-center justify-center relative">
+                        <div className="w-14 h-14 rounded-2xl bg-card border border-border overflow-hidden flex items-center justify-center relative">
                           <SafeAvatar
                             src={athlete.avatar}
                             name={athlete.name}
@@ -458,7 +458,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
                         whileTap={{ scale: 0.95 }}
                         onClick={handleLoadMore}
                         disabled={loadingMore}
-                        className="flex items-center gap-2 px-6 py-3 bg-card/80 backdrop-blur-xl border border-border rounded-2xl text-xs font-black text-muted-foreground uppercase tracking-widest disabled:opacity-50 transition-opacity"
+                        className="flex items-center gap-2 px-6 py-3 bg-card border border-border rounded-2xl text-xs font-black text-muted-foreground uppercase tracking-widest disabled:opacity-50 transition-opacity"
                       >
                         {loadingMore
                           ? <><Loader2 size={13} className="animate-spin text-purple-500" /> Carregando...</>
