@@ -22,6 +22,8 @@
     "@capacitor-firebase/authentication": "^8.5.2",
     "@capacitor/android": "^8.5.3",
     "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
     "@radix-ui/react-tooltip": "^1.2.7",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
