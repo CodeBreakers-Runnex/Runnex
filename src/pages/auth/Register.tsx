@@ -285,7 +285,7 @@ export default function Register() {
             >
               <motion.img
                 src={logo}
-                alt="Logo Veloxy"
+                alt="Logo Runnex"
                 className="w-24 h-24 sm:w-28 sm:h-28 object-contain mb-2 drop-shadow-2xl"
                 whileHover={{
                   scale: 1.06,
@@ -303,7 +303,7 @@ export default function Register() {
               </h1>
 
               <p className="text-muted-foreground mt-2 text-sm text-center">
-                Comece sua jornada com a Veloxy
+                Comece sua jornada com o Runnex
               </p>
             </motion.div>
 

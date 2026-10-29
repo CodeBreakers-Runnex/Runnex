@@ -386,7 +386,7 @@ export default function Social() {
           <div className="flex items-center gap-3">
             <SafeAvatar src={userPhotoURL} name={displayName} alt="Perfil" className="h-11 w-11 rounded-full border border-purple-500/30 bg-card" />
             <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground/70">Veloxy</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground/70">Runnex</p>
               <h1 className="font-display text-2xl font-black tracking-tighter text-purple-500">SOCIAL</h1>
             </div>
           </div>
@@ -515,7 +515,7 @@ export default function Social() {
                               {selectedGroup.tag}
                             </div>
                             <h3 className="font-display text-2xl font-black">{selectedGroup.name}</h3>
-                            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{selectedGroup.description || "Grupo de corrida no Veloxy."}</p>
+                            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{selectedGroup.description || "Grupo de corrida no Runnex."}</p>
                           </div>
                           <Users size={28} className="text-purple-500" />
                         </div>

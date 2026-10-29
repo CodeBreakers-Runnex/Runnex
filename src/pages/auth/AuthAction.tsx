@@ -31,7 +31,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         transition={{ duration: 0.35 }}
         className={cn(GLASS_CARD_CLASS, "w-full max-w-[440px] p-6 sm:p-8 text-center")}
       >
-        <img src={logo} alt="Logo Veloxy" className="w-20 h-20 object-contain mx-auto mb-4" />
+        <img src={logo} alt="Logo Runnex" className="w-20 h-20 object-contain mx-auto mb-4" />
         {children}
       </motion.div>
     </div>
@@ -150,7 +150,7 @@ export default function AuthAction() {
           to="/"
           className="block w-full bg-purple-600 hover:bg-purple-700 transition rounded-xl py-3 text-white text-sm font-semibold"
         >
-          Ir para o Veloxy
+          Ir para o Runnex
         </Link>
       </Shell>
     );

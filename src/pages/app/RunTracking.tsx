@@ -1016,7 +1016,7 @@ const RunTracking = () => {
                 exit={{ opacity: 0, y: 28, scale: 0.96 }}
                 className={cn(GLASS_CARD_CLASS, "pointer-events-auto w-full max-w-md p-6")}
               >
-                <p className="text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground">Veloxy</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground">Runnex</p>
                 <h2 className="mt-1 font-display text-xl font-black text-purple-500 uppercase">Corrida nao finalizada</h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                   Encontramos {recoverableRun.distance.toFixed(2)} km de uma corrida que nao chegou a ser salva. Quer continuar de onde parou ou descartar?
@@ -1072,7 +1072,7 @@ const RunTracking = () => {
                   </button>
                 </div>
                 <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                  Abra sua playlist antes ou durante a corrida. O Veloxy continua acompanhando o treino quando você voltar para o app.
+                  Abra sua playlist antes ou durante a corrida. O Runnex continua acompanhando o treino quando você voltar para o app.
                 </p>
                 <div className="grid gap-3">
                   {[

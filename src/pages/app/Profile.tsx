@@ -209,7 +209,7 @@ function SettingsModal({
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Veloxy</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Runnex</p>
                 <h2 className="font-display text-2xl font-black text-purple-500">CONFIGURAÇÕES</h2>
               </div>
               <button onClick={onClose} className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground" aria-label="Fechar">
@@ -218,7 +218,7 @@ function SettingsModal({
             </div>
 
             <div className="max-h-[calc(82svh-7rem)] overflow-y-auto no-scrollbar space-y-3 pb-1">
-              <SettingsRow icon={theme === "light" ? <Sun size={18} /> : <Moon size={18} />} title="Tema do app" description="Escolha como o Veloxy aparece na tela.">
+              <SettingsRow icon={theme === "light" ? <Sun size={18} /> : <Moon size={18} />} title="Tema do app" description="Escolha como o Runnex aparece na tela.">
                 <div className="relative flex rounded-2xl bg-background/50 border border-border p-1">
                   {(["dark", "light"] as Theme[]).map((option) => (
                     <button
@@ -615,7 +615,7 @@ const Profile = () => {
       {/* Header */}
       <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <h1 className="font-display font-black text-2xl tracking-tighter text-purple-500">
-          VELOXY PROFILE
+          RUNNEX PROFILE
         </h1>
         <div className="flex gap-2">
             <button

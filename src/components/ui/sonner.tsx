@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "sonner";
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const theme = "dark"; // Defaulting to dark for Veloxy since next-themes was removed
+  const theme = "dark"; // Defaulting to dark for Runnex since next-themes was removed
 
   return (
     <Sonner

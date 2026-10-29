@@ -184,7 +184,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
                 fallbackClassName="text-xs font-bold text-purple-500"
               />
             </button>
-            <h1 className="font-display font-black text-2xl tracking-tighter text-purple-500">VELOXY</h1>
+            <h1 className="font-display font-black text-2xl tracking-tighter text-purple-500">RUNNEX</h1>
 
             <button
               onClick={handleBellClick}

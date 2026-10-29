@@ -125,7 +125,7 @@ export default function Coach() {
             <ArrowLeft size={18} />
           </button>
           <div className="min-w-0 flex-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Veloxy</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Runnex</p>
             <h1 className="font-display text-xl font-black">Treinador</h1>
           </div>
           {messages.length > 0 && (

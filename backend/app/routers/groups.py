@@ -63,7 +63,7 @@ def _serialize_group(group: Group, users: UserCache) -> GroupOut:
         tag=group.tag,
         photo_url=group.photo_url,
         created_by=group.created_by,
-        creator_name=creator.display_name if creator else "Veloxy",
+        creator_name=creator.display_name if creator else "Runnex",
         member_ids=member_ids,
         members_count=len(member_ids),
         weekly_km=group.weekly_km,

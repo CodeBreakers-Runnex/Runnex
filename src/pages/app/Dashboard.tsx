@@ -124,7 +124,7 @@ const Dashboard = () => {
         </div>
 
         <h1 className="font-display font-black text-2xl tracking-tighter text-purple-500">
-          VELOXY STATS
+          RUNNEX STATS
         </h1>
 
         <motion.button

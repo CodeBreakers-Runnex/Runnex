@@ -196,7 +196,7 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
         </div>
         
         <h1 className="font-display font-black text-2xl tracking-tighter text-purple-500">
-          VELOXY EVENTS
+          RUNNEX EVENTS
         </h1>
         
         <button className="w-10 h-10 rounded-full bg-card flex items-center justify-center border border-border text-muted-foreground" aria-label="Ver calendário de eventos">

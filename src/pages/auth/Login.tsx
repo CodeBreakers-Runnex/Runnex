@@ -280,7 +280,7 @@ export default function Login() {
 
             <motion.img
               src={logo}
-              alt="Logo Veloxy"
+              alt="Logo Runnex"
               className="w-24 h-24 sm:w-32 sm:h-32 object-contain mb-3 drop-shadow-2xl"
               whileHover={{
                 scale: 1.06,

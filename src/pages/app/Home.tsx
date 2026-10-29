@@ -159,7 +159,7 @@ export default function Home() {
             />
           </button>
           <div className="text-center">
-            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground/70">Veloxy</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground/70">Runnex</p>
             <h1 className="font-display text-2xl font-black tracking-tighter text-purple-500">
               INICIO
             </h1>
