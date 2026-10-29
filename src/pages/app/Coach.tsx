@@ -17,6 +17,7 @@ import {
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
+import ScreenTitle from "@/components/ScreenTitle";
 // Atalhos para o que o treinador responde com os dados do próprio app.
 const SUGGESTIONS = [
   "Minhas estatísticas",
@@ -115,19 +116,16 @@ export default function Coach() {
 
   return (
     <div className="app-shell flex h-[100svh] flex-col pb-28 safe-top lg:pb-6">
-      <header className="shrink-0 bg-card/80 backdrop-blur-xl border-b border-border px-5 py-4">
+      <header className="shrink-0 bg-card border-b border-border px-5 py-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card border border-border text-muted-foreground"
             aria-label="Voltar"
           >
             <ArrowLeft size={18} />
           </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Veloxy</p>
-            <h1 className="font-display text-xl font-black">Treinador</h1>
-          </div>
+          <ScreenTitle title="Treinador" className="flex-1" />
           {messages.length > 0 && (
             <button
               onClick={handleClear}

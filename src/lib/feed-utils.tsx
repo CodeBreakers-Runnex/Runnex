@@ -46,10 +46,10 @@ export const formatCardDate = (timestamp: TimestampLike | null | undefined, fall
 
 export const shareActivity = async (item: FeedActivity) => {
   const distanceFixed = Number(item.distance || 0).toFixed(2);
-  const text = `🏃 ${item.userName} correu ${distanceFixed}km em ${item.time} com pace ${item.pace}/km! 🔥\n\nVeloxy Running App`;
+  const text = `🏃 ${item.userName} correu ${distanceFixed}km em ${item.time} com pace ${item.pace}/km! 🔥\n\nRunnex`;
   try {
     if (navigator.share) {
-      await navigator.share({ title: "Veloxy Run", text });
+      await navigator.share({ title: "Runnex", text });
     } else {
       await navigator.clipboard.writeText(text);
       toast.success("Copiado para a área de transferência!");

@@ -6,7 +6,7 @@ from app.routers import recovery
 from app.routers import training
 from app.routers import health_imports
 
-app = FastAPI(title="Veloxy API")
+app = FastAPI(title="Runnex API")
 
 app.add_middleware(
     CORSMiddleware,

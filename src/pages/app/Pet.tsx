@@ -28,6 +28,7 @@ import {
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
+import ScreenTitle from "@/components/ScreenTitle";
 // Animacao de "vivo" do pet, uma por humor: feliz pula mais e mais rapido,
 // cansado balanca devagar, triste quase nao se mexe (cabisbaixo).
 const PET_IDLE_ANIMATION: Record<PetMood, { y: number[]; rotate: number[]; duration: number }> = {
@@ -85,7 +86,7 @@ function PetOnboarding({ onAdopt, adopting }: { onAdopt: (species: PetSpecies, n
             key={item.id}
             onClick={() => setSpecies(item.id)}
             className={`flex flex-col items-center gap-2 rounded-2xl border p-4 transition ${
-              species === item.id ? "border-purple-500 bg-purple-500/10" : "border-border bg-card/80 backdrop-blur-xl"
+              species === item.id ? "border-purple-500 bg-purple-500/10" : "border-border bg-card"
             }`}
           >
             <span className="text-4xl">{item.emoji}</span>
@@ -271,19 +272,16 @@ export default function Pet() {
 
   return (
     <div className="app-shell pb-24 safe-top">
-      <header className="bg-card/80 backdrop-blur-xl border-b border-border sticky top-0 z-40 px-5 py-4">
+      <header className="bg-card border-b border-border sticky top-0 z-40 px-5 py-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card border border-border text-muted-foreground"
             aria-label="Voltar"
           >
             <ArrowLeft size={18} />
           </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Seu pet</p>
-            <h1 className="truncate font-display text-xl font-black">{profile.petName}</h1>
-          </div>
+          <ScreenTitle title={profile.petName || "Pet"} className="flex-1" />
           <div className="flex items-center gap-1.5 rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-2 text-xs font-black text-purple-300">
             🪙 {(profile.petCoins || 0).toLocaleString("pt-BR")}
           </div>
@@ -323,7 +321,7 @@ export default function Pet() {
 
         <p className="mt-5 font-display text-2xl font-black uppercase tracking-tighter">{profile.petName}</p>
         <p className="mt-1 text-xs font-black uppercase tracking-widest text-muted-foreground">{speciesInfo?.label}</p>
-        <div className="mt-3 rounded-full border border-border bg-card/80 backdrop-blur-xl px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <div className="mt-3 rounded-full border border-border bg-card px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {PET_MOOD_LABEL[mood]}
         </div>
 
@@ -347,7 +345,7 @@ export default function Pet() {
           <button
             onClick={() => setTab("acessorios")}
             className={`rounded-2xl py-3 text-xs font-black uppercase tracking-widest transition ${
-              tab === "acessorios" ? "bg-purple-600 text-white" : "bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+              tab === "acessorios" ? "bg-purple-600 text-white" : "bg-card border border-border text-muted-foreground"
             }`}
           >
             Acessórios
@@ -355,7 +353,7 @@ export default function Pet() {
           <button
             onClick={() => setTab("loja")}
             className={`flex items-center justify-center gap-1.5 rounded-2xl py-3 text-xs font-black uppercase tracking-widest transition ${
-              tab === "loja" ? "bg-purple-600 text-white" : "bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+              tab === "loja" ? "bg-purple-600 text-white" : "bg-card border border-border text-muted-foreground"
             }`}
           >
             <ShoppingBag size={13} />
@@ -452,7 +450,7 @@ function AccessoryRow({
   disabled?: boolean;
 }) {
   return (
-    <div className={`flex items-center gap-4 rounded-2xl bg-card/80 backdrop-blur-xl border p-4 ${equipped ? "border-purple-500/50" : "border-border"} ${locked ? "opacity-50" : ""}`}>
+    <div className={`flex items-center gap-4 rounded-2xl bg-card border p-4 ${equipped ? "border-purple-500/50" : "border-border"} ${locked ? "opacity-50" : ""}`}>
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary/60 border border-input text-2xl">
         {locked ? <Lock size={18} className="text-muted-foreground" /> : accessory.emoji}
       </div>

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import desc, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.activity_rules import MAX_DURATION_PER_DAY_SECONDS
@@ -12,8 +13,10 @@ from app.gamification import calculate_run_coins, calculate_xp, get_level_from_x
 from app.listing import MAX_PAGE_SIZE, page_size, visible_to
 from app.models import Activity, User
 from app.rate_limit import rate_limit
+from app.route_privacy import trim_route_edges
 from app.performance import performance_summary
-from app.schemas import ActivityCreate, ActivityOut, SaveActivityResult, ToggleLikeIn
+from app.schemas import ActivityCreate, ActivityOut, SaveActivityResult, ToggleLikeIn, UserStatsOut
+from app.user_stats import user_stats
 from app.schemas_shoe import ActivityShoeInput
 from app.services.shoes import owned_shoe
 from app.services.activity_effects import (
@@ -38,6 +41,12 @@ def save_activity(
 ):
     if current_user.uid != payload.user_id:
         raise HTTPException(status_code=403, detail="userId nao corresponde ao usuario autenticado.")
+
+    # Fila offline: o mesmo clientId chegando de novo (a resposta anterior se
+    # perdeu na rede) devolve a corrida ja salva em vez de duplicar XP e km.
+    existing = _activity_by_client_id(db, payload.user_id, payload.client_id)
+    if existing is not None:
+        return SaveActivityResult(id=existing.id, xp_update_failed=False)
 
     # Velocidade e rota ja foram checadas no schema (activity_rules); aqui
     # fica o que depende do banco: ninguem corre mais de 24h em 24h.
@@ -91,12 +100,26 @@ def save_activity(
         heart_rate_samples=[{"elapsedSeconds": p.elapsed_seconds, "bpm": p.bpm, "segmentId": p.segment_id} for p in payload.heart_rate_samples] if payload.heart_rate_samples else None,
         heart_rate_max_bpm=payload.heart_rate_max_bpm,
         is_simulated=payload.is_simulated,
+        client_id=payload.client_id,
     )
+    finished_at = _plausible_finished_at(payload.finished_at)
+    if finished_at is not None:
+        activity.created_at = finished_at
     db.add(activity)
 
     try:
         db.commit()
         db.refresh(activity)
+    except IntegrityError as exc:
+        # Dois envios do mesmo clientId ao mesmo tempo: o segundo perde a
+        # corrida no indice unico e devolve o que o primeiro gravou.
+        db.rollback()
+        existing = _activity_by_client_id(db, payload.user_id, payload.client_id)
+        if existing is not None:
+            return SaveActivityResult(id=existing.id, xp_update_failed=False)
+        print("ERRO AO SALVAR ATIVIDADE:")
+        print(traceback.format_exc(), flush=True)
+        raise HTTPException(status_code=500, detail="Erro ao salvar atividade.") from exc
     except Exception as exc:
         db.rollback()
         print("ERRO AO SALVAR ATIVIDADE:")
@@ -124,6 +147,29 @@ def save_activity(
     return SaveActivityResult(id=activity.id, xp_update_failed=xp_update_failed)
 
 
+# Uma corrida da fila offline pode subir dias depois; mais que isso, ou uma
+# hora no futuro (relogio do celular errado), cai para a hora do envio.
+MAX_OFFLINE_AGE = timedelta(days=14)
+MAX_CLOCK_SKEW = timedelta(minutes=5)
+
+
+def _plausible_finished_at(finished_at: datetime | None) -> datetime | None:
+    if finished_at is None:
+        return None
+    if finished_at.tzinfo is None:
+        finished_at = finished_at.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    if now - MAX_OFFLINE_AGE <= finished_at <= now + MAX_CLOCK_SKEW:
+        return min(finished_at, now)
+    return None
+
+
+def _activity_by_client_id(db: Session, user_id: str, client_id: str | None) -> Activity | None:
+    if not client_id:
+        return None
+    return db.query(Activity).filter(Activity.user_id == user_id, Activity.client_id == client_id).first()
+
+
 @router.get("/performance/me")
 def get_performance(
     utc_offset_minutes: int = 0,
@@ -136,6 +182,35 @@ def get_performance(
     return performance_summary(rows, datetime.now(timezone.utc), utc_offset_minutes)
 
 
+@router.get("/stats/me", response_model=UserStatsOut)
+def get_my_stats(
+    utc_offset_minutes: int = 0,
+    db: Session = Depends(get_db),
+    current_user: FirebaseUser = Depends(get_current_user),
+):
+    """Totais, sequencia, grafico da semana e flags de conquista do proprio
+    usuario, calculados aqui em vez de o app baixar todas as corridas."""
+    if not -720 <= utc_offset_minutes <= 840:
+        raise HTTPException(status_code=422, detail="Fuso inválido.")
+    stats = user_stats(db, current_user.uid, datetime.now(timezone.utc), utc_offset_minutes)
+    for key in ("bestActivity", "lastActivity"):
+        if stats[key] is not None:
+            stats[key] = ActivityOut.model_validate(stats[key])
+    return stats
+
+
+def _for_viewer(activities: list[Activity], viewer_uid: str) -> list[ActivityOut]:
+    """Corridas de outras pessoas saem sem os primeiros e ultimos 200 m da
+    rota (app/route_privacy.py). Copia o schema: o objeto do banco nao muda."""
+    result = []
+    for activity in activities:
+        out = ActivityOut.model_validate(activity)
+        if activity.user_id != viewer_uid:
+            out = out.model_copy(update={"route": trim_route_edges(out.route)})
+        result.append(out)
+    return result
+
+
 @router.get("/user/{user_id}", response_model=list[ActivityOut])
 def get_user_activities(
     user_id: str,
@@ -143,7 +218,8 @@ def get_user_activities(
     db: Session = Depends(get_db),
     current_user: FirebaseUser = Depends(get_current_user),
 ):
-    """limit=None retorna todas as corridas do usuario (usado por getUserStats no frontend).
+    """O proprio usuario pode pedir sem limite. O app atual usa /stats/me para
+    os totais; o limite livre fica para os APKs antigos (limit=100000).
 
     Bug real encontrado em revisao: private_profile so era respeitado no
     ranking global - as corridas de uma conta privada continuavam visiveis
@@ -154,12 +230,12 @@ def get_user_activities(
 
     q = db.query(Activity).filter(Activity.user_id == user_id).order_by(desc(Activity.created_at))
     if current_user.uid == user_id:
-        # O proprio usuario pode pedir tudo: getUserStats soma o historico inteiro.
+        # O proprio usuario pode pedir tudo (APKs antigos somam o historico no app).
         if limit is not None:
             q = q.limit(max(1, limit))
     else:
         q = q.limit(page_size(limit if limit is not None else MAX_PAGE_SIZE))
-    return q.all()
+    return _for_viewer(q.all(), current_user.uid)
 
 
 @router.get("/by-users", response_model=list[ActivityOut])
@@ -174,7 +250,7 @@ def get_activities_by_users(
     ids = [uid for uid in user_ids.split(",") if uid]
     if not ids:
         return []
-    return (
+    rows = (
         db.query(Activity)
         .join(User, User.uid == Activity.user_id)
         .filter(Activity.user_id.in_(ids), visible_to(current_user.uid))
@@ -182,6 +258,7 @@ def get_activities_by_users(
         .limit(page_size(limit))
         .all()
     )
+    return _for_viewer(rows, current_user.uid)
 
 
 @router.get("/feed", response_model=list[ActivityOut])
@@ -204,7 +281,7 @@ def get_feed(
     )
     if before_id is not None:
         q = q.filter(Activity.id < before_id)
-    return q.limit(page_size(limit)).all()
+    return _for_viewer(q.limit(page_size(limit)).all(), current_user.uid)
 
 
 @router.put("/{activity_id}/shoe", response_model=ActivityOut, dependencies=[Depends(rate_limit("activities:shoe", 60, 60))])

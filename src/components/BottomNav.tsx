@@ -24,7 +24,7 @@ const BottomNav = () => {
   if (location.pathname === "/run") return null;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[1000] bg-card/80 backdrop-blur-xl border-t border-border safe-bottom">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[1000] bg-card border-t border-border safe-bottom">
       <div className="flex items-center justify-around px-2 pt-3 pb-2 max-w-lg mx-auto relative">
         {tabs.map((tab, idx) => {
           if (tab.path === "RECORD") {

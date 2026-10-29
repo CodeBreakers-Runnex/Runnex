@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import type { ReactNode } from "react";
 import RunTracking from "@/pages/app/RunTracking";
 import { selectPlannedRun } from "@/lib/trainingRunSelection";
+import { ApiError } from "@/services/apiClient";
 
 const mocks = vi.hoisted(() => ({ uid: "ana", save: vi.fn(), load: vi.fn(), complete: vi.fn(), shoes: vi.fn(), warn: vi.fn(), success: vi.fn(), navigate: vi.fn() }));
 vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: { uid: mocks.uid, displayName: mocks.uid, providerData: [], photoURL: null } }) }));
@@ -50,13 +51,26 @@ describe("corrida iniciada por treino", () => {
     expect(mocks.save).toHaveBeenCalledTimes(1);
     expect(mocks.navigate).toHaveBeenCalledWith("/calendario-treinos");
   });
-  it("falha ao salvar mantém o rascunho e não conclui o treino", async () => {
-    mocks.save.mockRejectedValue(new Error("Falha no envio"));
+  it("recusa do servidor mantém o rascunho e não conclui o treino", async () => {
+    mocks.save.mockRejectedValue(new ApiError(422, "Velocidade acima do permitido."));
     await finish();
     await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(1));
     expect(mocks.complete).not.toHaveBeenCalled();
     expect(localStorage.getItem("veloxy_active_run_v1")).not.toBeNull();
+    expect(localStorage.getItem("runnex-offline-runs:ana")).toBeNull();
     expect(mocks.navigate).not.toHaveBeenCalled();
+  });
+  it("sem rede, guarda a corrida na fila com o treino e encerra a tela", async () => {
+    mocks.save.mockRejectedValue(new TypeError("Failed to fetch"));
+    await finish();
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith("/calendario-treinos"));
+    const queued = JSON.parse(localStorage.getItem("runnex-offline-runs:ana")!);
+    expect(queued).toHaveLength(1);
+    expect(queued[0].workoutId).toBe(5);
+    expect(queued[0].payload.clientId).toBe(mocks.save.mock.calls[0][0].clientId);
+    expect(queued[0].payload.finishedAt).toEqual(expect.any(String));
+    expect(mocks.complete).not.toHaveBeenCalled();
+    expect(localStorage.getItem("veloxy_active_run_v1")).toBeNull();
   });
   it("pausa a corrida e bloqueia a retomada enquanto salva", async () => {
     let resolve!: (result: { id: string; xpUpdateFailed: boolean }) => void;

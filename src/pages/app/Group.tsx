@@ -43,6 +43,7 @@ import { getBestUserPhotoURL } from "@/lib/user-photo";
 import { formatCardDate, toDateSafe } from "@/lib/feed-utils";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
 type GroupTab = "feed" | "chat";
 
@@ -83,7 +84,7 @@ function StateScreen({
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate("/social")}
-          className="rounded-xl border border-border bg-card/80 backdrop-blur-xl px-6 py-3 text-xs font-black uppercase tracking-widest text-foreground/80"
+          className="rounded-xl border border-border bg-card px-6 py-3 text-xs font-black uppercase tracking-widest text-foreground/80"
         >
           Voltar aos grupos
         </button>
@@ -150,7 +151,7 @@ function PostComposer({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="mb-4 flex w-full items-center gap-3 rounded-2xl bg-card/80 backdrop-blur-xl border border-border p-4 text-left"
+        className="mb-4 flex w-full items-center gap-3 rounded-2xl bg-card border border-border p-4 text-left"
       >
         <SafeAvatar src={authorPhoto} name={authorName} className="h-9 w-9 rounded-full bg-secondary shrink-0" />
         <span className="text-sm text-muted-foreground">O que você quer compartilhar com o grupo?</span>
@@ -544,6 +545,7 @@ function GroupOptionsModal({ open, onClose, group, onLeave, leaving }: {
   onLeave: () => void;
   leaving: boolean;
 }) {
+  useBackHandler(open, () => { if (!leaving) onClose(); });
   return (
     <AnimatePresence>
       {open && (
@@ -715,7 +717,7 @@ export default function Group() {
       <div className="app-shell relative flex flex-col items-center justify-center gap-5 px-6 text-center safe-top">
         <button
           onClick={() => navigate("/social")}
-          className="absolute left-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+          className="absolute left-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-card border border-border text-muted-foreground"
           aria-label="Voltar"
         >
           <ArrowLeft size={18} />
@@ -745,11 +747,11 @@ export default function Group() {
 
   return (
     <div className="app-shell pb-24 safe-top">
-      <header className="bg-card/80 backdrop-blur-xl border-b border-border sticky top-0 z-40 px-5 py-4">
+      <header className="bg-card border-b border-border sticky top-0 z-40 px-5 py-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/social")}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card border border-border text-muted-foreground"
             aria-label="Voltar"
           >
             <ArrowLeft size={18} />
@@ -766,7 +768,7 @@ export default function Group() {
 
           <button
             onClick={() => setOptionsOpen(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card border border-border text-muted-foreground"
             aria-label="Opções do grupo"
           >
             <Settings size={18} />
@@ -786,7 +788,7 @@ export default function Group() {
               key={tab.id}
               onClick={() => setMobileTab(tab.id)}
               className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest transition ${
-                mobileTab === tab.id ? "bg-purple-600 text-white" : "bg-card/80 backdrop-blur-xl border border-border text-muted-foreground"
+                mobileTab === tab.id ? "bg-purple-600 text-white" : "bg-card border border-border text-muted-foreground"
               }`}
             >
               <tab.icon size={14} />

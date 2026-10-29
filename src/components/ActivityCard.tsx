@@ -58,12 +58,12 @@ const ActivityCard = ({ item, userUid, idx, onLike }: ActivityCardProps) => {
       >
         <RouteSVGPreview route={item.route} uid={item.id} />
         <div className="absolute bottom-3 left-4">
-          <div className="bg-black/60 backdrop-blur-md border border-purple-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 shimmer-sweep">
+          <div className="bg-black/60 border border-purple-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 shimmer-sweep">
             <span className="text-purple-400">{badge.icon}</span>
             <span className="text-[9px] font-black uppercase tracking-widest text-white">{badge.label}</span>
           </div>
         </div>
-        <div className="absolute top-3 right-4 bg-black/70 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-2xl">
+        <div className="absolute top-3 right-4 bg-black/70 border border-white/10 px-3 py-1.5 rounded-2xl">
           <span className="font-display font-black text-white text-lg leading-none">{Number(item.distance).toFixed(2)}</span>
           <span className="text-[9px] font-black text-purple-400 ml-0.5">km</span>
         </div>

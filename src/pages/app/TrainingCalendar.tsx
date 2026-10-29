@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { addDays, addMonths } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserActivities } from "@/services/database";
 import { createWorkout, deleteWorkout, getTrainingSummary, getWorkouts, linkWorkoutActivity, setWorkoutStatus, updateWorkout } from "@/services/trainingApi";
@@ -14,6 +14,7 @@ import WorkoutDetails from "@/components/training/WorkoutDetails";
 import type { FeedActivity } from "@/types";
 import type { TrainingSummary, Workout, WorkoutInput } from "@/types/training";
 
+import ScreenTitle from "@/components/ScreenTitle";
 type LoadedAgenda = { uid: string; workouts: Workout[]; activities: FeedActivity[]; summary: TrainingSummary };
 type FormState = { uid: string | undefined; workout?: Workout; copy?: boolean; day: string };
 const buttonClass = "rounded-xl border border-border bg-card px-3 py-2 text-sm font-bold disabled:opacity-50";
@@ -89,7 +90,7 @@ export default function TrainingCalendar() {
   };
 
   return <div className="app-shell pb-28 safe-top">
-    <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-card/90 px-5 py-4 backdrop-blur-xl"><div className="flex items-center gap-3"><CalendarDays className="shrink-0 text-primary" /><h1 className="text-xl font-black">Calendário de treinos</h1></div><button className="rounded-xl bg-primary p-3 text-primary-foreground disabled:opacity-50" disabled={busy} aria-label="Adicionar treino" onClick={() => setForm({ uid, day })}><Plus size={20} /></button></header>
+    <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-card px-5 py-4"><ScreenTitle title="Treinos" /><button className="rounded-xl bg-primary p-3 text-primary-foreground disabled:opacity-50" disabled={busy} aria-label="Adicionar treino" onClick={() => setForm({ uid, day })}><Plus size={20} /></button></header>
     <main className="space-y-5 px-4 py-5 sm:px-6">
       <p className="text-sm text-muted-foreground">Organize seus próximos treinos e acompanhe o que realizou.</p>
       <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex gap-2">{(["month", "week", "list"] as const).map(mode => <button key={mode} className={`${buttonClass} ${view === mode ? "border-primary text-primary" : ""}`} aria-pressed={view === mode} disabled={busy} onClick={() => setView(mode)}>{mode === "month" ? "Mês" : mode === "week" ? "Semana" : "Lista"}</button>)}</div><button className={buttonClass} disabled={busy} onClick={() => setDay(dayKey(new Date()))}>Hoje</button></div>

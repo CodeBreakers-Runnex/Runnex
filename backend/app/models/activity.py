@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import ARRAY, Boolean, DateTime, ForeignKey, Integer, JSON, String
+from sqlalchemy import ARRAY, Boolean, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -9,6 +9,7 @@ from app.time_utils import utcnow
 
 class Activity(Base):
     __tablename__ = "activities"
+    __table_args__ = (UniqueConstraint("user_id", "client_id", name="uq_activities_user_client_id"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.uid", ondelete="CASCADE"), nullable=False)
@@ -33,5 +34,7 @@ class Activity(Base):
     heart_rate_samples: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
     heart_rate_max_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_simulated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Gerado no celular; único por usuário (uq_activities_user_client_id).
+    client_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     user = relationship("User", back_populates="activities")

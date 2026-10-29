@@ -11,9 +11,11 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import AndroidBackButton from "@/components/AndroidBackButton";
 import BottomNav from "@/components/BottomNav";
 import SideNav from "@/components/SideNav";
 import TermsGate from "@/components/TermsGate";
+import OfflineRunSync from "@/components/OfflineRunSync";
 import PrivateRoute from "@/components/PrivateRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/hooks/AuthContext";
@@ -84,6 +86,7 @@ function ProtectedLayout() {
         {!isRunScreen && <SideNav />}
         <BottomNav />
         <TermsGate />
+        <OfflineRunSync />
       </div>
     </PrivateRoute>
   );
@@ -109,6 +112,7 @@ const App = () => {
 
         <AuthProvider>
           <BrowserRouter>
+            <AndroidBackButton />
             <Suspense fallback={<AppLoading />}>
               <Routes>
                 {/* =========================

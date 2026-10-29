@@ -14,6 +14,7 @@ import { clearSleepSync, exportSleepData, openSleepHealthSettings, requestSleepP
 import type { SleepHealthStatus } from "@/services/sleepHealthConnect";
 import type { RecoveryOverview, SleepInput, SleepSession } from "@/types/sleep";
 
+import ScreenTitle from "@/components/ScreenTitle";
 const panel = "rounded-3xl border border-border bg-card/80 p-5 shadow-card sm:p-6";
 const action = "inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm font-bold transition hover:bg-secondary/70 disabled:opacity-50";
 
@@ -194,7 +195,7 @@ export default function Sleep() {
     <main className="app-shell pb-28">
       <header className="app-header flex items-center gap-4 px-5 py-5 sm:px-8">
         <Link to="/profile" aria-label="Voltar ao perfil" className="rounded-xl p-2 hover:bg-secondary"><ArrowLeft size={20} /></Link>
-        <div className="flex-1"><p className="text-xs font-bold uppercase tracking-widest text-primary">Seu descanso também conta</p><h1 className="mt-1 text-2xl font-black sm:text-3xl">Sono e recuperação</h1></div>
+        <ScreenTitle title="Sono" className="flex-1" />
         <span className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground"><Lock size={12} />Privado</span>
       </header>
       <div className="space-y-5 px-5 py-6 sm:px-8">

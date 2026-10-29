@@ -1,4 +1,4 @@
-// ─── Veloxy — Types Centralizados ────────────────────────────────────────────
+// ─── Runnex — Types Centralizados ────────────────────────────────────────────
 // Todas as interfaces ficam aqui para manter uma única fonte de verdade.
 // Importar a partir daqui em vez de database.ts quando precisar apenas dos tipos.
 
