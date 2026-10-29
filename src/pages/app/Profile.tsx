@@ -45,6 +45,8 @@ import ExportDataButton from "@/components/ExportDataButton";
 import { useBackHandler } from "@/hooks/useBackHandler";
 
 import ScreenTitle from "@/components/ScreenTitle";
+import { features } from "@/config/features";
+
 type Theme = "dark" | "light";
 
 const THEME_STORAGE_KEY = "veloxy-theme";
@@ -694,11 +696,13 @@ const Profile = () => {
           <h3 className="font-display font-black text-sm tracking-tighter">SEU PROGRESSO</h3>
         </div>
 
-        <button onClick={() => navigate("/sono")} className="mb-4 flex w-full items-center gap-3 rounded-3xl border border-border bg-card/80 p-4 text-left transition hover:bg-secondary">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Moon size={22} /></div>
-          <div className="flex-1"><p className="text-sm font-black">Sono e recuperação</p><p className="mt-1 text-xs text-muted-foreground">Acompanhe seu descanso junto aos treinos</p></div>
-          <ChevronRight size={18} className="text-muted-foreground" />
-        </button>
+        {features.sleep && (
+          <button onClick={() => navigate("/sono")} className="mb-4 flex w-full items-center gap-3 rounded-3xl border border-border bg-card/80 p-4 text-left transition hover:bg-secondary">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Moon size={22} /></div>
+            <div className="flex-1"><p className="text-sm font-black">Sono e recuperação</p><p className="mt-1 text-xs text-muted-foreground">Acompanhe seu descanso junto aos treinos</p></div>
+            <ChevronRight size={18} className="text-muted-foreground" />
+          </button>
+        )}
 
         <button
           onClick={() => navigate("/pet")}
@@ -790,11 +794,13 @@ const Profile = () => {
           </p>
         </div>
 
-        <button onClick={() => navigate("/dispositivos")} className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-5 text-left">
-          <Watch size={24} className="shrink-0 text-purple-500" />
-          <div className="flex-1"><h3 className="font-display text-xl font-black">Dispositivos conectados</h3><p className="mt-1 text-xs text-muted-foreground">Conectar Health Connect e importar corridas do relógio.</p></div>
-          <ChevronRight size={20} className="text-muted-foreground" />
-        </button>
+        {features.healthConnectRuns && (
+          <button onClick={() => navigate("/dispositivos")} className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-5 text-left">
+            <Watch size={24} className="shrink-0 text-purple-500" />
+            <div className="flex-1"><h3 className="font-display text-xl font-black">Dispositivos conectados</h3><p className="mt-1 text-xs text-muted-foreground">Conectar Health Connect e importar corridas do relógio.</p></div>
+            <ChevronRight size={20} className="text-muted-foreground" />
+          </button>
+        )}
         {/* Entrada: status completo, mesmo padrao visual de linha com chevron */}
         <button onClick={() => navigate("/tenis")} className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-5 text-left">
           <Footprints size={24} className="shrink-0 text-purple-500" />

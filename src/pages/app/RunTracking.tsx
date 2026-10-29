@@ -1,5 +1,6 @@
 import { useRunSamples, type RunPerformance } from "@/hooks/useRunSamples";
 import HeartRateControls from "@/components/performance/HeartRateControls";
+import { features } from "@/config/features";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FirebaseError } from "firebase/app";
@@ -778,7 +779,7 @@ const RunTracking = () => {
         )}
       </motion.header>
 
-      <HeartRateControls running={isRunning} reference={recoverableRun?.performance?.heartRateMaxBpm ?? performance.snapshot().heartRateMaxBpm} onReading={performance.recordHeartRate} onBreak={performance.breakHeartRateSegment} />
+      {features.heartRateSensor && <HeartRateControls running={isRunning} reference={recoverableRun?.performance?.heartRateMaxBpm ?? performance.snapshot().heartRateMaxBpm} onReading={performance.recordHeartRate} onBreak={performance.breakHeartRateSegment} />}
 
       <section className="mx-4 mt-2 rounded-2xl border border-border bg-card px-3 py-2.5" aria-label="Tênis da corrida">
         <div className="flex items-center gap-2">
@@ -930,16 +931,20 @@ const RunTracking = () => {
         <div className="flex items-center justify-center gap-8">
           {!isRunning ? (
             <>
-              <motion.button
-                initial={{ opacity: 0, scale: 0.82, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setIsMusicOpen(true)}
-                className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
-                aria-label="Abrir musica"
-              >
-                <Music size={24} />
-              </motion.button>
+              {features.music ? (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.82, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsMusicOpen(true)}
+                  className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
+                  aria-label="Abrir musica"
+                >
+                  <Music size={24} />
+                </motion.button>
+              ) : (
+                <div className="w-14 h-14" aria-hidden="true" />
+              )}
               <motion.button
                 initial={{ opacity: 0, scale: 0.82, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -986,16 +991,20 @@ const RunTracking = () => {
                 )}
               </motion.button>
 
-              <motion.button
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 360, damping: 22, delay: 0.12 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setIsMusicOpen(true)}
-                className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
-              >
-                <Music size={24} />
-              </motion.button>
+              {features.music ? (
+                <motion.button
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 360, damping: 22, delay: 0.12 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsMusicOpen(true)}
+                  className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-purple-500 active:scale-95 transition-transform"
+                >
+                  <Music size={24} />
+                </motion.button>
+              ) : (
+                <div className="w-14 h-14" aria-hidden="true" />
+              )}
             </>
           )}
         </div>
