@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { formatCardDate } from "@/lib/feed-utils";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
 type SocialTab = "feed" | "leaderboard" | "groups" | "events";
 
@@ -78,6 +79,7 @@ function GroupCreateModal({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  useBackHandler(open, () => { if (!creating) onClose(); });
 
   useEffect(() => {
     if (open) {

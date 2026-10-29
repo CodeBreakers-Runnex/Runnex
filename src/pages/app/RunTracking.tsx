@@ -46,6 +46,7 @@ import { getShoes } from "@/services/shoesApi";
 import { enqueueRun, isRetryableSaveError, newClientId, type QueuedRunPayload } from "@/services/offlineRuns";
 import type { RunningShoe } from "@/types";
 import ShoeStatusBadge from "@/components/ShoeStatusBadge";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
 const BackgroundGeolocation =
   registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
@@ -629,6 +630,12 @@ const RunTracking = () => {
     }
     navigate("/");
   };
+
+  // Botão voltar do Android. A ordem importa: o último registrado é atendido primeiro.
+  useBackHandler(true, handleBack);
+  // O aviso de corrida não finalizada exige escolher Continuar ou Descartar.
+  useBackHandler(Boolean(recoverableRun), () => undefined);
+  useBackHandler(isMusicOpen, () => setIsMusicOpen(false));
 
   // Corrida sem distancia real (iniciou sem querer e parou logo em seguida)
   // nao deve tentar salvar: o backend rejeita distance<=0 e isso aparecia

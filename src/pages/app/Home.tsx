@@ -28,6 +28,7 @@ import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import NextWorkoutCard from "@/components/training/NextWorkoutCard";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
 const KM_TO_MI = 0.621371;
 
@@ -71,6 +72,7 @@ export default function Home() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [unit, setUnit] = useState<DistanceUnit>(() => getStoredSettings().units);
   const [unitModalOpen, setUnitModalOpen] = useState(false);
+  useBackHandler(unitModalOpen, () => setUnitModalOpen(false));
 
   const displayName = user?.displayName || "Corredor";
   const firstName = displayName.split(" ")[0] || "Corredor";

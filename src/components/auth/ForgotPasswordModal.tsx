@@ -8,6 +8,7 @@ import { actionCodeSettings, auth } from "@/config/firebase";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebaseAuthErrors";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
 interface ForgotPasswordModalProps {
   open: boolean;
@@ -66,6 +67,8 @@ export default function ForgotPasswordModal({
       onClose();
     }
   }
+
+  useBackHandler(open, handleClose);
 
   return (
     <AnimatePresence>

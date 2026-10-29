@@ -11,6 +11,7 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import AndroidBackButton from "@/components/AndroidBackButton";
 import BottomNav from "@/components/BottomNav";
 import SideNav from "@/components/SideNav";
 import TermsGate from "@/components/TermsGate";
@@ -111,6 +112,7 @@ const App = () => {
 
         <AuthProvider>
           <BrowserRouter>
+            <AndroidBackButton />
             <Suspense fallback={<AppLoading />}>
               <Routes>
                 {/* =========================
