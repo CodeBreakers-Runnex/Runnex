@@ -13,7 +13,8 @@ from app.listing import MAX_PAGE_SIZE, page_size, visible_to
 from app.models import Activity, User
 from app.rate_limit import rate_limit
 from app.performance import performance_summary
-from app.schemas import ActivityCreate, ActivityOut, SaveActivityResult, ToggleLikeIn
+from app.schemas import ActivityCreate, ActivityOut, SaveActivityResult, ToggleLikeIn, UserStatsOut
+from app.user_stats import user_stats
 from app.schemas_shoe import ActivityShoeInput
 from app.services.shoes import owned_shoe
 from app.services.activity_effects import (
@@ -136,6 +137,23 @@ def get_performance(
     return performance_summary(rows, datetime.now(timezone.utc), utc_offset_minutes)
 
 
+@router.get("/stats/me", response_model=UserStatsOut)
+def get_my_stats(
+    utc_offset_minutes: int = 0,
+    db: Session = Depends(get_db),
+    current_user: FirebaseUser = Depends(get_current_user),
+):
+    """Totais, sequencia, grafico da semana e flags de conquista do proprio
+    usuario, calculados aqui em vez de o app baixar todas as corridas."""
+    if not -720 <= utc_offset_minutes <= 840:
+        raise HTTPException(status_code=422, detail="Fuso inválido.")
+    stats = user_stats(db, current_user.uid, datetime.now(timezone.utc), utc_offset_minutes)
+    for key in ("bestActivity", "lastActivity"):
+        if stats[key] is not None:
+            stats[key] = ActivityOut.model_validate(stats[key])
+    return stats
+
+
 @router.get("/user/{user_id}", response_model=list[ActivityOut])
 def get_user_activities(
     user_id: str,
@@ -143,7 +161,8 @@ def get_user_activities(
     db: Session = Depends(get_db),
     current_user: FirebaseUser = Depends(get_current_user),
 ):
-    """limit=None retorna todas as corridas do usuario (usado por getUserStats no frontend).
+    """O proprio usuario pode pedir sem limite. O app atual usa /stats/me para
+    os totais; o limite livre fica para os APKs antigos (limit=100000).
 
     Bug real encontrado em revisao: private_profile so era respeitado no
     ranking global - as corridas de uma conta privada continuavam visiveis
@@ -154,7 +173,7 @@ def get_user_activities(
 
     q = db.query(Activity).filter(Activity.user_id == user_id).order_by(desc(Activity.created_at))
     if current_user.uid == user_id:
-        # O proprio usuario pode pedir tudo: getUserStats soma o historico inteiro.
+        # O proprio usuario pode pedir tudo (APKs antigos somam o historico no app).
         if limit is not None:
             q = q.limit(max(1, limit))
     else:

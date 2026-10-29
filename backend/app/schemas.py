@@ -133,6 +133,29 @@ class ActivityOut(BaseModel):
         return str(value) if value is not None else None
 
 
+class WeeklyDay(BaseModel):
+    day: str
+    km: float
+
+
+class UserStatsOut(BaseModel):
+    """GET /activities/stats/me. Campos ja em camelCase: o app usa direto."""
+
+    totalKm: float
+    runsCount: int
+    totalSeconds: int
+    totalCalories: int
+    currentStreak: int
+    weeklyTotalKm: float
+    weeklyData: list[WeeklyDay]
+    hasHourLongRun: bool
+    hasSub10kRun: bool
+    dawnRunsCount: int
+    nightRunsCount: int
+    bestActivity: ActivityOut | None
+    lastActivity: ActivityOut | None
+
+
 class SaveActivityResult(BaseModel):
     id: str
     xp_update_failed: bool = Field(serialization_alias="xpUpdateFailed")
