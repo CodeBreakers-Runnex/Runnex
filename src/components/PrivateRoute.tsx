@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 
 import { auth } from "@/config/firebase";
 import { useAuth } from "@/hooks/useAuth";
+import ServerWakeGate from "@/components/ServerWakeGate";
 
 function PrivateRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -34,7 +35,7 @@ function PrivateRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/verificar-email" replace />;
   }
 
-  return <>{children}</>;
+  return <ServerWakeGate>{children}</ServerWakeGate>;
 }
 
 export default PrivateRoute;

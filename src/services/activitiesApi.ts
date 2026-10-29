@@ -1,4 +1,4 @@
-import { api, ApiError } from "@/services/apiClient";
+import { api, ApiError, OWN_DATA_CACHE_MS } from "@/services/apiClient";
 import type { ActivityData, FeedActivity, UserStats } from "@/types";
 
 // Fase 1: os 3 chamadores passam objetos já tipados vindos da API (não mais
@@ -133,7 +133,9 @@ export const getUserStats = async (userId: string): Promise<UserStats> => {
   void userId; // o backend sempre usa o usuário autenticado
   try {
     const utcOffsetMinutes = -new Date().getTimezoneOffset();
-    const stats = await api.get<UserStatsResponse>(`/activities/stats/me?utc_offset_minutes=${utcOffsetMinutes}`);
+    const stats = await api.get<UserStatsResponse>(`/activities/stats/me?utc_offset_minutes=${utcOffsetMinutes}`, {
+      cacheMs: OWN_DATA_CACHE_MS,
+    });
     const normalize = (activity: FeedActivity | null) =>
       activity ? normalizeActivity(activity.id, activity) : null;
 
