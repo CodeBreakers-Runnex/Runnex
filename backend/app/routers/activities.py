@@ -13,6 +13,7 @@ from app.gamification import calculate_run_coins, calculate_xp, get_level_from_x
 from app.listing import MAX_PAGE_SIZE, page_size, visible_to
 from app.models import Activity, User
 from app.rate_limit import rate_limit
+from app.route_privacy import trim_route_edges
 from app.performance import performance_summary
 from app.schemas import ActivityCreate, ActivityOut, SaveActivityResult, ToggleLikeIn, UserStatsOut
 from app.user_stats import user_stats
@@ -198,6 +199,18 @@ def get_my_stats(
     return stats
 
 
+def _for_viewer(activities: list[Activity], viewer_uid: str) -> list[ActivityOut]:
+    """Corridas de outras pessoas saem sem os primeiros e ultimos 200 m da
+    rota (app/route_privacy.py). Copia o schema: o objeto do banco nao muda."""
+    result = []
+    for activity in activities:
+        out = ActivityOut.model_validate(activity)
+        if activity.user_id != viewer_uid:
+            out = out.model_copy(update={"route": trim_route_edges(out.route)})
+        result.append(out)
+    return result
+
+
 @router.get("/user/{user_id}", response_model=list[ActivityOut])
 def get_user_activities(
     user_id: str,
@@ -222,7 +235,7 @@ def get_user_activities(
             q = q.limit(max(1, limit))
     else:
         q = q.limit(page_size(limit if limit is not None else MAX_PAGE_SIZE))
-    return q.all()
+    return _for_viewer(q.all(), current_user.uid)
 
 
 @router.get("/by-users", response_model=list[ActivityOut])
@@ -237,7 +250,7 @@ def get_activities_by_users(
     ids = [uid for uid in user_ids.split(",") if uid]
     if not ids:
         return []
-    return (
+    rows = (
         db.query(Activity)
         .join(User, User.uid == Activity.user_id)
         .filter(Activity.user_id.in_(ids), visible_to(current_user.uid))
@@ -245,6 +258,7 @@ def get_activities_by_users(
         .limit(page_size(limit))
         .all()
     )
+    return _for_viewer(rows, current_user.uid)
 
 
 @router.get("/feed", response_model=list[ActivityOut])
@@ -267,7 +281,7 @@ def get_feed(
     )
     if before_id is not None:
         q = q.filter(Activity.id < before_id)
-    return q.limit(page_size(limit)).all()
+    return _for_viewer(q.limit(page_size(limit)).all(), current_user.uid)
 
 
 @router.put("/{activity_id}/shoe", response_model=ActivityOut, dependencies=[Depends(rate_limit("activities:shoe", 60, 60))])
