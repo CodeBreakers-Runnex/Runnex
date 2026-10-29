@@ -19,6 +19,7 @@ import OfflineRunSync from "@/components/OfflineRunSync";
 import PrivateRoute from "@/components/PrivateRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/hooks/AuthContext";
+import { features } from "@/config/features";
 
 /* =========================
    PÁGINAS DE AUTENTICAÇÃO
@@ -221,9 +222,9 @@ const App = () => {
                   />
 
                   <Route path="tenis" element={<Shoes />} />
-                  <Route path="sono" element={<Sleep />} />
+                  {features.sleep && <Route path="sono" element={<Sleep />} />}
                   <Route path="calendario-treinos" element={<TrainingCalendar />} />
-                  <Route path="dispositivos" element={<ConnectedDevices />} />
+                  {features.healthConnectRuns && <Route path="dispositivos" element={<ConnectedDevices />} />}
                 </Route>
 
                 {/* =========================

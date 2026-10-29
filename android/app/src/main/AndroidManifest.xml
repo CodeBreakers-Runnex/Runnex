@@ -55,9 +55,9 @@
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
     </queries>
-    <uses-permission android:name="android.permission.health.READ_SLEEP" />
-    <uses-permission android:name="android.permission.health.READ_EXERCISE" />
-    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <!-- Sono e importação do relógio estão desligados nesta versão
+         (src/config/features.ts). Ao religar, devolva as permissões:
+         android.permission.health.READ_SLEEP, READ_EXERCISE e READ_DISTANCE. -->
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />

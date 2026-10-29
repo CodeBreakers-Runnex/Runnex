@@ -1,5 +1,6 @@
 import PersonalRecords from "@/components/performance/PersonalRecords";
 import HeartRateInsights from "@/components/performance/HeartRateInsights";
+import { features } from "@/config/features";
 import EvolutionInsights from "@/components/performance/EvolutionInsights";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -223,7 +224,7 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {user && <><PersonalRecords userId={user.uid} /><HeartRateInsights userId={user.uid} /><EvolutionInsights userId={user.uid} /></>}
+      {user && <><PersonalRecords userId={user.uid} />{features.heartRateSensor && <HeartRateInsights userId={user.uid} />}<EvolutionInsights userId={user.uid} /></>}
       {/* Weekly Chart */}
       <section className="px-6 mt-10">
         <div className={cn(GLASS_CARD_CLASS, "p-7")}>
