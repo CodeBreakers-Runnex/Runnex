@@ -68,6 +68,14 @@ def count(conn: psycopg.Connection, table: str) -> int:
     return conn.execute(sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(table))).fetchone()[0]
 
 
+def columns(conn: psycopg.Connection, table: str) -> list[tuple[str, str]]:
+    return [tuple(r) for r in conn.execute(
+        "SELECT column_name, data_type FROM information_schema.columns "
+        "WHERE table_schema = 'public' AND table_name = %s ORDER BY ordinal_position",
+        (table,),
+    )]
+
+
 def alembic_version(conn: psycopg.Connection) -> str | None:
     row = conn.execute("SELECT version_num FROM alembic_version").fetchone()
     return row[0] if row else None
@@ -82,6 +90,13 @@ def main() -> None:
                 "Os bancos não têm as mesmas tabelas. Rode `alembic upgrade head` no destino.\n"
                 f"Só na origem: {sorted(set(src_tables) - set(dst_tables))}\n"
                 f"Só no destino: {sorted(set(dst_tables) - set(src_tables))}"
+            )
+
+        different = [t for t in src_tables if columns(src, t) != columns(dst, t)]
+        if different:
+            sys.exit(
+                f"Colunas diferentes em {different}. Rode `alembic upgrade head` no destino "
+                "(com DATABASE_URL apontando para ele) e tente de novo."
             )
 
         version = alembic_version(src)
