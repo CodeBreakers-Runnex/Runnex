@@ -46,3 +46,26 @@ def test_invalid_client_id_is_rejected(client, make_user):
     make_user("ana")
     assert client.post("/activities", json=run_payload("ana", clientId="x")).status_code == 422
     assert client.post("/activities", json=run_payload("ana", clientId="tem espaço e acento")).status_code == 422
+
+
+def test_backdated_runs_still_count_toward_the_daily_cap(client, make_user):
+    """Uma corrida da fila offline grava a hora em que terminou. Sem contar
+    essa hora no limite diario, datas antigas deixariam somar mais de 24h de
+    corrida no mesmo dia e acumular XP sem limite."""
+    make_user("ana")
+    finished = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat()
+    long_run = {"km": 200, "seconds": 40000, "finishedAt": finished}
+    assert client.post("/activities", json=run_payload("ana", clientId="atrasada-0001", **long_run)).status_code == 200
+    assert client.post("/activities", json=run_payload("ana", clientId="atrasada-0002", **long_run)).status_code == 200
+    response = client.post("/activities", json=run_payload("ana", clientId="atrasada-0003", km=20, seconds=7000, finishedAt=finished))
+    assert response.status_code == 422
+    assert "24h" in response.json()["detail"]
+
+
+def test_backdated_run_and_run_now_are_checked_in_their_own_days(client, make_user):
+    make_user("ana")
+    three_days_ago = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat()
+    assert client.post("/activities", json=run_payload("ana", clientId="ontem-0001", km=200, seconds=40000, finishedAt=three_days_ago)).status_code == 200
+    assert client.post("/activities", json=run_payload("ana", clientId="ontem-0002", km=200, seconds=40000, finishedAt=three_days_ago)).status_code == 200
+    # Hoje a conta esta zerada: a corrida de agora nao e barrada pelas de 3 dias atras.
+    assert client.post("/activities", json=run_payload("ana", km=20, seconds=7000)).status_code == 200
