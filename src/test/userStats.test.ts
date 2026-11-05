@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({ get: vi.fn() }));
-vi.mock("@/services/apiClient", () => ({ api, ApiError: class extends Error {} }));
+vi.mock("@/services/apiClient", () => ({ api, ApiError: class extends Error {}, OWN_DATA_CACHE_MS: 10_000 }));
 
 import { getUserStats } from "@/services/activitiesApi";
 

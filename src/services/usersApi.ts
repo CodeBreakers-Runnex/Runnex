@@ -1,6 +1,6 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/config/firebase";
-import { api, ApiError } from "@/services/apiClient";
+import { api, ApiError, OWN_DATA_CACHE_MS } from "@/services/apiClient";
 import type { UserProfile } from "@/types";
 
 // Buscar perfil do usuário — Fase 1: os campos principais (XP, nível, pet)
@@ -9,14 +9,14 @@ import type { UserProfile } from "@/types";
 // (Firestore, nunca tiveram linha real no Postgres).
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
-    const profile = await api.get<UserProfile>(`/users/${userId}`);
+    const profile = await api.get<UserProfile>(`/users/${userId}`, { cacheMs: OWN_DATA_CACHE_MS });
 
     const [realGroupIds, realEventIds, legacyIds] = await Promise.all([
-      api.get<string[]>(`/groups/joined/${userId}`).catch((groupsError) => {
+      api.get<string[]>(`/groups/joined/${userId}`, { cacheMs: OWN_DATA_CACHE_MS }).catch((groupsError) => {
         console.warn("Nao foi possivel buscar grupos reais do usuario:", groupsError);
         return [] as string[];
       }),
-      api.get<string[]>(`/events/enrolled/${userId}`).catch((eventsError) => {
+      api.get<string[]>(`/events/enrolled/${userId}`, { cacheMs: OWN_DATA_CACHE_MS }).catch((eventsError) => {
         console.warn("Nao foi possivel buscar eventos reais do usuario:", eventsError);
         return [] as string[];
       }),

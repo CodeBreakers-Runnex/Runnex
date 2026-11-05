@@ -1,15 +1,18 @@
 // Identifica a versão dos termos aceita por cada usuário no cadastro.
 // Atualize junto com a data em "Última atualização" abaixo.
-export const LEGAL_VERSION = "2026-10-28";
+export const LEGAL_VERSION = "2026-10-29";
 
 // Cada afirmação deste texto foi conferida com o código em 28/10/2026
 // (o que é coletado, onde fica e quem vê), incluindo rota com início e fim
 // ocultos, frequência cardíaca, sono, Health Connect, tênis e treinos.
+// Em 29/10/2026 a seção 1 passou a refletir src/config/features.ts: sensor
+// cardíaco, sono/Health Connect e música estão desligados nesta versão. As
+// seções sobre esses dados continuam no texto para quando forem religados.
 // Ao mudar o que o app coleta ou mostra a outros usuários, atualize o texto e
 // LEGAL_VERSION juntos.
 export const legalContent = `
 TERMOS DE USO E POLÍTICA DE PRIVACIDADE — RUNNEX
-Última atualização: 28/10/2026
+Última atualização: 29/10/2026
 
 O Runnex é um aplicativo de corrida desenvolvido como projeto acadêmico pela equipe CodeBreakers, de Campinas-SP, disponível para Android e na web. Este documento tem duas partes: os Termos de Uso (regras de uso do aplicativo) e a Política de Privacidade (quais dados coletamos, para quê, quem vê e quais são os seus direitos).
 Ao criar uma conta, você declara ter lido e aceitado as duas partes. Se não concordar, não utilize o aplicativo.
@@ -25,10 +28,8 @@ PARTE I — TERMOS DE USO
 • Lista de eventos esportivos de terceiros, com opção de salvar o evento e abrir o site oficial do organizador;
 • Pet virtual que evolui com os seus treinos e ganha acessórios comprados com RunCoins, a moeda interna do aplicativo;
 • Treinador virtual, que responde dúvidas sobre corrida com base em regras pré-definidas e nas suas próprias corridas;
-• Leitura de sensor de frequência cardíaca por Bluetooth durante a corrida, com zonas de treino;
-• Agenda de treinos planejados e controle da quilometragem dos seus tênis;
-• Registro de sono e recuperação, com importação opcional do Health Connect (Android);
-• Atalho para abrir playlists de corrida em aplicativos de música. O Runnex não se conecta à sua conta nesses aplicativos nem troca dados com eles.
+• Agenda de treinos planejados e controle da quilometragem dos seus tênis.
+Nesta versão, o sensor de frequência cardíaca, o registro de sono, a importação do Health Connect e os atalhos para aplicativos de música estão desligados. O aplicativo não pede permissão para esses dados nem os coleta. Os itens desta política que tratam deles só passam a valer se esses recursos forem religados, o que será comunicado no aplicativo.
 
 2. CONTA
 Você pode criar uma conta com nome de usuário, e-mail e senha (com confirmação do e-mail) ou entrar com uma conta Google.

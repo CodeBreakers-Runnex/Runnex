@@ -49,11 +49,18 @@ def save_activity(
         return SaveActivityResult(id=existing.id, xp_update_failed=False)
 
     # Velocidade e rota ja foram checadas no schema (activity_rules); aqui
-    # fica o que depende do banco: ninguem corre mais de 24h em 24h.
-    since = datetime.now(timezone.utc) - timedelta(hours=24)
+    # fica o que depende do banco: ninguem corre mais de 24h em 24h. A janela
+    # gira em torno da hora em que a corrida terminou, nao da hora do envio:
+    # senao uma corrida da fila offline com data antiga escaparia do limite.
+    finished_at = _plausible_finished_at(payload.finished_at)
+    run_time = finished_at or datetime.now(timezone.utc)
     recent_seconds = (
         db.query(func.coalesce(func.sum(Activity.duration_seconds), 0))
-        .filter(Activity.user_id == payload.user_id, Activity.created_at >= since)
+        .filter(
+            Activity.user_id == payload.user_id,
+            Activity.created_at > run_time - timedelta(hours=24),
+            Activity.created_at < run_time + timedelta(hours=24),
+        )
         .scalar()
     )
     if recent_seconds + payload.duration_seconds > MAX_DURATION_PER_DAY_SECONDS:
@@ -102,7 +109,6 @@ def save_activity(
         is_simulated=payload.is_simulated,
         client_id=payload.client_id,
     )
-    finished_at = _plausible_finished_at(payload.finished_at)
     if finished_at is not None:
         activity.created_at = finished_at
     db.add(activity)
