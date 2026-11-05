@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   unsubscribe: vi.fn(),
   success: vi.fn(),
   info: vi.fn(),
+  error: vi.fn(),
 }));
 
 vi.mock("@/config/firebase", () => ({ auth: {}, db: {}, storage: {} }));
@@ -24,7 +25,7 @@ vi.mock("@/services/database", () => ({
   getUserStats: () => Promise.resolve({ totalKm: "12.5", runsCount: 3, totalTime: "1h 5m" }),
   loadMoreActivities: (...a: unknown[]) => mocks.loadMore(...a),
 }));
-vi.mock("sonner", () => ({ toast: { success: (...a: unknown[]) => mocks.success(...a), info: (...a: unknown[]) => mocks.info(...a), error: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { success: (...a: unknown[]) => mocks.success(...a), info: (...a: unknown[]) => mocks.info(...a), error: (...a: unknown[]) => mocks.error(...a) } }));
 
 import Feed from "@/pages/app/Feed";
 
@@ -55,6 +56,8 @@ describe("feed", () => {
     mocks.unsubscribe.mockReset();
     mocks.success.mockReset();
     mocks.info.mockReset();
+    mocks.error.mockReset();
+    vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   it("sem corridas, mostra o estado vazio com atalho para correr", async () => {
@@ -79,6 +82,14 @@ describe("feed", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Descurtir corrida" }));
     expect(mocks.toggleLike).toHaveBeenCalledWith("2", "ana", true);
+  });
+
+  it("avisa quando a curtida não é salva", async () => {
+    mocks.toggleLike.mockRejectedValue(new Error("offline"));
+    mocks.feed = [run("1", "bruno", "Bruno")];
+    renderFeed();
+    fireEvent.click(await screen.findByRole("button", { name: "Curtir corrida" }));
+    await waitFor(() => expect(mocks.error).toHaveBeenCalledWith("Não foi possível salvar a curtida. Tente de novo."));
   });
 
   it("a busca filtra pelo nome do atleta e avisa quando não acha ninguém", async () => {

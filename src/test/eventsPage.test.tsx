@@ -64,6 +64,25 @@ describe("eventos", () => {
     expect(within(lista()).queryByText("Maratona Antiga")).toBeNull();
   });
 
+  it("o destaque EM BREVE mostra o próximo evento, nunca um que já passou", async () => {
+    mocks.getEvents.mockResolvedValue([
+      event("passado", "Maratona Antiga", -30),
+      event("depois", "Desafio 10K", 20),
+      event("logo", "Corrida da Primavera", 10),
+    ]);
+    render(<Events />);
+    const destaque = (await screen.findByText("EM BREVE")).closest("section") as HTMLElement;
+    expect(within(destaque).getByText("Corrida da Primavera")).toBeInTheDocument();
+    expect(within(destaque).queryByText("Maratona Antiga")).toBeNull();
+  });
+
+  it("sem eventos futuros, não mostra o destaque", async () => {
+    mocks.getEvents.mockResolvedValue([event("passado", "Maratona Antiga", -30)]);
+    render(<Events />);
+    await screen.findByText(/Nenhum evento encontrado/);
+    expect(screen.queryByText("EM BREVE")).toBeNull();
+  });
+
   it("a aba Passados mostra só os que já aconteceram", async () => {
     render(<Events />);
     await screen.findAllByText("Corrida da Primavera");

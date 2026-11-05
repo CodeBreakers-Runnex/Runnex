@@ -87,6 +87,17 @@ describe("perfil", () => {
     expect(mocks.getUserActivities).toHaveBeenCalledWith("ana", 20);
   });
 
+  it("se não conseguir carregar, avisa e deixa tentar de novo em vez de mostrar um perfil zerado", async () => {
+    mocks.getUserProfile.mockRejectedValueOnce(new Error("offline"));
+    renderProfile();
+    expect(await screen.findByText("Não foi possível carregar seu perfil.")).toBeInTheDocument();
+    expect(screen.queryByText("Nenhuma corrida no histórico")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tentar de novo" }));
+    expect(await screen.findByText("Nenhuma corrida no histórico")).toBeInTheDocument();
+    expect(mocks.getUserProfile).toHaveBeenCalledTimes(2);
+  });
+
   it("sem corridas, mostra o histórico vazio", async () => {
     renderProfile();
     expect(await screen.findByText("Nenhuma corrida no histórico")).toBeInTheDocument();
@@ -115,6 +126,15 @@ describe("perfil", () => {
     });
     // Recarrega os dados do perfil depois de salvar.
     await waitFor(() => expect(mocks.getUserProfile).toHaveBeenCalledTimes(2));
+  });
+
+  it("cada campo da edição tem rótulo ligado a ele (leitor de tela)", async () => {
+    renderProfile();
+    await abrirEdicao();
+    expect(screen.getByLabelText("Nome de Corredor")).toHaveValue("Ana Souza");
+    expect(screen.getByLabelText("Localização")).toHaveAttribute("placeholder", "Ex: São Paulo, SP");
+    expect(screen.getByLabelText("Meta semanal (km)")).toHaveValue(10);
+    expect(screen.getByLabelText("Minha Bio").tagName).toBe("TEXTAREA");
   });
 
   it("não salva com o nome vazio", async () => {
