@@ -11,7 +11,7 @@ Resultado: ✅ passou · ❌ falhou (descrever) · ⚠️ passou com ressalva ·
 | Aparelho / fabricante | |
 | Versão do Android | |
 | Economia de bateria | ligada / desligada |
-| APK (versionName / versionCode) | 0.1.4 / 2 |
+| APK (versionName / versionCode) | 0.2.0 / 3 |
 | Backend usado (URL) | |
 | Data | |
 | Quem testou | |

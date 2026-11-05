@@ -469,8 +469,9 @@ function EditProfileModal({
                     <p className="mt-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground">Toque para trocar a foto</p>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 block">Nome de Corredor</label>
+                    <label htmlFor="edit-profile-name" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 block">Nome de Corredor</label>
                     <input
+                      id="edit-profile-name"
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
@@ -478,8 +479,9 @@ function EditProfileModal({
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 block">Localização</label>
+                    <label htmlFor="edit-profile-location" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 block">Localização</label>
                     <input
+                      id="edit-profile-location"
                       type="text"
                       placeholder="Ex: São Paulo, SP"
                       value={location}
@@ -488,8 +490,9 @@ function EditProfileModal({
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 block">Meta semanal (km)</label>
+                    <label htmlFor="edit-profile-goal" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 block">Meta semanal (km)</label>
                     <input
+                      id="edit-profile-goal"
                       type="number"
                       min="0"
                       max="500"
@@ -500,8 +503,9 @@ function EditProfileModal({
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 block">Minha Bio</label>
+                    <label htmlFor="edit-profile-bio" className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 block">Minha Bio</label>
                     <textarea
+                      id="edit-profile-bio"
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       rows={3}
@@ -538,9 +542,11 @@ const Profile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [statsData, setStatsData] = useState<UserStats | null>(null);
   const [runHistory, setRunHistory] = useState<FeedActivity[]>([]);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchProfileData = useCallback(async () => {
     if (!user) return;
+    setLoadError(false);
     try {
       const [userStats, userProfile, history] = await Promise.all([
         getUserStats(user.uid),
@@ -551,7 +557,9 @@ const Profile = () => {
       setProfile(userProfile);
       setRunHistory(history);
     } catch (error) {
+      // Sem isso a tela mostrava XP 0 e histórico vazio, como se fosse uma conta nova.
       console.error("Erro ao carregar perfil:", error);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -609,6 +617,21 @@ const Profile = () => {
       <div className="app-shell flex flex-col items-center justify-center gap-4">
         <Loader2 className="animate-spin text-purple-500" size={40} />
         <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">Carregando Perfil...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="app-shell flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-sm font-black">Não foi possível carregar seu perfil.</p>
+        <p className="text-xs text-muted-foreground">Confira sua conexão e tente de novo.</p>
+        <button
+          onClick={() => { setLoading(true); void fetchProfileData(); }}
+          className="rounded-xl bg-purple-600 px-6 py-3 text-xs font-black uppercase tracking-widest text-white"
+        >
+          Tentar de novo
+        </button>
       </div>
     );
   }

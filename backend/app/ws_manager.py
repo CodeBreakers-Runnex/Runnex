@@ -1,3 +1,4 @@
+from anyio import from_thread
 from fastapi import WebSocket
 
 
@@ -37,6 +38,11 @@ class GroupConnectionManager:
                 dead.append(connection)
         for connection in dead:
             self.disconnect(group_id, connection)
+
+    def broadcast_from_thread(self, group_id: int, message: dict) -> None:
+        """Para rotas sincronas (def): o FastAPI as roda numa thread do pool,
+        e o envio volta para o loop de eventos, dono das conexoes."""
+        from_thread.run(self.broadcast, group_id, message)
 
 
 manager = GroupConnectionManager()
