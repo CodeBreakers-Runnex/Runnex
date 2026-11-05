@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, selectinload
 
@@ -129,23 +130,30 @@ def create_group(
     return _serialize_group(group, users)
 
 
+def _check_membership(group_id: int, uid: str) -> bool:
+    db = SessionLocal()
+    try:
+        return _is_group_member(db, group_id, uid)
+    finally:
+        db.close()
+
+
 @router.websocket("/{group_id}/ws")
 async def group_websocket(group_id: int, websocket: WebSocket, token: str = ""):
     """Substitui o polling de 15s do chat/feed/comentarios do grupo. O
     browser nao consegue mandar header Authorization no handshake do
     WebSocket, entao o ID token do Firebase chega via query param
     (?token=...) em vez do Bearer normal."""
+    # Validar o token pode buscar as chaves do Google (requests, ate 5 s) e a
+    # checagem de membro usa o banco sincrono: as duas vao para uma thread
+    # para nao travar o loop de eventos, que atende todos os usuarios.
     try:
-        user = decode_firebase_token(token)
+        user = await run_in_threadpool(decode_firebase_token, token)
     except HTTPException:
         await websocket.close(code=4401)
         return
 
-    db = SessionLocal()
-    try:
-        is_member = _is_group_member(db, group_id, user.uid)
-    finally:
-        db.close()
+    is_member = await run_in_threadpool(_check_membership, group_id, user.uid)
 
     if not is_member:
         await websocket.close(code=4403)
@@ -260,7 +268,7 @@ def list_group_posts(
 
 
 @router.post("/{group_id}/posts", response_model=GroupPostOut, dependencies=[Depends(rate_limit("groups:post", 10, 60))])
-async def create_group_post(
+def create_group_post(
     group_id: int,
     payload: GroupPostCreate,
     db: Session = Depends(get_db),
@@ -279,12 +287,12 @@ async def create_group_post(
     db.commit()
     db.refresh(post)
     result = _serialize_post(post, author)
-    await manager.broadcast(group_id, {"type": "post_created"})
+    manager.broadcast_from_thread(group_id, {"type": "post_created"})
     return result
 
 
 @router.post("/{group_id}/posts/{post_id}/like", dependencies=[Depends(rate_limit("groups:post-like", 60, 60))])
-async def toggle_group_post_like(
+def toggle_group_post_like(
     group_id: int,
     post_id: int,
     payload: ToggleLikeIn,
@@ -305,7 +313,7 @@ async def toggle_group_post_like(
             likes.append(current_user.uid)
     post.likes = likes
     db.commit()
-    await manager.broadcast(group_id, {"type": "post_like", "postId": str(post_id)})
+    manager.broadcast_from_thread(group_id, {"type": "post_like", "postId": str(post_id)})
     return {"likes": likes}
 
 
@@ -350,7 +358,7 @@ def list_group_post_comments(
 
 
 @router.post("/{group_id}/posts/{post_id}/comments", response_model=GroupCommentOut, dependencies=[Depends(rate_limit("groups:comment", 20, 60))])
-async def add_group_post_comment(
+def add_group_post_comment(
     group_id: int,
     post_id: int,
     payload: GroupCommentCreate,
@@ -369,7 +377,7 @@ async def add_group_post_comment(
     db.commit()
     db.refresh(comment)
     result = _serialize_comment(comment, author)
-    await manager.broadcast(group_id, {"type": "comment_created", "postId": str(post_id)})
+    manager.broadcast_from_thread(group_id, {"type": "comment_created", "postId": str(post_id)})
     return result
 
 
@@ -409,7 +417,7 @@ def list_group_messages(
 
 
 @router.post("/{group_id}/messages", response_model=GroupMessageOut, dependencies=[Depends(rate_limit("groups:message", 30, 60))])
-async def send_group_message(
+def send_group_message(
     group_id: int,
     payload: GroupMessageCreate,
     db: Session = Depends(get_db),
@@ -422,7 +430,7 @@ async def send_group_message(
     db.commit()
     db.refresh(message)
     result = _serialize_message(message, sender)
-    await manager.broadcast(group_id, {"type": "message_created"})
+    manager.broadcast_from_thread(group_id, {"type": "message_created"})
     return result
 
 
