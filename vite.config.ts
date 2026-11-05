@@ -28,22 +28,15 @@ export default defineConfig(({ mode }) => ({
         theme_color: "#000000",
         background_color: "#000000",
         display: "standalone",
+        start_url: "/",
+        scope: "/",
+        lang: "pt-BR",
+        // O Chrome só oferece "Instalar app" com ícones PNG de 192 e 512 px.
         icons: [
-          {
-            src: "/favicon.ico",
-            sizes: "64x64 32x32 24x24 16x16",
-            type: "image/x-icon",
-          },
-          {
-            src: "/favicon.ico",
-            type: "image/x-icon",
-            sizes: "192x192",
-          },
-          {
-            src: "/favicon.ico",
-            type: "image/x-icon",
-            sizes: "512x512",
-          },
+          { src: "/favicon.ico", sizes: "48x48 32x32 16x16", type: "image/x-icon" },
+          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "/maskable-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
     }),
