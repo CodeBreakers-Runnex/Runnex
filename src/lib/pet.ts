@@ -8,6 +8,15 @@ import tartarugaImg from "@/assets/pets/tartaruga.webp";
 import coroaDiamanteImg from "@/assets/accessories/store-coroa-diamante.webp";
 import coroaLourosImg from "@/assets/accessories/store-coroa-louros.webp";
 import chifresNeonImg from "@/assets/accessories/store-chifres-neon.webp";
+import bandanaImg from "@/assets/accessories/store-bandana.webp";
+import faixaImg from "@/assets/accessories/store-faixa.webp";
+import gorroImg from "@/assets/accessories/store-gorro.webp";
+import chapeuSolImg from "@/assets/accessories/store-chapeu-sol.webp";
+import capaceteImg from "@/assets/accessories/store-capacete.webp";
+import foneImg from "@/assets/accessories/store-fone.webp";
+import chapeuCowboyImg from "@/assets/accessories/store-chapeu-cowboy.webp";
+import tiaraFloresImg from "@/assets/accessories/store-tiara-flores.webp";
+import chapeuFestaImg from "@/assets/accessories/store-chapeu-festa.webp";
 
 export interface PetSpeciesInfo {
   id: PetSpecies;
@@ -54,11 +63,16 @@ export interface PetAccessory {
   imageBySpecies?: Partial<Record<PetSpecies, string>>;
   /** Posição própria deste item em cada pet (sobrepõe PET_ANCHORS). */
   anchorBySpecies?: Partial<Record<PetSpecies, Partial<PetAnchor>>>;
+  /** Ajuste do item em todos os pets: escala da largura e deslocamento vertical (fração do quadro). */
+  fit?: { scale?: number; dy?: number };
 }
 
 export function getAccessoryAnchor(accessory: PetAccessory, species: PetSpecies): PetAnchor {
   const base = PET_ANCHORS[species][accessory.slot as PetBodySlot];
-  return { ...base, ...accessory.anchorBySpecies?.[species] };
+  const fitted = accessory.fit
+    ? { ...base, width: base.width * (accessory.fit.scale ?? 1), y: base.y + (accessory.fit.dy ?? 0) }
+    : base;
+  return { ...fitted, ...accessory.anchorBySpecies?.[species] };
 }
 
 /**
@@ -167,15 +181,15 @@ export const PET_ACCESSORIES: PetAccessory[] = [
   { id: "store-laco", label: "Laço", slot: "pescoco", emoji: "🎀", source: "store", price: 40, rarity: "comum" },
   { id: "store-skyline", label: "Skyline noturno", slot: "fundo", emoji: "🌆", source: "store", price: 100, rarity: "comum" },
   { id: "store-arcoiris", label: "Arco-íris", slot: "fundo", emoji: "🌈", source: "store", price: 70, rarity: "comum" },
-  { id: "store-bandana", label: "Bandana de treino", slot: "cabeca", emoji: "🧕", source: "store", price: 40, rarity: "comum" },
-  { id: "store-faixa", label: "Faixa de suor", slot: "cabeca", emoji: "🎗️", source: "store", price: 30, rarity: "comum" },
-  { id: "store-gorro", label: "Gorro de inverno", slot: "cabeca", emoji: "🧶", source: "store", price: 60, rarity: "comum" },
-  { id: "store-chapeu-sol", label: "Chapéu de sol", slot: "cabeca", emoji: "👒", source: "store", price: 70, rarity: "comum" },
-  { id: "store-capacete", label: "Capacete de ciclista", slot: "cabeca", emoji: "⛑️", source: "store", price: 90, rarity: "comum" },
-  { id: "store-fone", label: "Fone de corrida", slot: "cabeca", emoji: "🎧", source: "store", price: 120, rarity: "raro" },
-  { id: "store-chapeu-cowboy", label: "Chapéu de cowboy", slot: "cabeca", emoji: "🤠", source: "store", price: 140, rarity: "raro" },
-  { id: "store-tiara-flores", label: "Tiara de flores", slot: "cabeca", emoji: "🌸", source: "store", price: 150, rarity: "raro" },
-  { id: "store-chapeu-festa", label: "Chapéu de festa", slot: "cabeca", emoji: "🥳", source: "store", price: 160, rarity: "raro" },
+  { id: "store-bandana", label: "Bandana de treino", slot: "cabeca", emoji: "🧕", source: "store", price: 40, rarity: "comum", image: bandanaImg, fit: { scale: 1.2, dy: 0.03 } },
+  { id: "store-faixa", label: "Faixa de suor", slot: "cabeca", emoji: "🎗️", source: "store", price: 30, rarity: "comum", image: faixaImg, fit: { scale: 1.0, dy: 0.05 } },
+  { id: "store-gorro", label: "Gorro de inverno", slot: "cabeca", emoji: "🧶", source: "store", price: 60, rarity: "comum", image: gorroImg, fit: { scale: 1.15, dy: 0.03 } },
+  { id: "store-chapeu-sol", label: "Chapéu de sol", slot: "cabeca", emoji: "👒", source: "store", price: 70, rarity: "comum", image: chapeuSolImg, fit: { scale: 1.3, dy: 0.0 } },
+  { id: "store-capacete", label: "Capacete de ciclista", slot: "cabeca", emoji: "⛑️", source: "store", price: 90, rarity: "comum", image: capaceteImg, fit: { scale: 1.15, dy: 0.02 } },
+  { id: "store-fone", label: "Fone de corrida", slot: "cabeca", emoji: "🎧", source: "store", price: 120, rarity: "raro", image: foneImg, fit: { scale: 1.2, dy: 0.06 } },
+  { id: "store-chapeu-cowboy", label: "Chapéu de cowboy", slot: "cabeca", emoji: "🤠", source: "store", price: 140, rarity: "raro", image: chapeuCowboyImg, fit: { scale: 1.3, dy: 0.0 } },
+  { id: "store-tiara-flores", label: "Tiara de flores", slot: "cabeca", emoji: "🌸", source: "store", price: 150, rarity: "raro", image: tiaraFloresImg, fit: { scale: 1.0, dy: 0.02 } },
+  { id: "store-chapeu-festa", label: "Chapéu de festa", slot: "cabeca", emoji: "🥳", source: "store", price: 160, rarity: "raro", image: chapeuFestaImg, fit: { scale: 1.0, dy: 0.0 } },
   { id: "store-chapeu-mago", label: "Chapéu de mago", slot: "cabeca", emoji: "🧙", source: "store", price: 280, rarity: "epico" },
   { id: "store-aureola", label: "Auréola", slot: "cabeca", emoji: "😇", source: "store", price: 320, rarity: "epico" },
   { id: "store-capacete-astronauta", label: "Capacete de astronauta", slot: "cabeca", emoji: "🧑‍🚀", source: "store", price: 350, rarity: "epico" },
