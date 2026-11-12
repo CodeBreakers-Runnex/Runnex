@@ -1,456 +1,373 @@
 # RUNNEX — Temporada 01: "30 dias para conquistar ela"
-## Roteiros dos 15 episódios (9:16 · 2D cartoon · 60–120s)
+## Roteiros dos 15 episódios — formato NARRADO (9:16 · 2D cartoon · 40–55s)
 
-### Elenco fixo (nomes definidos para continuidade)
-- **CLEITON** — protagonista. Moletom manchado, chinelo, cabelo bagunçado (Dias 1–6) → roupa esportiva, postura ereta (Dia 30).
-- **JÚLIA** — corredora, leve, simpática, competitiva consigo mesma. Tênis rosa-neon (marca visual).
-- **DUDU** — melhor amigo. Sarcástico, sempre comendo algo. É o "coro grego" da série: humor + verdade.
-- **MARCOS** — "o cara da foto". Corredor experiente, **treinador da assessoria de corrida da Júlia** (não é namorado; revelado no ep. 09).
-- **SEU ZÉ** — o senhor de 70 anos que caminha mais rápido que Cleiton. Gag recorrente (eps. 02, 08, 15).
+---
 
-### Convenções
-- `[RUNNEX]` = inserção de tela do app (usar telas reais na produção; números abaixo são de referência e devem bater com o app).
-- `CORTE`, `ZOOM`, `PAN` = movimentos de câmera. Tudo pensado para vertical: rosto e celular no terço superior, legendas no terço inferior.
-- Cada episódio abre com **cartela "DIA X"** (1s) e fecha com **gancho + logo RUNNEX** (2s).
+## Formato (bíblia de estilo)
+
+**Linguagem:** narrador em 3ª pessoa, tom seco e debochado, contando as desgraças do protagonista. Quase sem diálogo — quando houver fala, é curta e aparece como mensagem no celular ou balão rápido.
+
+**Visual:**
+- 2D chapado, contorno preto grosso, cores saturadas, sombra simples.
+- **POV do celular** como plano principal: o dedo do Beto rolando, tocando, digitando. A RUNNEX entra por aqui, naturalmente.
+- **Close de reação** como punchline: olhos arregalados, gota de suor, boca aberta, olhos de coração.
+- Cortes de 1–2s. Zoom seco em detalhes (números, datas, notificações).
+
+**Legenda:** palavra por palavra, centralizada no terço inferior, branca, caixa alta, contorno preto. **Palavra-chave em cor:**
+- Nome do protagonista → laranja (cor da RUNNEX, ajustar ao brand)
+- Júlia → rosa
+- Números/distâncias → amarelo
+- Ações/perigo → vermelho
+
+**Áudio:** narração + SFX secos (swoosh, "plim", vidro quebrando, grilo). Trilha original, sem músicas licenciadas.
+
+**Assinatura de abertura:** todo episódio começa com a frase **"O BETO…"** (marca da série).
+**Assinatura de fechamento:** cartela "DIA X DE 30" + logo RUNNEX (1,5s).
+
+**Convenção do roteiro:** `[VISUAL]` à esquerda da linha, `NARRADOR:` com **palavras-chave** em negrito. `[RUNNEX]` = tela do app (usar telas reais; números devem bater com a tabela de continuidade no fim).
+
+---
+
+## Personagens (originais)
+
+| Personagem | Visual (travar em ficha antes de produzir) | Função |
+|---|---|---|
+| **BETO** | 24 anos, cabelo crespo armado, óculos redondos, moletom cinza com mancha de molho, bermuda, chinelo de dedo. Ao longo da temporada: troca para camiseta laranja de corrida e tênis. **Sem boné.** | Protagonista |
+| **JÚLIA** | Rabo de cavalo alto, viseira branca, tênis rosa-neon (marca visual dela) | A motivação |
+| **DUDU** | Melhor amigo, sempre comendo, camiseta de time genérico | Coro cômico / verdade |
+| **MARCOS** | Alto, regata de assessoria, apito no pescoço | Treinador da Júlia (parece rival, não é) |
+| **SEU ZÉ** | Senhor de 70 anos, boina, sacola de pão | Gag recorrente: sempre mais rápido que o Beto |
 
 ---
 
 ## ATO 1 — O INÍCIO DA MUDANÇA
 
-### EP 01 — A GAROTA DOS MEUS SONHOS · Dia 1 · ~75s
-**Funcionalidade:** Eventos
+### EP 01 — A GAROTA DOS MEUS SONHOS · Dia 1 · ~45s
+**RUNNEX:** Eventos
 
-**CENA 1 (0–12s) — INT. QUARTO DO CLEITON — 02h DA MANHÃ**
-PAN lento por um quarto caótico: latas de energético, caixas de pizza, roupas no ventilador. Luz azul da TV. Cleiton jogando, controle na mão, celular na barriga.
-> **CLEITON (gritando pro jogo):** Não! NÃO! Esse lag tá de sacanagem!
+| Visual | Narração |
+|---|---|
+| Quarto escuro, luz azul da TV, latas de energético. Relógio: 02:13 | O **BETO** TÁ ACORDADO ÀS **DUAS DA MANHÃ**… |
+| POV celular: dedo rolando stories. Story da Júlia correndo ao nascer do sol | …VENDO A **JÚLIA** ACORDAR PRA **CORRER**. |
+| Close: olhos do Beto viram corações. SFX "plim" | |
+| Zoom no texto do story: "30 dias pra minha maratona 🏃‍♀️" | ELA VAI CORRER UMA **MARATONA** EM **30 DIAS**. |
+| Beto, deitado, barriga pra cima, salgadinho no peito | O **BETO** NÃO CORRE NEM PRO **ÔNIBUS**. |
+| POV: dedo digitando pro Dudu: "vou correr a maratona" → enviado | E ACABOU DE **PROMETER** QUE VAI CORRER **TAMBÉM**. |
+| Resposta do Dudu: "kkkkkkkkkkk você não corre nem até a esquina" | |
+| POV `[RUNNEX]` aba Eventos → encontra a prova → contagem **30 DIAS** → toca "Tenho interesse" | AGORA ELE TEM **30 DIAS**… |
+| Close de pânico, gota de suor | …E **ZERO** CONDICIONAMENTO. |
+| Beto levanta decidido, tropeça na caixa de pizza. Corte preto | |
 
-O celular vibra. Ele ignora. Vibra de novo.
-
-**CENA 2 (12–30s) — CLOSE NO CELULAR**
-Notificação: *"Júlia publicou um story."* ZOOM no rosto dele — olhos viram corações (estilo cartoon), o controle cai.
-Story da Júlia: ela correndo ao nascer do sol. Texto: *"30 dias pra minha maratona 🏃‍♀️ #foco"*.
-> **CLEITON (sussurrando):** Ela acorda antes de eu dormir...
-
-**CENA 3 (30–50s) — CHAMADA DE VÍDEO COM DUDU**
-Split-screen vertical. Dudu de pijama, comendo cereal.
-> **CLEITON:** Dudu. Eu vou correr uma maratona.
-> **DUDU:** Você não corre nem do boleto.
-> **CLEITON:** Tô falando sério. Daqui a 30 dias. Eu vou estar lá.
-> **DUDU:** Irmão, você consegue correr até a esquina?
-> **CLEITON:** ...Depende de qual esquina.
-
-**CENA 4 (50–65s) — [RUNNEX] Eventos**
-Cleiton baixa o app, abre a aba Eventos, encontra a prova. Contagem regressiva na tela: **30 DIAS**.
-Ele aperta "Tenho interesse". O botão brilha.
-
-**GANCHO (65–75s)**
-Cleiton olha pro quarto, olha pro celular, respira fundo.
-> **CLEITON:** Em 30 dias... eu mudo a minha vida.
-
-Ele se levanta decidido — e tropeça numa caixa de pizza. CORTE PRETO.
-**Cartela:** *DIA 1 de 30.*
+**Cartela:** DIA 1 DE 30
 
 ---
 
-### EP 02 — O PRIMEIRO TREINO · Dia 2 · ~80s
-**Funcionalidade:** GPS
+### EP 02 — O PRIMEIRO TREINO · Dia 2 · ~45s
+**RUNNEX:** GPS
 
-**CENA 1 (0–15s) — INT. LOJA DE ESPORTES**
-Montagem rápida: Cleiton experimentando roupas, faixa na cabeça, óculos espelhados, munhequeira. Se olha no espelho, faz pose de atleta. Música épica.
-> **VENDEDOR:** Vai correr quanto?
-> **CLEITON:** Uns 42.
-> **VENDEDOR:** Minutos?
-> **CLEITON:** ...Quilômetros.
-O vendedor olha pra ele de cima a baixo. Silêncio. Grilo.
+| Visual | Narração |
+|---|---|
+| Beto no espelho da loja: faixa na testa, munhequeira, óculos espelhado, pose de atleta | O **BETO** GASTOU **QUATROCENTOS REAIS**… |
+| Zoom na nota fiscal | …PRA PARECER QUE **CORRE**. |
+| POV `[RUNNEX]` toca INICIAR, GPS 0,00 km | AGORA FALTA SÓ **CORRER**. |
+| Beto disparando, linhas de velocidade, poeira de desenho | NOS PRIMEIROS **DEZ SEGUNDOS**, ELE ERA UM **ATLETA OLÍMPICO**. |
+| Corte seco: Beto curvado, língua pra fora, suor em jato | NOS **DEZ SEGUINTES**, ERA UM **CASO MÉDICO**. |
+| Seu Zé passa caminhando com sacola de pão, assobiando | E FOI ULTRAPASSADO POR UM SENHOR DE **SETENTA ANOS**… |
+| Zoom na sacola | …**CARREGANDO PÃO**. |
+| POV `[RUNNEX]` resumo: **0,48 km** | O **BETO** ACHOU QUE TINHA CORRIDO ATÉ **OUTRO ESTADO**. |
+| Zoom no 0,48 | FORAM **480 METROS**. |
+| Beto deitado na calçada olhando o céu | **AMANHÃ** VAI SER **DIFERENTE**, ELE DISSE. |
 
-**CENA 2 (15–35s) — EXT. RUA — MANHÃ**
-Cleiton alonga exageradamente. Abre o RUNNEX e toca **INICIAR**.
-`[RUNNEX]` GPS ativo, 0,00 km.
-Ele dispara em velocidade de desenho animado (linhas de velocidade, poeira).
-Imaginação: estádio lotado, narrador: *"E CLEITON LIDERA!"*
-
-**CENA 3 (35–55s) — EXT. RUA — 40 SEGUNDOS DEPOIS**
-Realidade: ele está curvado, mãos no joelho, língua pra fora, suor em jato.
-SEU ZÉ passa caminhando, com sacola de pão, assobiando.
-> **SEU ZÉ:** Bom dia, campeão!
-> **CLEITON (sem ar):** Bom... dia...
-
-**CENA 4 (55–72s) — [RUNNEX] Resumo do treino**
-Ele para o treino. Tela: **0,48 km · 4min12s**.
-> **CLEITON:** Só isso?! Eu achei que tinha corrido até outro estado!
-Dudu aparece por trás dele (estava na padaria).
-> **DUDU:** Você correu até a esquina, irmão. E nem foi a esquina toda.
-
-**GANCHO (72–80s)**
-Cleiton deitado na calçada, olhando o céu.
-> **CLEITON:** Amanhã eu volto. Dessa vez vai ser diferente.
-**Cartela:** *Não foi diferente.*
+**Cartela:** NÃO FOI. · DIA 2 DE 30
 
 ---
 
-### EP 03 — A REALIDADE DÓI · Dias 3–6 · ~90s
-**Funcionalidade:** Perfil e estatísticas
+### EP 03 — A REALIDADE DÓI · Dias 3–6 · ~50s
+**RUNNEX:** Perfil e estatísticas
 
-**CENA 1 (0–25s) — MONTAGEM "DIAS 3, 4, 5"**
-Três tentativas, mesma estrutura, cada uma mais curta:
-- Dia 3: sai correndo, para na mesma esquina.
-- Dia 4: câimbra na panturrilha, pulando num pé só.
-- Dia 5: desiste antes de sair, ao ver a escada do prédio.
-Cada uma termina com Cleiton no chão e SEU ZÉ passando.
+| Visual | Narração |
+|---|---|
+| Montagem rápida: Dia 3 para na esquina / Dia 4 câimbra pulando num pé / Dia 5 desiste vendo a escada | O **BETO** TENTOU DE NOVO. E DE NOVO. E **DE NOVO**. |
+| Seu Zé passando nas três cenas, mesma sacola | O **SEU ZÉ** TAMBÉM. TODO DIA. |
+| Beto na cama com bolsa de gelo na perna | ATÉ QUE ELE TEVE UMA IDEIA **REVOLUCIONÁRIA**: |
+| POV: busca "como começar a correr" | **PESQUISAR** COMO SE FAZ. |
+| POV: vídeos "intercale corrida e caminhada", "dormir importa" | DESCOBRIU QUE INICIANTE **CAMINHA** NO MEIO… |
+| Close chocado | …E QUE **DORMIR ÀS 3 DA MANHÃ** NÃO AJUDA. |
+| POV `[RUNNEX]` cria perfil: selfie suado, nível **Iniciante** | ENTÃO ELE CRIOU O **PERFIL** NA **RUNNEX**… |
+| `[RUNNEX]` estatísticas: 4 treinos, **1,6 km** total | …E VIU OS PRÓPRIOS **NÚMEROS** PELA PRIMEIRA VEZ. |
+| Close: cara de quem viu a fatura do cartão | FOI PIOR QUE A **FATURA DO CARTÃO**. |
+| Beto apaga a luz. Relógio 23:58 | MAS PELO MENOS AGORA ELE SABIA O **TAMANHO DO BURACO**. |
 
-**CENA 2 (25–45s) — INT. QUARTO — NOITE (Dia 5)**
-Cleiton deitado, todo dolorido, com bolsa de gelo na perna.
-> **CLEITON:** Eu tô fazendo alguma coisa errada.
-> **DUDU (off, pelo celular):** Tudo. Você tá fazendo tudo errado.
-Montagem de pesquisa: vídeos sobre "como começar a correr", "intercalar corrida e caminhada", "dormir importa?". Ele faz anotações tortas num caderno.
-
-**CENA 3 (45–75s) — [RUNNEX] Perfil**
-Dia 6. Ele cria o perfil completo: foto (selfie suado), objetivo, nível: **Iniciante**.
-Tela de estatísticas mostrando os primeiros registros: 4 treinos, total ~1,6 km, pace médio alto.
-ZOOM no rosto dele lendo os números. Expressão de quem viu a fatura do cartão.
-> **CLEITON:** Pelo menos agora eu sei o tamanho do buraco.
-
-**GANCHO (75–90s)**
-Ele olha a contagem regressiva no evento: **24 DIAS**.
-> **CLEITON:** Ok. Chega de improviso.
-Ele fecha o notebook. Pela primeira vez, apaga a luz antes da meia-noite. Relógio: 23h58.
+**Cartela:** DIA 6 DE 30
 
 ---
 
 ## ATO 2 — A PRIMEIRA EVOLUÇÃO
 
-### EP 04 — AGORA TEMOS UM PLANO · Dias 7–9 · ~85s
-**Funcionalidade:** Histórico e metas
+### EP 04 — AGORA TEMOS UM PLANO · Dias 7–9 · ~45s
+**RUNNEX:** Histórico e metas
 
-**CENA 1 (0–25s) — INT. QUARTO — MANHÃ (Dia 7)**
-Montagem de arrumação com música animada, em ritmo acelerado: lixo no saco, roupa dobrada, tênis na porta, garrafa de água na mesa. O controle do videogame vai pra uma gaveta — ele hesita, tira de volta, coloca de novo.
-Na parede: um papel escrito à mão "ROTINA": *Dormir 23h · Acordar 6h30 · Treino 3x/semana*.
+| Visual | Narração |
+|---|---|
+| Timelapse do quarto sendo arrumado, sacos de lixo saindo | O **BETO** FEZ ALGO QUE NÃO FAZIA DESDE **2019**: |
+| Quarto limpo, brilho de desenho | **ARRUMOU O QUARTO**. |
+| Beto guarda o controle na gaveta, hesita, tira, guarda de novo | GUARDOU O **VIDEOGAME**. NA SEGUNDA TENTATIVA. |
+| Papel na parede: "Dormir 23h · Acordar 6h30 · Treino 3x" | E MONTOU UMA **ROTINA**. |
+| POV `[RUNNEX]` define meta: **3 treinos / semana** | NA **RUNNEX**, COLOCOU UMA META **REALISTA**. |
+| Mensagem do Dudu: "quem é você e o que fez com o beto" | |
+| Parque: Beto correndo 1 min, caminhando 2 | DESSA VEZ, ELE CORREU **UM MINUTO**… CAMINHOU **DOIS**… |
+| `[RUNNEX]` treino concluído: **2,1 km**, barra do histórico bem maior | …E **TERMINOU** O TREINO. PELA **PRIMEIRA VEZ**. |
+| Corredora passa em câmera lenta, tênis rosa-neon | E FOI AÍ QUE ELE VIU… |
+| Close de pânico, olhos de coração ao mesmo tempo | …A **JÚLIA**. |
 
-**CENA 2 (25–45s) — [RUNNEX] Metas**
-Ele define meta semanal no app: **3 treinos / 5 km na semana**.
-> **DUDU (entrando no quarto):** Quem é você e o que fez com o Cleiton?
-> **CLEITON:** O Cleiton antigo morreu.
-> **DUDU:** Ele deixou o Wi-Fi de herança?
-
-**CENA 3 (45–70s) — EXT. PARQUE — MANHÃ (Dia 9)**
-Treino intervalado: 1 min correndo, 2 min caminhando. Ritmo controlado. Ele sofre, mas não para.
-`[RUNNEX]` Treino concluído: **2,1 km**. Histórico mostra a barra de hoje bem maior que as anteriores.
-Ele comemora discretamente — primeira vez que termina o que começou.
-
-**GANCHO (70–85s)**
-Na volta, uma corredora passa por ele em câmera lenta. Tênis rosa-neon. Ela se vira.
-ZOOM no rosto do Cleiton. É a Júlia.
-> **JÚLIA:** Cleiton?
+**Cartela:** DIA 9 DE 30
 
 ---
 
-### EP 05 — ELA FALOU COMIGO! · Dia 9 · ~80s
-**Funcionalidade:** Comunidade
+### EP 05 — ELA FALOU COMIGO! · Dia 9 · ~45s
+**RUNNEX:** Comunidade
 
-**CENA 1 (0–30s) — EXT. PARQUE — CONTINUAÇÃO**
-Cleiton tenta disfarçar o cansaço, encosta numa árvore como se estivesse "relaxado". A árvore é um poste fino; ele quase cai.
-> **JÚLIA:** Não sabia que você corria!
-> **CLEITON:** Ah, é... desde sempre. Coisa minha.
-> **JÚLIA:** Tá treinando pra alguma prova?
-> **CLEITON (sem pensar):** Pros 42.
-> **JÚLIA (impressionada):** Sério?! A maratona? Que demais!
-Por dentro (balão de pensamento): Cleiton gritando em pânico num cenário pegando fogo.
+| Visual | Narração |
+|---|---|
+| Beto tenta encostar "casual" numa árvore; é um poste fino, quase cai | O **BETO** TENTOU PARECER **DESCANSADO**. |
+| Balão da Júlia: "Tá treinando pra alguma prova?" | A **JÚLIA** PERGUNTOU SE ELE TREINA PRA ALGUMA PROVA. |
+| Close: boca do Beto se mexendo sozinha | E A BOCA DELE RESPONDEU **SEM AUTORIZAÇÃO**: |
+| Balão do Beto: "Pros 42." | "**PROS 42**." |
+| Balão de pensamento: Beto gritando num cenário em chamas | |
+| POV `[RUNNEX]` seguem um ao outro. Beto posta treino de 2,1 km: "mais um dia 💪" | ELES SE SEGUIRAM NA **RUNNEX**. |
+| Notificação: **Júlia reagiu 🔥** | E ELA REAGIU COM **FOGO**. |
+| Beto rolando no chão abraçado ao travesseiro | O **BETO** COMEMOROU COMO **TÍTULO DE COPA**. |
+| POV chat com Dudu: "ela acha que eu vou correr 42" / Dudu: "irmão. você sabe o que é 42 km?" | |
+| POV mapa: 42 km a partir de casa, o pin cai em **outra cidade** | ELE NÃO SABIA. |
+| Close: gota de suor | **AGORA SABE**. |
 
-**CENA 2 (30–50s) — [RUNNEX] Comunidade**
-Ela pede pra se seguirem no app. Ele aceita. Em casa, compartilha o treino de 2,1 km com legenda: *"Mais um dia de treino 💪"*.
-Notificação: **Júlia reagiu 🔥**.
-Cleiton rola no chão do quarto, chuta o ar, abraça o travesseiro.
-
-**CENA 3 (50–70s) — CHAMADA COM DUDU**
-> **CLEITON:** Ela reagiu com fogo, Dudu. FOGO.
-> **DUDU:** E o que você falou pra ela?
-> **CLEITON:** ...Que eu vou correr os 42.
-Dudu cospe o refrigerante na câmera. Ri por 5 segundos sem parar.
-
-**GANCHO (70–80s)**
-> **DUDU (enxugando lágrimas):** Irmão... você sabe o que é correr 42 quilômetros?
-Cleiton abre o mapa. Digita uma distância de 42 km a partir de casa. O pin cai **em outra cidade**.
-> **CLEITON:** ...Ah.
+**Cartela:** DIA 9 DE 30
 
 ---
 
-### EP 06 — O PRIMEIRO QUILÔMETRO · Dias 10–12 · ~80s
-**Funcionalidade:** Conquistas
+### EP 06 — O PRIMEIRO QUILÔMETRO · Dias 10–12 · ~45s
+**RUNNEX:** Conquistas
 
-**CENA 1 (0–20s) — MONTAGEM DE TREINOS**
-Três treinos curtos, cada um com o intervalo de corrida um pouco maior (1 → 2 → 3 min). Visual: Cleiton um pouco menos vermelho a cada dia. Detalhe: ele dorme no horário (relógio 23h).
+| Visual | Narração |
+|---|---|
+| Montagem: 3 treinos, intervalo de corrida 1→2→3 min. Relógio 23h na cama | O **BETO** PAROU DE TENTAR SER **HERÓI**… |
+| | …E COMEÇOU A SER **CONSTANTE**. |
+| Parque. Câmera colada no rosto, respiração. Contador: 0,6… 0,8… 0,95… | NO **DIA 12**, ELE TENTOU **UM QUILÔMETRO** SEM PARAR. |
+| Seu Zé de longe, braço erguido | ATÉ O **SEU ZÉ** PAROU PRA VER. |
+| `[RUNNEX]` **1,00 km** + 🏅 "PRIMEIRO QUILÔMETRO" | **CONSEGUIU**. |
+| Beto de joelhos, braços pro céu, confete, coral épico | E COMEMOROU COMO SE TIVESSE GANHADO UMA **OLIMPÍADA**. |
+| Chat Dudu: "ganhou dinheiro?" / Beto: "ganhei um TROFÉU" / Dudu: "é uma figurinha" | |
+| POV: perfil da Júlia. Foto dela com um cara alto de regata: "Treino top com o melhor ❤️" | MINUTOS DEPOIS, A **JÚLIA** POSTOU UMA FOTO… |
+| Close: sorriso do Beto derretendo | …COM **OUTRO CARA**. |
 
-**CENA 2 (20–50s) — EXT. PARQUE — DIA 12**
-Cleiton decide tentar 1 km direto, sem caminhar. Câmera colada no rosto, som da respiração. Cronômetro e distância no canto da tela subindo: 0,6... 0,8... 0,95...
-SEU ZÉ, de longe, para e torce:
-> **SEU ZÉ:** VAI, CAMPEÃO!
-
-**CENA 3 (50–68s) — [RUNNEX] Conquista desbloqueada**
-**1,00 km**. O app vibra. Tela: *🏅 Conquista desbloqueada: PRIMEIRO QUILÔMETRO*.
-Cleiton cai de joelhos, braços pro céu, confete imaginário, hino nacional (paródia genérica, sem música real).
-> **DUDU (chegando):** Ganhou dinheiro?
-> **CLEITON:** Não. Mas ganhei um troféu!
-> **DUDU:** É uma figurinha, Cleiton.
-> **CLEITON:** É UM TROFÉU.
-
-**GANCHO (68–80s)**
-Ele abre o app pra ver o perfil da Júlia. Ela postou uma foto treinando **com um cara alto, sorridente, de regata de assessoria**. Legenda: *"Treino top com o melhor ❤️"*.
-ZOOM no Cleiton. O sorriso dele derrete.
+**Cartela:** DIA 12 DE 30
 
 ---
 
-### EP 07 — QUEM É AQUELE CARA? · Dias 13–14 · ~80s
-**Funcionalidade:** Ranking
+### EP 07 — QUEM É AQUELE CARA? · Dias 13–14 · ~45s
+**RUNNEX:** Ranking
 
-**CENA 1 (0–25s) — INT. QUARTO — NOITE**
-Cleiton investigando a foto como detetive: lupa, quadro de cortiça imaginário com barbante vermelho ligando "JÚLIA", "CARA ALTO", "TREINO TOP", "❤️".
-> **CLEITON:** "O melhor"... o melhor O QUÊ?
+| Visual | Narração |
+|---|---|
+| Beto com lupa, quadro de cortiça com barbante vermelho: "JÚLIA – CARA – ❤️" | O **BETO** VIROU **DETETIVE**. |
+| POV `[RUNNEX]` ranking da comunidade → perfil do Marcos | ACHOU O CARA NO **RANKING** DA **RUNNEX**. |
+| Números entrando como golpes de luta (SFX POW): **210 km no mês** | **DUZENTOS E DEZ** QUILÔMETROS NO MÊS. |
+| POW: **pace 4:30** | PACE DE **QUATRO E MEIA**. |
+| Posição do Beto lá embaixo: **9,8 km** | O **BETO** TINHA **NOVE**. |
+| Beto cai pra trás na cadeira (K.O.) | |
+| Chat Dudu: "vc tá se comparando com o cara errado" / "compara com você do dia 1" | O **DUDU** DEU UM CONSELHO **SÁBIO**. |
+| Beto escrevendo post-it: "OPERAÇÃO SUPERAR O MARCOS" | O **BETO** IGNOROU **COMPLETAMENTE**. |
+| POV: alarme marcado para **05:00** | |
 
-**CENA 2 (25–50s) — [RUNNEX] Ranking**
-Ele encontra o perfil do Marcos no ranking da comunidade. Números aparecem um a um, como golpes de luta:
-- Distância no mês: **210 km** (POW!)
-- Pace médio: **4:30/km** (POW!)
-- Ele mesmo: **9,8 km** no mês, posição lá embaixo (K.O.)
-Cleiton cai pra trás na cadeira.
-
-**CENA 3 (50–70s) — CHAMADA COM DUDU**
-> **DUDU:** Você tá preocupado com a pessoa errada.
-> **CLEITON:** Ele tem 210 quilômetros, Dudu!
-> **DUDU:** E você tem 14 dias atrás tinha zero. Compara com quem você era, não com ele.
-> **CLEITON:** ...Ok, frase bonita. Mas eu vou descobrir quem é ele.
-
-**GANCHO (70–80s)**
-Cleiton coloca o alarme pra **5h da manhã** e escreve num post-it: *"OPERAÇÃO SUPERAR O MARCOS"*. Dudu, na tela, faz o sinal da cruz.
+**Cartela:** DIA 14 DE 30
 
 ---
 
 ## ATO 3 — A CRISE E O AMADURECIMENTO
 
-### EP 08 — EU POSSO SER MELHOR · Dias 15–16 · ~85s
-**Funcionalidade:** GPS e ritmo
+### EP 08 — EU POSSO SER MELHOR · Dias 15–16 · ~45s
+**RUNNEX:** GPS e ritmo
 
-**CENA 1 (0–20s) — EXT. PARQUE — 5h DA MANHÃ**
-Cleiton chega de faixa na cabeça, olhar de filme de boxe. Vê Marcos de longe, treinando um grupo.
-> **CLEITON (voz interna):** Se ele faz 4:30, eu faço 4:29.
+| Visual | Narração |
+|---|---|
+| 5h da manhã, Beto com olhar de filme de boxe | O PLANO DO **BETO** ERA SIMPLES: |
+| Marcos ao fundo, treinando um grupo | SE O CARA FAZ **QUATRO E MEIA**… |
+| Close determinado | …ELE FAZ **QUATRO E VINTE E NOVE**. |
+| Beto dispara. `[RUNNEX]` alerta de ritmo muito acima do habitual | A **RUNNEX** AVISOU QUE O RITMO TAVA **ALTO DEMAIS**. |
+| | O **BETO** ACHOU QUE ERA **ELOGIO**. |
+| Sequência: voa / pontada na lateral, corre torto / desaba no banco, verde | O PLANO DUROU **NOVENTA SEGUNDOS**. |
+| Seu Zé oferece água: "devagar se vai ao longe" | |
+| Beto andando como robô no dia seguinte | NO DIA SEGUINTE, NÃO CONSEGUIA NEM **DESCER ESCADA**. |
+| POV `[RUNNEX]` histórico — ele abre pra se lamentar | ELE ABRIU O HISTÓRICO PRA PROVAR QUE ERA UM **FRACASSO**… |
+| Lado a lado: **Dia 2: 0,48 km** vs **Dia 14: 2,6 km** | …E DEU DE CARA COM ISSO. |
+| Close, zoom lento | |
 
-**CENA 2 (20–50s) — O TREINO DESASTRE**
-Ele dispara. `[RUNNEX]` alerta de ritmo: pace muito acima do habitual.
-Sequência cômica em três atos: 1) voa; 2) lateral do abdômen dói ("pontada"), ele corre torto; 3) para num banco, verde, quase passando mal.
-SEU ZÉ passa. Para. Oferece água.
-> **SEU ZÉ:** Devagar se vai ao longe, campeão.
-
-**CENA 3 (50–70s) — INT. QUARTO — DIA 16**
-Cleiton com dor muscular, andando como robô. Tentou treinar de novo, não conseguiu.
-> **CLEITON:** Eu regredi. Duas semanas jogadas fora.
-
-**GANCHO (70–85s) — [RUNNEX] Histórico**
-Por birra, ele abre o histórico para provar que é um fracasso. Mas a tela mostra, lado a lado: **Dia 2: 0,48 km** vs. **Dia 14: 2,6 km**.
-Ele para. ZOOM lento no rosto.
-> **CLEITON:** ...Pera.
+**Cartela:** DIA 16 DE 30
 
 ---
 
-### EP 09 — NÃO É UMA COMPETIÇÃO · Dias 17–18 · ~80s
-**Funcionalidade:** Histórico
+### EP 09 — NÃO É UMA COMPETIÇÃO · Dias 17–18 · ~45s
+**RUNNEX:** Histórico
 
-**CENA 1 (0–25s) — EXT. LANCHONETE — DUDU E CLEITON**
-Dudu comendo um X-tudo, Cleiton com salada (cara de sofrimento).
-> **CLEITON:** Eu quis passar o cara. Quase morri.
-> **DUDU:** Cleiton, ele corre há quantos anos? Você corre há duas semanas. Isso não é uma corrida contra ele.
-> **CLEITON:** Então é contra quem?
-> **DUDU:** Contra o Cleiton do sofá.
+| Visual | Narração |
+|---|---|
+| Lanchonete: Dudu com X-tudo, Beto com salada, cara de sofrimento | O **DUDU** EXPLICOU DE UM JEITO QUE ATÉ O **BETO** ENTENDEU: |
+| Balão do Dudu: "o cara corre há anos. vc há 2 semanas." | |
+| Balão: "a corrida é contra o Beto do sofá." | |
+| POV `[RUNNEX]` gráfico: distância subindo, pace caindo | E OS NÚMEROS **CONCORDAVAM**. |
+| `[RUNNEX]` meta ajustada: 3x por semana, aumento gradual | ELE VOLTOU PRO **PLANO**. SEM **ATALHO**. |
+| Parque: Júlia aparece com o Marcos e o grupo | AÍ A **JÚLIA** APARECEU. COM **ELE**. |
+| Balão da Júlia: "Beto! Esse é o Marcos, meu **treinador**." | |
+| Close: Beto com cara de alívio extremo, anjos cantando | **TREINADOR**. |
+| Balão do Marcos: "vi teus treinos no app. evolução consistente." | E O CARA AINDA **ELOGIOU** ELE. |
+| À noite, POV: notificação da Júlia "ei, sábado tem um treino…" | E À NOITE… |
+| Celular cai na cara do Beto | |
 
-**CENA 2 (25–45s) — [RUNNEX] Histórico completo**
-Cleiton revisa o histórico em tela cheia: a linha de distância subindo devagar, o pace caindo. Pequenas conquistas listadas.
-Ele ajusta a meta: volta a ser realista (**intervalado, 3x por semana, +10% por semana**).
-
-**CENA 3 (45–68s) — EXT. PARQUE — DIA 18**
-Treino leve. Marcos passa correndo, cumprimenta com a cabeça. Cleiton cumprimenta de volta, sem drama.
-Júlia aparece correndo com Marcos e o grupo:
-> **JÚLIA:** Cleiton! Esse é o Marcos, meu treinador da assessoria.
-> **CLEITON (aliviado, voz fina):** Treinador! Que ótimo. Ótimo, ótimo.
-> **MARCOS:** Vi teus treinos no app. Evolução consistente. É assim que se faz.
-
-**GANCHO (68–80s)**
-À noite, notificação: **mensagem da Júlia**. Prévia: *"Ei, sábado tem um treino..."*. Cleiton deixa o celular cair na cara.
+**Cartela:** DIA 18 DE 30
 
 ---
 
-### EP 10 — O CONVITE · Dias 19–20 · ~85s
-**Funcionalidade:** Comunidade
+### EP 10 — O CONVITE · Dias 19–20 · ~45s
+**RUNNEX:** Comunidade
 
-**CENA 1 (0–20s) — INT. QUARTO**
-Mensagem completa: *"Sábado tem treino coletivo da assessoria, 5 km leve. Bora?"*
-Cleiton digita "SIM!!!!!!", apaga, digita "pode ser", apaga, digita "talvez", apaga. Dudu ao lado:
-> **DUDU:** Manda só "bora".
-Ele manda "bora 🏃". Joga o celular longe como se fosse uma granada.
+| Visual | Narração |
+|---|---|
+| POV chat: "sábado tem treino coletivo, 5 km leve. bora?" | A **JÚLIA** CONVIDOU O **BETO** PRA UM **TREINO**. |
+| POV digitando "SIM!!!!!!" → apaga → "pode ser" → apaga → "talvez" → apaga | ELE ESCREVEU **ONZE** RESPOSTAS DIFERENTES. |
+| Envia "bora 🏃". Joga o celular como granada | E MANDOU A MAIS **CURTA**. |
+| `[RUNNEX]` evento de treino coletivo com foto dele na lista de participantes | |
+| Grupo largando, Beto no fim do pelotão | NO SÁBADO, ELE FICOU NO **FINAL** DO GRUPO… |
+| Beto corre, caminha, volta a correr | …MAS **NÃO FICOU PRA TRÁS**. |
+| Júlia corre ao lado dele, balão: "tá bem melhor do que eu esperava" | |
+| `[RUNNEX]` **3,5 km** | **TRÊS E MEIO**. O MAIOR TREINO DA VIDA DELE. |
+| Foto do grupo, Beto suado e sorrindo | |
+| Balão da Júlia: "e aí, vai mesmo correr a maratona?" | AÍ ELA PERGUNTOU DA **MARATONA**. |
+| Close: sorriso travado, gota de suor | |
 
-**CENA 2 (20–60s) — EXT. PARQUE — SÁBADO (Dia 20)**
-`[RUNNEX]` Evento de treino coletivo na aba Comunidade: lista de participantes, foto dele ali no meio.
-Grupo de 15 pessoas. Largada leve. Cleiton fica no fim do pelotão, mas **acompanha**. Corre, caminha quando precisa, volta a correr.
-Júlia fica um tempo do lado dele, conversando.
-> **JÚLIA:** Você tá bem melhor do que eu esperava.
-> **CLEITON:** Isso é um elogio?
-> **JÚLIA:** É um elogio.
-
-**CENA 3 (60–75s) — FIM DO TREINO**
-Ele completa **3,5 km** (o grupo fez 5; ele fez a parte dele e caminhou o resto). Foto do grupo — ele está nela, suado e sorrindo.
-
-**GANCHO (75–85s)**
-> **JÚLIA:** E aí... você vai mesmo estar na prova?
-Cleiton congela. Pausa longa. O sorriso fica travado.
+**Cartela:** DIA 20 DE 30
 
 ---
 
-### EP 11 — O PIOR DIA · Dias 21–22 · ~90s
-**Funcionalidade:** Conquistas e retrospectiva
+### EP 11 — O PIOR DIA · Dias 21–22 · ~50s
+**RUNNEX:** Conquistas e retrospectiva
+*(Único episódio com paleta fria e dessaturada.)*
 
-**CENA 1 (0–30s) — MONTAGEM DO DIA RUIM**
-Chuva. Alarme toca, ele aperta soneca 3 vezes. Trabalho/faculdade acumulado, mãe cobrando louça, chefe cobrando relatório. Perna pesada. Paleta de cores mais fria e dessaturada (único ep. assim).
-Ele olha o controle do videogame na gaveta. Abre a gaveta.
+| Visual | Narração |
+|---|---|
+| Chuva na janela. Soneca 1, 2, 3 | TEM DIA QUE **NADA** FUNCIONA. |
+| Pilha de tarefas, mensagem da mãe "e a louça?", e-mail do chefe | O **BETO** TAVA CANSADO, ATRASADO… |
+| Close sério | …E COM A **MENTIRA** DOS 42 PESANDO NAS COSTAS. |
+| Mão abrindo a gaveta do videogame | ELE QUASE **DESISTIU**. |
+| POV chat Dudu: "eu menti pra ela. eu sou uma piada" | |
+| Dudu responde: "mentiu sim. mas o resto não é mentira" | O **DUDU** NÃO PASSOU PANO. |
+| POV `[RUNNEX]` conquistas: Primeiro Quilômetro / Primeira Semana / Primeiro Treino em Grupo | E MOSTROU O QUE O **BETO** JÁ TINHA FEITO. |
+| `[RUNNEX]` total: **~24 km em 21 dias** | **VINTE E QUATRO QUILÔMETROS**. |
+| Flash do Dia 2: Seu Zé e a sacola de pão | O CARA QUE PERDEU PRA UM **SACO DE PÃO**. |
+| Gaveta se fecha. Tênis na porta | O **BETO** DECIDIU CONTINUAR… |
+| Chuva para, sol aparece com "plim", cores voltam | …MAS AGORA, **POR ELE**. |
 
-**CENA 2 (30–50s) — INT. QUARTO — NOITE**
-> **CLEITON (pro Dudu):** Pra quê isso tudo? Eu não vou correr 42. Eu menti pra ela. Eu sou uma piada.
-> **DUDU:** Você mentiu, sim. Isso é problema. Mas o resto não é mentira.
-
-**CENA 3 (50–75s) — [RUNNEX] Retrospectiva**
-Dudu pega o celular dele e abre as conquistas: *Primeiro Quilômetro*, *Primeira Semana Completa*, *Primeiro Treino em Grupo*. Total acumulado: **~24 km em 21 dias**.
-> **DUDU:** Lembra do Dia 2? 480 metros. Seu Zé passou você caminhando.
-> **CLEITON (rindo, chorando):** Com uma sacola de pão.
-> **DUDU:** Agora você faz 3 km. Isso aqui não é sobre ela.
-
-**GANCHO (75–90s)**
-Cleiton fecha a gaveta do videogame. Coloca o tênis ao lado da porta.
-> **CLEITON:** Eu vou continuar. Mas agora é por mim.
-A chuva para do lado de fora (exagero cartoon: sol aparece com um "plim").
+**Cartela:** DIA 22 DE 30
 
 ---
 
 ## ATO 4 — A TRANSFORMAÇÃO
 
-### EP 12 — OLHA DE ONDE EU VIM · Dia 23 · ~80s
-**Funcionalidade:** Gráficos e estatísticas
+### EP 12 — OLHA DE ONDE EU VIM · Dia 23 · ~40s
+**RUNNEX:** Gráficos e estatísticas
 
-**CENA 1 (0–25s) — SPLIT-SCREEN "ANTES / AGORA"**
-Tela dividida na horizontal (vertical funciona melhor assim):
-- Em cima, Dia 1: quarto caótico, 2h da manhã, energético.
-- Embaixo, Dia 23: quarto arrumado, 6h30, garrafa de água, tênis na porta.
-Os dois Cleitons fazem o mesmo movimento (levantar da cama) ao mesmo tempo — um cai, o outro levanta firme.
+| Visual | Narração |
+|---|---|
+| Tela dividida em cima/embaixo: Dia 1 (quarto caótico, 2h) / Dia 23 (quarto limpo, 6h30) | **DIA 1**. **DIA 23**. |
+| Os dois Betos levantam da cama ao mesmo tempo: um cai, o outro levanta firme | |
+| POV `[RUNNEX]` gráfico animado da evolução | O **BETO** ACHAVA QUE MUDAR ERA UM **DIA GIGANTE**. |
+| `[RUNNEX]` mapa: 1º percurso minúsculo vs. o último dando a volta no parque | FORAM **VINTE E TRÊS DIAS PEQUENOS**. |
+| Espelho: postura melhor, rosto um pouco menos inchado, camiseta laranja | O **ESPELHO** COMEÇOU A **CONCORDAR**. |
+| Ele ajeita a postura e sorri, sem pose | |
+| Notificação `[RUNNEX]`: "Faltam 7 dias para a prova" | |
+| Close: respira fundo | **SETE DIAS**. |
 
-**CENA 2 (25–55s) — [RUNNEX] Gráficos**
-Gráfico de evolução animado: distância semanal subindo, pace caindo, frequência constante. Primeiro treino vs. último lado a lado (percursos no mapa: um minúsculo, outro dando a volta no parque).
-> **CLEITON (voz off):** Eu achava que mudar era um dia gigante. Na real foi um monte de dia pequeno.
-
-**CENA 3 (55–70s) — ESPELHO**
-Ele se olha no espelho. Mudança **discreta**: postura melhor, rosto menos inchado, a roupa esportiva já caindo melhor. Ele não comemora o corpo — ajeita a postura e sorri.
-
-**GANCHO (70–80s)**
-Notificação `[RUNNEX]` Eventos: **"Faltam 7 dias para a prova."**
-Ele respira fundo.
+**Cartela:** DIA 23 DE 30
 
 ---
 
-### EP 13 — A ÚLTIMA PREPARAÇÃO · Dias 24–28 · ~90s
-**Funcionalidade:** Música e GPS
+### EP 13 — A ÚLTIMA PREPARAÇÃO · Dias 24–28 · ~50s
+**RUNNEX:** Música e GPS
 
-**CENA 1 (0–25s) — EXT. RUA — A PLAYLIST**
-Cleiton conecta a música no app e escolhe a faixa mais épica possível (trilha original, coral e tambores).
-Ele dispara como herói de filme. Dez segundos depois, sem fôlego, com a música ainda épica.
-> **DUDU (de bicicleta ao lado):** A trilha sonora tá de maratonista, mas o condicionamento tá de sofá.
-Cleiton troca pra uma música calma, ritmo constante. Corre melhor. Lição visual.
+| Visual | Narração |
+|---|---|
+| POV `[RUNNEX]` conecta música, escolhe a faixa mais épica (coral, tambores) | O **BETO** ESCOLHEU A MÚSICA MAIS **ÉPICA** DO MUNDO. |
+| Dispara como herói de filme | CORREU COMO **PROTAGONISTA**… |
+| 10s depois, sem fôlego, música ainda épica | …POR **DEZ SEGUNDOS**. |
+| Balão do Dudu de bicicleta: "a trilha tá de maratonista, o fôlego tá de sofá" | |
+| Troca pra música calma, ritmo constante | AÍ TROCOU PRA UMA NO **RITMO DELE**. FUNCIONOU. |
+| `[RUNNEX]` **4 km contínuos** | **QUATRO QUILÔMETROS**. SEM PARAR. |
+| Banco do parque, pôr do sol, Beto e Júlia | E AÍ VEIO A PERGUNTA. |
+| Balão da Júlia: "por que você começou a correr?" | |
+| Balão do Beto: "por sua causa. e eu não vou correr 42. eu menti." | O **BETO** FALOU A **VERDADE**. AS DUAS. |
+| Júlia ri. Balão: "eu sabia. ninguém treina pra maratona caminhando 2 minutos" | ELA **JÁ SABIA**. |
+| Balão: "mas eu vi você aparecer todo dia. isso eu não sabia." | |
+| Balão: "aliás… preparei uma surpresa." Ela sai correndo | |
+| Close: Beto com ponto de interrogação | |
 
-**CENA 2 (25–45s) — MONTAGEM "POLIMENTO"**
-`[RUNNEX]` Último treino longo: **4 km contínuos** (marco da temporada). Depois, treinos mais curtos e leves (Dias 26–28), dormindo cedo, comendo melhor.
-
-**CENA 3 (45–80s) — EXT. BANCO DO PARQUE — PÔR DO SOL**
-Cleiton e Júlia sentados depois de um treino.
-> **JÚLIA:** Posso perguntar uma coisa? Por que você começou a correr?
-> **CLEITON:** ...Por sua causa. Vi seu story e falei pro Dudu que ia correr a maratona. E também... eu não vou correr 42. Eu menti. Eu mal fazia 500 metros.
-Silêncio. Júlia ri.
-> **JÚLIA:** Eu já desconfiava. Ninguém treina pra maratona com intervalado de 2 minutos.
-> **CLEITON:** Você tá brava?
-> **JÚLIA:** Não. Eu vi você aparecer todo dia. Isso eu não desconfiava.
-
-**GANCHO (80–90s)**
-> **JÚLIA:** Aliás, eu preparei uma surpresa pra você.
-Ela sorri e sai correndo. Cleiton fica com cara de ponto de interrogação.
+**Cartela:** DIA 28 DE 30
 
 ---
 
-### EP 14 — ALGO ACONTECEU · Dia 29 · ~85s
-**Funcionalidade:** Eventos e notificações
+### EP 14 — ALGO ACONTECEU · Dia 29 · ~45s
+**RUNNEX:** Eventos e notificações
 
-**CENA 1 (0–20s) — INT. QUARTO — MANHÃ**
-Cleiton separando o kit da prova na cama, organizadíssimo (callback visual do quarto do ep. 01). O celular toca: Júlia.
-> **JÚLIA (voz chorosa):** Cleiton... torci o tornozelo no último trote. Não vou poder correr amanhã.
+| Visual | Narração |
+|---|---|
+| Kit de prova arrumado na cama (callback do quarto do ep. 01) | VÉSPERA DA PROVA. O **BETO** TAVA **PRONTO**. |
+| POV: ligação "Júlia 🏃‍♀️" | AÍ O TELEFONE TOCOU. |
+| Casa da Júlia: pé imobilizado, gelo | A **JÚLIA** TORCEU O **TORNOZELO**. |
+| Close triste dela | OITO MESES DE TREINO. **FORA DA PROVA**. |
+| Beto chega com sacola de frutas (esconde a bolacha atrás das costas) | |
+| Balão do Beto: "vai ter outra. e você vai estar pronta." | |
+| Júlia entrega um envelope | ENTÃO ELA ENTREGOU A **SURPRESA**. |
+| POV `[RUNNEX]` notificação: "Sua inscrição para os **5 km** foi confirmada" | UMA INSCRIÇÃO. **CINCO QUILÔMETROS**. NO NOME DELE. |
+| Balão da Júlia: "eu queria estar lá te vendo." | |
+| Quarto à noite: Beto prende o número de peito na camiseta | AMANHÃ É O **DIA 30**. |
+| Ele dorme às 22h | |
 
-**CENA 2 (20–55s) — INT. CASA DA JÚLIA**
-Júlia no sofá, pé imobilizado com gelo. Cleiton chega com uma sacola (frutas, e um pacote de bolacha que ele esconde atrás das costas).
-> **JÚLIA:** Treinei 8 meses pra isso.
-> **CLEITON:** Vai ter outra. E você vai estar pronta.
-> **JÚLIA:** Fala isso o cara que me ensinou que dá pra começar do zero.
-Ela entrega um envelope.
-> **JÚLIA:** Essa era a surpresa. Te inscrevi na prova de **5 km**. Mesmo dia, mesma largada da festa. Eu queria estar lá vendo.
-
-**CENA 3 (55–72s) — [RUNNEX] Notificação**
-`[RUNNEX]` *"Sua inscrição para a prova de 5 km foi confirmada."* O evento aparece no perfil dele.
-
-**GANCHO (72–85s) — INT. QUARTO — NOITE**
-Cleiton prende o número de peito na camiseta. ZOOM no número. Ele olha pela janela.
-> **CLEITON:** Amanhã é o meu dia.
-Ele dorme às 22h. Pela primeira vez, não precisa de alarme pra saber que vai acordar.
+**Cartela:** DIA 29 DE 30
 
 ---
 
 ## ATO 5 — O GRANDE DIA
 
-### EP 15 — 30 DIAS DEPOIS · Dia 30 · ~120s
-**Funcionalidade:** Eventos, perfil e comunidade
+### EP 15 — 30 DIAS DEPOIS · Dia 30 · ~55s
+**RUNNEX:** Eventos, perfil e comunidade
 
-**CENA 1 (0–20s) — EXT. ÁREA DE LARGADA — MADRUGADA**
-Multidão, balões, locutor. Cleiton com o número no peito, Dudu do lado (com um cartaz "VAI QUE É TUA, CLEITON" escrito errado).
-Na grade, de muletas, chega **Júlia** com o pé imobilizado.
-> **JÚLIA:** Achou que eu ia perder isso?
+| Visual | Narração |
+|---|---|
+| Área de largada, multidão, Beto com número no peito, Dudu com cartaz escrito errado | **DIA 30**. |
+| Júlia chega de muletas | E A **JÚLIA** VEIO. DE **MULETA**. |
+| Júlia amarra a fita do tênis rosa-neon no pulso dele | ELA PEDIU PRA ELE CORRER UM POUCO **POR ELA**. |
+| Close: mãos tremendo | O **BETO** TAVA COM **MEDO**. |
+| Flashbacks de 0,5s cada: quarto caótico → 0,48 km → Seu Zé e o pão → câimbra → 🏅 1 km → banco verde → chuva → gaveta fechando | AÍ ELE LEMBROU DE ONDE TINHA **VINDO**. |
+| Largada. Beto sai devagar e controlado | DESSA VEZ, SEM **HEROÍSMO**. |
+| Km 2: Seu Zé na plateia, braço erguido | |
+| Km 3,5: Beto caminha 30 segundos sem vergonha, depois volta a correr | ELE **CAMINHOU** UM POUCO. E **VOLTOU** A CORRER. |
+| Km 4,8: pórtico de chegada, música sobe, ele acelera | |
+| Cruza a linha | |
+| `[RUNNEX]` **5,00 km** + 🏅 "PRIMEIRA PROVA" + comparativo **Dia 2: 0,48 km → Dia 30: 5,00 km** | **480 METROS**. **CINCO MIL**. |
+| Reações chegando: Júlia 🔥, Marcos 👏, Dudu "chorei" | |
+| Júlia: "e agora?" Beto olha o cartaz da maratona do ano que vem | O **BETO** COMEÇOU POR CAUSA DE **UMA GAROTA**… |
+| Close no rosto, sorrindo | …E TERMINOU COM UM **PLANO**. |
 
-**CENA 2 (20–40s) — O MEDO**
-Cleiton olha o pórtico. Mãos tremendo.
-> **CLEITON:** E se eu travar no meio?
-> **DUDU:** Trinta dias atrás você não fazia 500 metros. Hoje você vai fazer 5 mil. Você já ganhou, irmão. Agora é só ir buscar.
-> **JÚLIA (tira a fita do tênis rosa-neon e amarra no pulso dele):** Corre um pouquinho por mim. O resto é seu.
-
-**CENA 3 (40–60s) — FLASHBACKS (cortes de 1s cada)**
-Quarto bagunçado → 0,48 km → Seu Zé e a sacola de pão → câimbra → "PRIMEIRO QUILÔMETRO" → treino desastre → treino coletivo → dia de chuva → gaveta fechada → quarto arrumado.
-
-**CENA 4 (60–95s) — A PROVA**
-Largada. Ele sai devagar, controlado (callback: não repete o erro do ep. 08).
-- Km 2: Seu Zé está no público. *"VAI, CAMPEÃO!"*
-- Km 3,5: ele sofre. Pensa em caminhar. Caminha 30 segundos — sem vergonha. Volta a correr.
-- Km 4,8: ele vê o pórtico. Música sobe.
-Câmera aproxima do rosto. Respiração. Ele **acelera**.
-
-**CENA 5 (95–110s) — CHEGADA**
-Cruza a linha. Cai de joelhos (callback do ep. 06), mas dessa vez sem exagero: só respira e ri.
-`[RUNNEX]` **5,00 km · 38min12s** · *🏅 Conquista: PRIMEIRA PROVA*. Comparativo automático: **Dia 2: 0,48 km → Dia 30: 5,00 km**.
-Ele compartilha na comunidade. Reações chegando: Júlia 🔥, Marcos 👏, Dudu "chorei".
-
-**CENA 6 (110–118s) — FINAL**
-Júlia e Cleiton, medalha no peito dele.
-> **JÚLIA:** E agora?
-Cleiton olha pro cartaz da maratona do ano que vem, ao fundo.
-> **CLEITON:** Agora... eu tenho um plano.
-CORTE PRETO.
-
-**Cartela (118–120s):** *TEMPORADA 2 EM BREVE.* → **RUNNEX — SUA EVOLUÇÃO COMEÇA AGORA.**
+**Cartela:** TEMPORADA 2 EM BREVE → **RUNNEX — SUA EVOLUÇÃO COMEÇA AGORA.**
 
 ---
 
-## Checklist de continuidade
-| Ep | Dia | Distância máx. | Visual Cleiton | Quarto |
+## Tabela de continuidade
+
+| Ep | Dia | Distância máx. | Visual do Beto | Quarto |
 |---|---|---|---|---|
-| 01–03 | 1–6 | 0,48 km | Moletom manchado, desleixado | Caos |
-| 04–07 | 7–14 | 2,6 km | Roupa esportiva nova, ainda pesado | Arrumando |
-| 08–11 | 15–22 | 3,5 km | Postura um pouco melhor | Organizado (ep. 11 regride levemente) |
-| 12–14 | 23–29 | 4 km | Rosto menos inchado, postura firme | Organizado |
+| 01–03 | 1–6 | 0,48 km | Moletom manchado, chinelo | Caos |
+| 04–07 | 7–14 | 2,6 km | Roupa esportiva nova, ainda pesado | Arrumado |
+| 08–11 | 15–22 | 3,5 km | Postura um pouco melhor | Arrumado (ep. 11 regride levemente) |
+| 12–14 | 23–29 | 4 km | Camiseta laranja, rosto menos inchado | Arrumado |
 | 15 | 30 | 5 km | Confiante, condicionado | — |
 
-**Atenção:** todos os números exibidos nas telas devem ser consistentes com esta tabela e gerados no app real antes da animação.
+**Antes de animar:** gerar todas as telas `[RUNNEX]` no app real com esses números.
