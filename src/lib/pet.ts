@@ -5,6 +5,7 @@ import guepardoImg from "@/assets/pets/guepardo.webp";
 import lebreImg from "@/assets/pets/lebre.webp";
 import galgoImg from "@/assets/pets/galgo.webp";
 import tartarugaImg from "@/assets/pets/tartaruga.webp";
+import coroaDiamanteImg from "@/assets/accessories/store-coroa-diamante.webp";
 
 export interface PetSpeciesInfo {
   id: PetSpecies;
@@ -78,37 +79,37 @@ export interface PetAnchor {
 // estimados a olho: ajuste aqui quando a arte real dos acessórios chegar.
 export const PET_ANCHORS: Record<PetSpecies, Record<PetBodySlot, PetAnchor>> = {
   cavalo: {
-    cabeca: { x: 0.47, y: 0.08, width: 0.3, rotate: 0 },
+    cabeca: { x: 0.47, y: 0.05, width: 0.28, rotate: 8 },
     pescoco: { x: 0.37, y: 0.4, width: 0.3, rotate: 0 },
     corpo: { x: 0.33, y: 0.53, width: 0.5, rotate: 0 },
     pes: { x: 0.42, y: 0.95, width: 0.6, rotate: 0 },
   },
   falcao: {
-    cabeca: { x: 0.44, y: 0.1, width: 0.28, rotate: 0 },
+    cabeca: { x: 0.45, y: 0.0, width: 0.26, rotate: 0 },
     pescoco: { x: 0.4, y: 0.3, width: 0.3, rotate: 0 },
     corpo: { x: 0.39, y: 0.46, width: 0.45, rotate: 0 },
     pes: { x: 0.52, y: 0.94, width: 0.4, rotate: 0 },
   },
   guepardo: {
-    cabeca: { x: 0.41, y: 0.06, width: 0.28, rotate: 0 },
+    cabeca: { x: 0.41, y: 0.0, width: 0.26, rotate: 0 },
     pescoco: { x: 0.38, y: 0.3, width: 0.3, rotate: 0 },
     corpo: { x: 0.41, y: 0.46, width: 0.45, rotate: 0 },
     pes: { x: 0.4, y: 0.93, width: 0.55, rotate: 0 },
   },
   lebre: {
-    cabeca: { x: 0.49, y: 0.2, width: 0.26, rotate: 0 },
+    cabeca: { x: 0.48, y: 0.16, width: 0.22, rotate: 0 },
     pescoco: { x: 0.45, y: 0.5, width: 0.28, rotate: 0 },
     corpo: { x: 0.43, y: 0.61, width: 0.42, rotate: 0 },
     pes: { x: 0.42, y: 0.93, width: 0.5, rotate: 0 },
   },
   galgo: {
-    cabeca: { x: 0.4, y: 0.08, width: 0.28, rotate: 0 },
+    cabeca: { x: 0.41, y: 0.02, width: 0.26, rotate: 0 },
     pescoco: { x: 0.39, y: 0.44, width: 0.3, rotate: 0 },
     corpo: { x: 0.39, y: 0.54, width: 0.42, rotate: 0 },
     pes: { x: 0.42, y: 0.95, width: 0.55, rotate: 0 },
   },
   tartaruga: {
-    cabeca: { x: 0.8, y: 0.38, width: 0.22, rotate: 10 },
+    cabeca: { x: 0.82, y: 0.31, width: 0.18, rotate: 10 },
     pescoco: { x: 0.8, y: 0.48, width: 0.2, rotate: 0 },
     corpo: { x: 0.46, y: 0.3, width: 0.6, rotate: 0 },
     pes: { x: 0.5, y: 0.82, width: 0.7, rotate: 0 },
@@ -167,7 +168,7 @@ export const PET_ACCESSORIES: PetAccessory[] = [
   { id: "store-aureola", label: "Auréola", slot: "cabeca", emoji: "😇", source: "store", price: 320, rarity: "epico" },
   { id: "store-capacete-astronauta", label: "Capacete de astronauta", slot: "cabeca", emoji: "🧑‍🚀", source: "store", price: 350, rarity: "epico" },
   { id: "store-chifres-neon", label: "Chifres neon", slot: "cabeca", emoji: "😈", source: "store", price: 380, rarity: "epico" },
-  { id: "store-coroa-diamante", label: "Coroa de diamante", slot: "cabeca", emoji: "💎", source: "store", price: 800, rarity: "lendario" },
+  { id: "store-coroa-diamante", label: "Coroa de diamante", slot: "cabeca", emoji: "💎", source: "store", price: 800, rarity: "lendario", image: coroaDiamanteImg },
   { id: "store-coroa-louros", label: "Coroa de louros olímpica", slot: "cabeca", emoji: "🌿", source: "store", price: 1000, rarity: "lendario" },
   { id: "store-apito", label: "Apito de treinador", slot: "pescoco", emoji: "📯", source: "store", price: 40, rarity: "comum" },
   { id: "store-gravata", label: "Gravata", slot: "pescoco", emoji: "👔", source: "store", price: 60, rarity: "comum" },
