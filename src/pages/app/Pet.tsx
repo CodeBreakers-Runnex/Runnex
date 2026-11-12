@@ -19,9 +19,9 @@ import {
   ACCESSORY_SLOTS,
   PET_ACCESSORIES,
   PET_SPECIES,
-  PET_ANCHORS,
   PET_MOOD_LABEL,
   RARITY_INFO,
+  getAccessoryAnchor,
   getAccessoryById,
   getAccessoryImage,
   getPetMood,
@@ -348,7 +348,7 @@ export default function Pet() {
             <img src={speciesInfo?.image} alt={speciesInfo?.label} className="h-full w-full object-contain" />
             {/* Acessórios com arte ficam presos no corpo e se mexem junto com o pet. */}
             {profile.petSpecies && wornWithImage.map((accessory) => {
-              const anchor = PET_ANCHORS[profile.petSpecies!][accessory.slot as Exclude<PetAccessorySlot, "fundo">];
+              const anchor = getAccessoryAnchor(accessory, profile.petSpecies!);
               return (
                 <motion.img
                   key={accessory.id}
@@ -364,6 +364,7 @@ export default function Pet() {
                     translateX: "-50%",
                     translateY: "-50%",
                     rotate: anchor.rotate,
+                    scaleY: anchor.scaleY ?? 1,
                     zIndex: SLOT_LAYER[accessory.slot],
                   }}
                 />

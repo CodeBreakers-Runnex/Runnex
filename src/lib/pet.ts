@@ -6,6 +6,7 @@ import lebreImg from "@/assets/pets/lebre.webp";
 import galgoImg from "@/assets/pets/galgo.webp";
 import tartarugaImg from "@/assets/pets/tartaruga.webp";
 import coroaDiamanteImg from "@/assets/accessories/store-coroa-diamante.webp";
+import coroaLourosImg from "@/assets/accessories/store-coroa-louros.webp";
 
 export interface PetSpeciesInfo {
   id: PetSpecies;
@@ -50,6 +51,13 @@ export interface PetAccessory {
   image?: string;
   /** Corpo e pés: uma arte por espécie (anatomias diferentes). Tem prioridade sobre image. */
   imageBySpecies?: Partial<Record<PetSpecies, string>>;
+  /** Posição própria deste item em cada pet (sobrepõe PET_ANCHORS). */
+  anchorBySpecies?: Partial<Record<PetSpecies, Partial<PetAnchor>>>;
+}
+
+export function getAccessoryAnchor(accessory: PetAccessory, species: PetSpecies): PetAnchor {
+  const base = PET_ANCHORS[species][accessory.slot as PetBodySlot];
+  return { ...base, ...accessory.anchorBySpecies?.[species] };
 }
 
 /**
@@ -72,6 +80,8 @@ export interface PetAnchor {
   width: number;
   /** Rotação em graus. */
   rotate: number;
+  /** Achata/estica a altura (1 = proporção original). Ex.: coroa de frente vira anel na cabeça. */
+  scaleY?: number;
 }
 
 // Onde cada parte do corpo fica em cada ilustração (as imagens de
@@ -170,7 +180,15 @@ export const PET_ACCESSORIES: PetAccessory[] = [
   { id: "store-capacete-astronauta", label: "Capacete de astronauta", slot: "cabeca", emoji: "🧑‍🚀", source: "store", price: 350, rarity: "epico" },
   { id: "store-chifres-neon", label: "Chifres neon", slot: "cabeca", emoji: "😈", source: "store", price: 380, rarity: "epico" },
   { id: "store-coroa-diamante", label: "Coroa de diamante", slot: "cabeca", emoji: "💎", source: "store", price: 800, rarity: "lendario", image: coroaDiamanteImg },
-  { id: "store-coroa-louros", label: "Coroa de louros olímpica", slot: "cabeca", emoji: "🌿", source: "store", price: 1000, rarity: "lendario" },
+  { id: "store-coroa-louros", label: "Coroa de louros olímpica", slot: "cabeca", emoji: "🌿", source: "store", price: 1000, rarity: "lendario", image: coroaLourosImg,
+    anchorBySpecies: {
+      cavalo: { x: 0.41, y: 0.15, width: 0.24, rotate: 20, scaleY: 0.6 },
+      falcao: { x: 0.45, y: 0.05, width: 0.27, scaleY: 0.6 },
+      guepardo: { x: 0.41, y: 0.06, width: 0.29, scaleY: 0.6 },
+      lebre: { x: 0.49, y: 0.24, width: 0.26, scaleY: 0.6 },
+      galgo: { x: 0.41, y: 0.11, width: 0.3, scaleY: 0.6 },
+      tartaruga: { x: 0.53, y: 0.16, width: 0.34, scaleY: 0.55 },
+    } },
   { id: "store-apito", label: "Apito de treinador", slot: "pescoco", emoji: "📯", source: "store", price: 40, rarity: "comum" },
   { id: "store-gravata", label: "Gravata", slot: "pescoco", emoji: "👔", source: "store", price: 60, rarity: "comum" },
   { id: "store-numero-peito", label: "Número de peito", slot: "pescoco", emoji: "🔢", source: "store", price: 70, rarity: "comum" },
