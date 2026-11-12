@@ -79,7 +79,7 @@ export interface PetAnchor {
 // estimados a olho: ajuste aqui quando a arte real dos acessórios chegar.
 export const PET_ANCHORS: Record<PetSpecies, Record<PetBodySlot, PetAnchor>> = {
   cavalo: {
-    cabeca: { x: 0.47, y: 0.05, width: 0.28, rotate: 8 },
+    cabeca: { x: 0.4, y: 0.11, width: 0.2, rotate: 18 },
     pescoco: { x: 0.37, y: 0.4, width: 0.3, rotate: 0 },
     corpo: { x: 0.33, y: 0.53, width: 0.5, rotate: 0 },
     pes: { x: 0.42, y: 0.95, width: 0.6, rotate: 0 },
@@ -108,8 +108,9 @@ export const PET_ANCHORS: Record<PetSpecies, Record<PetBodySlot, PetAnchor>> = {
     corpo: { x: 0.39, y: 0.54, width: 0.42, rotate: 0 },
     pes: { x: 0.42, y: 0.95, width: 0.55, rotate: 0 },
   },
+  // Tartaruga: a cabeça fica sob o casco, então chapéus vão no topo do casco.
   tartaruga: {
-    cabeca: { x: 0.82, y: 0.31, width: 0.18, rotate: 10 },
+    cabeca: { x: 0.53, y: 0.12, width: 0.3, rotate: 5 },
     pescoco: { x: 0.8, y: 0.48, width: 0.2, rotate: 0 },
     corpo: { x: 0.46, y: 0.3, width: 0.6, rotate: 0 },
     pes: { x: 0.5, y: 0.82, width: 0.7, rotate: 0 },
