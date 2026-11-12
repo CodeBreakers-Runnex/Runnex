@@ -1,0 +1,18 @@
+# Grades 3×3 que faltam (cole no gerador de imagem do Canva)
+
+Ordem dos itens = ordem na grade (da esquerda pra direita, de cima pra baixo). Baixe em PNG no maior tamanho e mande aqui.
+
+## Pescoço — lote 1
+Folha de sprites em grade 3x3 com 9 acessórios de jogo diferentes, um em cada quadrado, mesmo tamanho, centralizados, sem se tocar, espaçamento uniforme, fundo branco liso, estilo ilustração anime cel-shading, contorno escuro fino, sombreamento suave, paleta preta e roxo neon, vista 3/4 virada para a direita, sem texto. Itens: 1) lenço triangular roxo amarrado 2) coleira preta com chamas laranja e roxas 3) medalha de bronze escuro com fita roxa 4) cachecol de lã listrado preto e roxo 5) laço de fita roxo brilhante 6) apito de treinador prateado num cordão roxo 7) gravata preta com listras diagonais roxas 8) número de peito de corrida branco com alfinetes 9) colar de pérolas brancas brilhantes
+
+## Pescoço — lote 2
+Folha de sprites em grade 3x3 com 9 acessórios de jogo diferentes, um em cada quadrado, mesmo tamanho, centralizados, sem se tocar, espaçamento uniforme, fundo branco liso, estilo ilustração anime cel-shading, contorno escuro fino, sombreamento suave, paleta preta e roxo neon, vista 3/4 virada para a direita, sem texto. Itens: 1) cronômetro analógico prateado pendurado num cordão 2) sininho dourado numa coleira de couro roxa 3) colar com pingente de trevo de quatro folhas verde esmeralda 4) medalha de bronze com fita listrada roxa e branca 5) medalha de prata polida com fita roxa e branca 6) colar com pingente de raio em roxo neon brilhando 7) amuleto de lua crescente prateada com pedra roxa em corrente fina 8) medalha de ouro grande e brilhante com fita roxa e raios de luz 9) capa de super-herói roxa esvoaçante presa por broche dourado
+
+## Corpo — lote 1
+Folha de sprites em grade 3x3 com 9 roupas de jogo diferentes, um item em cada quadrado, mesmo tamanho, centralizados, sem se tocar, espaçamento uniforme, fundo branco liso, sem manequim e sem personagem, estilo ilustração anime cel-shading, contorno escuro fino, sombreamento suave, paleta preta e roxo neon, sem texto. Itens: 1) regata de corrida preta com recortes roxos 2) camiseta de prova branca de maratona 3) jaqueta corta-vento leve roxa com zíper preto 4) colete refletivo amarelo-limão com faixas prateadas 5) pochete de corrida preta com garrafinha de água 6) mochila de trail compacta preta com detalhes roxos 7) capa de chuva transparente roxa com capuz 8) moletom preto com capuz e detalhes roxos 9) colete de hidratação com duas garrafas flexíveis na frente
+
+## Corpo — lote 2
+Folha de sprites em grade 3x3 com 9 roupas de jogo diferentes, um item em cada quadrado, mesmo tamanho, centralizados, sem se tocar, espaçamento uniforme, fundo branco liso, sem manequim e sem personagem, estilo ilustração anime cel-shading, contorno escuro fino, sombreamento suave, paleta preta e roxo neon, sem texto. Itens: 1) kimono branco de artes marciais com faixa roxa 2) camisa havaiana roxa com estampa de hibiscos 3) camisa esportiva amarela com gola verde sem escudo 4) par de asas de anjo brancas emplumadas 5) armadura medieval prateada com detalhes roxos 6) traje espacial branco com painéis roxos 7) jaqueta bomber preta com linhas roxas neon brilhantes 8) smoking preto com gravata-borboleta roxa 9) asas de fênix em chamas laranja, douradas e roxas
+
+## Corpo — avulso
+Ícone de acessório de jogo: armadura dourada reluzente com gravuras e capa curta roxa, sem manequim e sem personagem, centralizada, fundo branco liso, estilo ilustração anime cel-shading, contorno escuro fino, brilho radiante dourado e roxo neon, partículas de luz, sem texto
