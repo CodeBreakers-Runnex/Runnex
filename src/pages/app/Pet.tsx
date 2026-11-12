@@ -89,7 +89,7 @@ function PetOnboarding({ onAdopt, adopting }: { onAdopt: (species: PetSpecies, n
               species === item.id ? "border-purple-500 bg-purple-500/10" : "border-border bg-card"
             }`}
           >
-            <span className="text-4xl">{item.emoji}</span>
+            <img src={item.image} alt={item.label} className="h-16 w-16 object-contain" />
             <span className="text-[10px] font-black uppercase tracking-widest text-foreground/80">{item.label}</span>
           </button>
         ))}
@@ -298,13 +298,13 @@ export default function Pet() {
           transition={{ duration: PET_IDLE_ANIMATION[mood].duration * 1.5, repeat: Infinity, ease: "easeInOut" }}
           className="relative flex h-40 w-40 items-center justify-center rounded-[2.5rem] border border-purple-500/25 bg-purple-500/10"
         >
-          <motion.span
-            className="text-7xl"
+          <motion.img
+            src={speciesInfo?.image}
+            alt={speciesInfo?.label}
+            className="h-40 w-40 object-contain"
             animate={{ y: PET_IDLE_ANIMATION[mood].y, rotate: PET_IDLE_ANIMATION[mood].rotate }}
             transition={{ duration: PET_IDLE_ANIMATION[mood].duration, repeat: Infinity, ease: "easeInOut" }}
-          >
-            {speciesInfo?.emoji}
-          </motion.span>
+          />
           {equippedAccessories.map((accessory, index) => (
             <motion.span
               key={accessory.id}

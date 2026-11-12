@@ -168,7 +168,7 @@ export default function Home() {
             aria-label="Ver seu pet"
           >
             {petSpeciesInfo ? (
-              <span className="text-xl">{petSpeciesInfo.emoji}</span>
+              <img src={petSpeciesInfo.image} alt={petSpeciesInfo.label} className="h-full w-full object-contain" />
             ) : (
               <PawPrint size={18} className="text-muted-foreground" />
             )}

@@ -1,18 +1,23 @@
 import type { PetAccessorySlot, PetSpecies } from "@/types";
+import cavaloImg from "@/assets/pets/cavalo.webp";
+import falcaoImg from "@/assets/pets/falcao.webp";
+import guepardoImg from "@/assets/pets/guepardo.webp";
+import lebreImg from "@/assets/pets/lebre.webp";
+import galgoImg from "@/assets/pets/galgo.webp";
 
 export interface PetSpeciesInfo {
   id: PetSpecies;
   label: string;
-  emoji: string;
+  image: string;
 }
 
 // 5 espécies, todas ligadas ao tema velocidade.
 export const PET_SPECIES: PetSpeciesInfo[] = [
-  { id: "guepardo", label: "Guepardo", emoji: "🐆" },
-  { id: "lebre", label: "Lebre", emoji: "🐇" },
-  { id: "cavalo", label: "Cavalo", emoji: "🐎" },
-  { id: "falcao", label: "Falcão", emoji: "🦅" },
-  { id: "galgo", label: "Galgo", emoji: "🐕" },
+  { id: "guepardo", label: "Guepardo", image: guepardoImg },
+  { id: "lebre", label: "Lebre", image: lebreImg },
+  { id: "cavalo", label: "Cavalo", image: cavaloImg },
+  { id: "falcao", label: "Falcão", image: falcaoImg },
+  { id: "galgo", label: "Galgo", image: galgoImg },
 ];
 
 export function getPetSpeciesInfo(species: PetSpecies | undefined | null): PetSpeciesInfo | null {

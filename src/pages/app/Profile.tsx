@@ -732,7 +732,7 @@ const Profile = () => {
           className="mb-4 flex w-full items-center gap-3 rounded-3xl bg-card border border-border p-4 text-left active:scale-[0.98] transition-transform"
         >
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-500/10 border border-purple-500/20 text-2xl">
-            {petSpeciesInfo?.emoji || <PawPrint className="text-purple-500" size={20} />}
+            {petSpeciesInfo ? <img src={petSpeciesInfo.image} alt={petSpeciesInfo.label} className="h-full w-full object-contain" /> : <PawPrint className="text-purple-500" size={20} />}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Seu pet</p>
