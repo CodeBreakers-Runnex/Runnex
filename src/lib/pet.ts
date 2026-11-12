@@ -47,6 +47,18 @@ export interface PetAccessory {
    * Fundo: imagem quadrada que cobre o quadro todo atrás do pet.
    */
   image?: string;
+  /** Corpo e pés: uma arte por espécie (anatomias diferentes). Tem prioridade sobre image. */
+  imageBySpecies?: Partial<Record<PetSpecies, string>>;
+}
+
+/**
+ * Arte que vai NO pet. Corpo e pés só aparecem vestidos com arte da própria
+ * espécie; a image genérica deles serve só de ícone na loja.
+ */
+export function getAccessoryImage(accessory: PetAccessory, species: PetSpecies | null | undefined): string | undefined {
+  const bySpecies = species ? accessory.imageBySpecies?.[species] : undefined;
+  if (accessory.slot === "corpo" || accessory.slot === "pes") return bySpecies;
+  return bySpecies || accessory.image;
 }
 
 export type PetBodySlot = Exclude<PetAccessorySlot, "fundo">;

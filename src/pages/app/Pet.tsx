@@ -23,6 +23,7 @@ import {
   PET_MOOD_LABEL,
   RARITY_INFO,
   getAccessoryById,
+  getAccessoryImage,
   getPetMood,
   getPetSpeciesInfo,
   type PetMood,
@@ -293,8 +294,10 @@ export default function Pet() {
     .map((slot) => getAccessoryById(equippedBySlot[slot.id]))
     .filter((accessory): accessory is NonNullable<typeof accessory> => Boolean(accessory));
   const backgroundAccessory = equippedAccessories.find((accessory) => accessory.slot === "fundo");
-  const wornWithImage = equippedAccessories.filter((accessory) => accessory.slot !== "fundo" && accessory.image);
-  const emojiOnly = equippedAccessories.filter((accessory) => !accessory.image);
+  const wornWithImage = equippedAccessories.filter(
+    (accessory) => accessory.slot !== "fundo" && getAccessoryImage(accessory, profile?.petSpecies),
+  );
+  const emojiOnly = equippedAccessories.filter((accessory) => !getAccessoryImage(accessory, profile?.petSpecies));
 
   const unlockedAccessories = PET_ACCESSORIES.filter((accessory) => accessory.source === "achievement" && isAccessoryOwned(accessory));
   const lockedAchievementAccessories = PET_ACCESSORIES.filter((accessory) => accessory.source === "achievement" && !isAccessoryOwned(accessory));
@@ -349,7 +352,7 @@ export default function Pet() {
               return (
                 <motion.img
                   key={accessory.id}
-                  src={accessory.image}
+                  src={getAccessoryImage(accessory, profile.petSpecies)}
                   alt={accessory.label}
                   initial={{ opacity: 0, scale: 0.6 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -531,7 +534,13 @@ function AccessoryRow({
   return (
     <div className={`flex items-center gap-4 rounded-2xl bg-card border p-4 ${equipped ? "border-purple-500/50" : "border-border"} ${locked ? "opacity-50" : ""}`}>
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary/60 border border-input text-2xl">
-        {locked ? <Lock size={18} className="text-muted-foreground" /> : accessory.emoji}
+        {locked ? (
+          <Lock size={18} className="text-muted-foreground" />
+        ) : accessory.image ? (
+          <img src={accessory.image} alt="" className="h-10 w-10 object-contain" />
+        ) : (
+          accessory.emoji
+        )}
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-black">{accessory.label}</p>
