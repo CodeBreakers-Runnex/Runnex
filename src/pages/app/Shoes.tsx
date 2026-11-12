@@ -554,9 +554,10 @@ export default function Shoes() {
           </div>
 
           <p className="my-5 text-xs leading-relaxed text-muted-foreground">
-            Bom estado: abaixo de 80% do limite. Atenção: de 80% a menos de
-            100%. Gasto: 100% ou desgaste informado. Quilometragem não mede a
-            condição física do tênis; observe também seu uso e conservação.
+            Bom estado: abaixo de 80% do limite. 
+            Atenção: de 80% a menos de
+            100%. Gasto: 100% ou desgaste informado. 
+            Quilometragem não mede a condição física do tênis; observe também seu uso e conservação.
           </p>
 
           <section className="mt-8" aria-labelledby="shoe-history-title">
