@@ -106,6 +106,36 @@ def test_websocket_pushes_new_messages_to_members(client, group, monkeypatch):
         assert ws.receive_json() == {"type": "message_created"}
 
 
+def test_websocket_pushes_posts_likes_and_comments(client, group, monkeypatch):
+    fake_token(monkeypatch, "bruno")
+    with client.websocket_connect(f"/groups/{group}/ws?token=x") as ws:
+        post = client.post(f"/groups/{group}/posts", json={"text": "Bora correr"}).json()
+        assert ws.receive_json() == {"type": "post_created"}
+
+        client.post(f"/groups/{group}/posts/{post['id']}/like", json={"isLiked": False})
+        assert ws.receive_json() == {"type": "post_like", "postId": str(post["id"])}
+
+        client.post(f"/groups/{group}/posts/{post['id']}/comments", json={"text": "Partiu"})
+        assert ws.receive_json() == {"type": "comment_created", "postId": str(post["id"])}
+
+
+def test_group_write_routes_do_not_block_the_event_loop():
+    # Rotas async def que usam o banco sincrono travam o loop de eventos:
+    # enquanto o banco responde, nenhum outro usuario e atendido (chat,
+    # feed, WebSocket). Como def comum, o FastAPI as roda numa thread.
+    import inspect
+
+    from app.routers import groups as groups_router
+
+    for handler in (
+        groups_router.create_group_post,
+        groups_router.toggle_group_post_like,
+        groups_router.add_group_post_comment,
+        groups_router.send_group_message,
+    ):
+        assert not inspect.iscoroutinefunction(handler), handler.__name__
+
+
 def test_cannot_list_comments_of_another_groups_post(client, group, make_user, login):
     # Regressao P2-02: a rota checava membro do grupo da URL, mas buscava
     # comentarios so pelo post_id - membro do grupo A lia posts do grupo B.

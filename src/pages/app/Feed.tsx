@@ -121,7 +121,10 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
     if (!user) return;
     const isLiked = likes.includes(user.uid);
     try { await toggleLike(activityId, user.uid, isLiked); }
-    catch (e) { console.error(e); }
+    catch (e) {
+      console.error(e);
+      toast.error("Não foi possível salvar a curtida. Tente de novo.");
+    }
   }, [user]);
 
   const athletes = useMemo(() => {

@@ -175,6 +175,14 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
             .map(({ event, distanceKm }) => ({ ...event, distanceKm }));
     }, [events, activeTab, enrolledIds, selectedDistance, selectedRadius, userCoords]);
 
+    // O destaque "EM BREVE" usava sempre o primeiro da lista, mesmo que já tivesse passado.
+    const featuredEvent = useMemo(() => {
+        const now = Date.now();
+        return events
+            .filter((event) => getEventDate(event).getTime() >= now)
+            .sort((a, b) => getEventDate(a).getTime() - getEventDate(b).getTime())[0];
+    }, [events]);
+
     if (loading) {
         return (
             <div className={`${embedded ? "min-h-[280px]" : "app-shell"} flex flex-col items-center justify-center gap-4`}>
@@ -273,23 +281,23 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
       </section>
 
       {/* Featured Event Banner */}
-      {events[0] && <section className={`${embedded ? "px-0 mt-6" : "px-6 mt-10"}`}>
+      {featuredEvent && <section className={`${embedded ? "px-0 mt-6" : "px-6 mt-10"}`}>
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="group relative h-64 rounded-3xl overflow-hidden border border-border cursor-pointer shadow-2xl"
           >
-              <EventImage src={events[0].image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              <EventImage src={featuredEvent.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
               <div className="absolute bottom-8 left-8 right-8 text-white">
                   <div className="flex items-center gap-2 mb-3">
                       <div className="bg-purple-600 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase shadow-lg shadow-purple-600/30">EM BREVE</div>
                       <div className="bg-black/50 border border-white/10 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase">Geral</div>
                   </div>
-                  <h2 className="font-display font-black text-2xl tracking-tighter uppercase mb-2 leading-none">{events[0].title}</h2>
+                  <h2 className="font-display font-black text-2xl tracking-tighter uppercase mb-2 leading-none">{featuredEvent.title}</h2>
                   <div className="flex items-center gap-4 text-white/70 text-[10px] font-bold uppercase tracking-widest">
-                      <span className="flex items-center gap-1.5"><Calendar size={12} className="text-purple-500" /> {events[0].date}</span>
-                      <span className="flex items-center gap-1.5"><MapPin size={12} className="text-purple-500" /> {events[0].city}</span>
+                      <span className="flex items-center gap-1.5"><Calendar size={12} className="text-purple-500" /> {featuredEvent.date}</span>
+                      <span className="flex items-center gap-1.5"><MapPin size={12} className="text-purple-500" /> {featuredEvent.city}</span>
                   </div>
               </div>
           </motion.div>
