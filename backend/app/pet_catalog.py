@@ -119,3 +119,15 @@ def accessory_slot(accessory_id: str) -> str | None:
     if accessory_id in STORE_ACCESSORIES:
         return STORE_ACCESSORIES[accessory_id][0]
     return None
+
+
+# Pacotes de RunCoins vendidos com dinheiro real. id -> moedas creditadas.
+# O valor em reais NAO mora aqui: quem cobra e a loja (Google Play), e o
+# backend so credita o que o catalogo dele diz - nunca um numero vindo do app.
+# Espelha COIN_PACKS de src/lib/coins.ts (tests/test_parity.py).
+COIN_PACKS = {
+    "rx_coins_300": 300,
+    "rx_coins_1000": 1100,
+    "rx_coins_2500": 3100,
+    "rx_coins_6000": 8400,
+}

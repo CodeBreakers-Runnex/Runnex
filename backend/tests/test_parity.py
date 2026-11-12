@@ -31,3 +31,11 @@ def test_levels_match_frontend():
     source = (SRC / "lib" / "gamification.ts").read_text(encoding="utf-8")
     levels = [(name, int(xp)) for name, xp in re.findall(r'name: "([^"]+)",\s*minXP: (\d+)', source)]
     assert levels == [(level["name"], level["min_xp"]) for level in LEVELS]
+
+
+def test_coin_packs_match_frontend():
+    from app.pet_catalog import COIN_PACKS
+
+    source = (SRC / "lib" / "coins.ts").read_text(encoding="utf-8")
+    items = re.findall(r'\{ id: "([^"]+)", coins: (\d+)', source)
+    assert {pack_id: int(coins) for pack_id, coins in items} == COIN_PACKS

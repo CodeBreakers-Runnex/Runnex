@@ -32,6 +32,7 @@ import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
 import ScreenTitle from "@/components/ScreenTitle";
+import CoinShopSheet from "@/components/CoinShopSheet";
 // Animacao de "vivo" do pet, uma por humor: feliz pula mais e mais rapido,
 // cansado balanca devagar, triste quase nao se mexe (cabisbaixo).
 const PET_IDLE_ANIMATION: Record<PetMood, { y: number[]; rotate: number[]; duration: number }> = {
@@ -153,6 +154,7 @@ export default function Pet() {
   const [loadError, setLoadError] = useState(false);
   const [adopting, setAdopting] = useState(false);
   const [tab, setTab] = useState<PetTab>("acessorios");
+  const [coinShopOpen, setCoinShopOpen] = useState(false);
   const [storeSlot, setStoreSlot] = useState<PetAccessorySlot | "todos">("todos");
   const [busyAccessoryId, setBusyAccessoryId] = useState<string | null>(null);
 
@@ -237,7 +239,9 @@ export default function Pet() {
   const handleBuy = async (accessory: (typeof PET_ACCESSORIES)[number]) => {
     if (!user || !accessory.price) return;
     if ((profile?.petCoins || 0) < accessory.price) {
-      toast.error("RunCoins insuficientes.");
+      toast.error("RunCoins insuficientes.", {
+        action: { label: "Comprar", onClick: () => setCoinShopOpen(true) },
+      });
       return;
     }
     setBusyAccessoryId(accessory.id);
@@ -321,9 +325,14 @@ export default function Pet() {
             <ArrowLeft size={18} />
           </button>
           <ScreenTitle title={profile.petName || "Pet"} className="flex-1" />
-          <div className="flex items-center gap-1.5 rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-2 text-xs font-black text-purple-300">
+          <button
+            onClick={() => setCoinShopOpen(true)}
+            className="flex items-center gap-1.5 rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-2 text-xs font-black text-purple-300 active:scale-95 transition"
+            aria-label="Comprar RunCoins"
+          >
             🪙 {(profile.petCoins || 0).toLocaleString("pt-BR")}
-          </div>
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[11px] leading-none text-white">+</span>
+          </button>
         </div>
       </header>
 
@@ -509,6 +518,16 @@ export default function Pet() {
           </motion.section>
         )}
       </AnimatePresence>
+
+      {user && (
+        <CoinShopSheet
+          open={coinShopOpen}
+          userId={user.uid}
+          balance={profile.petCoins || 0}
+          onClose={() => setCoinShopOpen(false)}
+          onPurchased={(newBalance) => setProfile((prev) => (prev ? { ...prev, petCoins: newBalance } : prev))}
+        />
+      )}
     </div>
   );
 }

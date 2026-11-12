@@ -80,3 +80,10 @@ Grupos criados pelo usuário passam para o membro mais antigo e só são apagado
 ficarem vazios; o uid também sai das curtidas alheias. O login no Firebase Auth é
 apagado pelo app logo depois (`deleteCurrentAccount` em `src/services/auth.ts`),
 após reautenticar o usuário — o backend não usa Admin SDK.
+
+## Compra de RunCoins (modo de teste)
+
+`COIN_MOCK_PURCHASES=true` libera `POST /users/{uid}/coins/mock-purchase`, que credita um pacote
+sem cobrança, só para testar a tela. **Nunca ligue em produção** (qualquer um ganharia moedas).
+Toda entrada de moedas pagas passa por `app/services/coin_purchases.py` (crédito único por
+transação e estorno); o webhook do Google Play/RevenueCat vai usar as mesmas funções.
