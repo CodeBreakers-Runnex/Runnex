@@ -7,6 +7,7 @@ import galgoImg from "@/assets/pets/galgo.webp";
 import tartarugaImg from "@/assets/pets/tartaruga.webp";
 import coroaDiamanteImg from "@/assets/accessories/store-coroa-diamante.webp";
 import coroaLourosImg from "@/assets/accessories/store-coroa-louros.webp";
+import chifresNeonImg from "@/assets/accessories/store-chifres-neon.webp";
 
 export interface PetSpeciesInfo {
   id: PetSpecies;
@@ -178,7 +179,15 @@ export const PET_ACCESSORIES: PetAccessory[] = [
   { id: "store-chapeu-mago", label: "Chapéu de mago", slot: "cabeca", emoji: "🧙", source: "store", price: 280, rarity: "epico" },
   { id: "store-aureola", label: "Auréola", slot: "cabeca", emoji: "😇", source: "store", price: 320, rarity: "epico" },
   { id: "store-capacete-astronauta", label: "Capacete de astronauta", slot: "cabeca", emoji: "🧑‍🚀", source: "store", price: 350, rarity: "epico" },
-  { id: "store-chifres-neon", label: "Chifres neon", slot: "cabeca", emoji: "😈", source: "store", price: 380, rarity: "epico" },
+  { id: "store-chifres-neon", label: "Chifres neon", slot: "cabeca", emoji: "😈", source: "store", price: 380, rarity: "epico", image: chifresNeonImg,
+    anchorBySpecies: {
+      cavalo: { x: 0.4, y: 0.1, width: 0.2, rotate: 18 },
+      falcao: { x: 0.45, y: 0.03, width: 0.28 },
+      guepardo: { x: 0.42, y: 0.03, width: 0.3 },
+      lebre: { x: 0.49, y: 0.21, width: 0.24 },
+      galgo: { x: 0.42, y: 0.1, width: 0.26 },
+      tartaruga: { x: 0.8, y: 0.35, width: 0.16, rotate: 15 },
+    } },
   { id: "store-coroa-diamante", label: "Coroa de diamante", slot: "cabeca", emoji: "💎", source: "store", price: 800, rarity: "lendario", image: coroaDiamanteImg },
   { id: "store-coroa-louros", label: "Coroa de louros olímpica", slot: "cabeca", emoji: "🌿", source: "store", price: 1000, rarity: "lendario", image: coroaLourosImg,
     anchorBySpecies: {
