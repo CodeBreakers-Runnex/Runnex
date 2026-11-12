@@ -10,16 +10,20 @@ export interface PetSpeciesInfo {
   id: PetSpecies;
   label: string;
   image: string;
+  /** Frase curta de personalidade, mostrada no card. */
+  tagline: string;
+  /** Que tipo de corredor combina com esse pet. */
+  description: string;
 }
 
 // 6 espécies (5 de velocidade + a tartaruga do "devagar e sempre").
 export const PET_SPECIES: PetSpeciesInfo[] = [
-  { id: "guepardo", label: "Guepardo", image: guepardoImg },
-  { id: "lebre", label: "Lebre", image: lebreImg },
-  { id: "cavalo", label: "Cavalo", image: cavaloImg },
-  { id: "falcao", label: "Falcão", image: falcaoImg },
-  { id: "galgo", label: "Galgo", image: galgoImg },
-  { id: "tartaruga", label: "Tartaruga", image: tartarugaImg },
+  { id: "guepardo", label: "Guepardo", image: guepardoImg, tagline: "Explosão pura", description: "O mais rápido de todos, mas não aguenta correr o dia inteiro. É pra quem ama tiro curto, intervalado e bater recorde nos 5K: sai na frente, dá tudo e depois desaba feliz no sofá." },
+  { id: "lebre", label: "Lebre", image: lebreImg, tagline: "Energia que não para", description: "Ágil, inquieta e sempre pronta pra mais uma. Combina com quem corre quase todo dia, muda o percurso sem avisar e às vezes sai rápido demais. Só cuidado com a soneca no meio da prova." },
+  { id: "cavalo", label: "Cavalo", image: cavaloImg, tagline: "Força e constância", description: "Forte, resistente e confiável. É pra quem gosta de rodagem longa, ritmo firme e meia maratona no horizonte: não é o mais explosivo, mas aguenta quilômetro atrás de quilômetro sem reclamar." },
+  { id: "falcao", label: "Falcão", image: falcaoImg, tagline: "Foco e estratégia", description: "Enxerga a prova lá de cima antes de largar. Combina com quem treina com planilha, controla pace e frequência cardíaca e escolhe o momento certo de atacar. Paciente na caçada, preciso no bote." },
+  { id: "galgo", label: "Galgo", image: galgoImg, tagline: "Alma de matilha", description: "Corre melhor em grupo e nunca deixa ninguém pra trás. É pra quem ama treino com a turma, assessoria e corrida de rua com os amigos. Leal, resistente e sempre puxando o bando." },
+  { id: "tartaruga", label: "Tartaruga", image: tartarugaImg, tagline: "Devagar e sempre", description: "Não é a mais rápida, mas já ganhou corrida. É pra quem está começando, voltando de lesão ou simplesmente corre no próprio ritmo: com paciência e constância, uma hora chega lá — e chega mais longe que muita gente apressada." },
 ];
 
 export function getPetSpeciesInfo(species: PetSpecies | undefined | null): PetSpeciesInfo | null {
@@ -36,7 +40,17 @@ export interface PetAccessory {
   achievementId?: string;
   /** Presente quando source === "store": preço em RunCoin. */
   price?: number;
+  rarity?: PetAccessoryRarity;
 }
+
+export type PetAccessoryRarity = "comum" | "raro" | "epico" | "lendario";
+
+export const RARITY_INFO: Record<PetAccessoryRarity, { label: string; className: string }> = {
+  comum: { label: "Comum", className: "text-muted-foreground" },
+  raro: { label: "Raro", className: "text-sky-400" },
+  epico: { label: "Épico", className: "text-purple-400" },
+  lendario: { label: "Lendário", className: "text-amber-400" },
+};
 
 export const ACCESSORY_SLOTS: { id: PetAccessorySlot; label: string }[] = [
   { id: "cabeca", label: "Cabeça" },
@@ -60,12 +74,54 @@ export const PET_ACCESSORIES: PetAccessory[] = [
   { id: "acc-1ano", label: "Coroa do ano", slot: "cabeca", emoji: "👑", source: "achievement", achievementId: "um-ano-ativo" },
 
   // Comprados na loja com RunCoin
-  { id: "store-cartola", label: "Cartola clássica", slot: "cabeca", emoji: "🎩", source: "store", price: 80 },
-  { id: "store-oculos", label: "Óculos escuros", slot: "cabeca", emoji: "🕶️", source: "store", price: 60 },
-  { id: "store-cachecol", label: "Cachecol", slot: "pescoco", emoji: "🧣", source: "store", price: 50 },
-  { id: "store-laco", label: "Laço", slot: "pescoco", emoji: "🎀", source: "store", price: 40 },
-  { id: "store-skyline", label: "Skyline noturno", slot: "fundo", emoji: "🌆", source: "store", price: 100 },
-  { id: "store-arcoiris", label: "Arco-íris", slot: "fundo", emoji: "🌈", source: "store", price: 70 },
+  { id: "store-cartola", label: "Cartola clássica", slot: "cabeca", emoji: "🎩", source: "store", price: 80, rarity: "comum" },
+  { id: "store-oculos", label: "Óculos escuros", slot: "cabeca", emoji: "🕶️", source: "store", price: 60, rarity: "comum" },
+  { id: "store-cachecol", label: "Cachecol", slot: "pescoco", emoji: "🧣", source: "store", price: 50, rarity: "comum" },
+  { id: "store-laco", label: "Laço", slot: "pescoco", emoji: "🎀", source: "store", price: 40, rarity: "comum" },
+  { id: "store-skyline", label: "Skyline noturno", slot: "fundo", emoji: "🌆", source: "store", price: 100, rarity: "comum" },
+  { id: "store-arcoiris", label: "Arco-íris", slot: "fundo", emoji: "🌈", source: "store", price: 70, rarity: "comum" },
+  { id: "store-bandana", label: "Bandana de treino", slot: "cabeca", emoji: "🧕", source: "store", price: 40, rarity: "comum" },
+  { id: "store-faixa", label: "Faixa de suor", slot: "cabeca", emoji: "🎗️", source: "store", price: 30, rarity: "comum" },
+  { id: "store-gorro", label: "Gorro de inverno", slot: "cabeca", emoji: "🧶", source: "store", price: 60, rarity: "comum" },
+  { id: "store-chapeu-sol", label: "Chapéu de sol", slot: "cabeca", emoji: "👒", source: "store", price: 70, rarity: "comum" },
+  { id: "store-capacete", label: "Capacete de ciclista", slot: "cabeca", emoji: "⛑️", source: "store", price: 90, rarity: "comum" },
+  { id: "store-fone", label: "Fone de corrida", slot: "cabeca", emoji: "🎧", source: "store", price: 120, rarity: "raro" },
+  { id: "store-chapeu-cowboy", label: "Chapéu de cowboy", slot: "cabeca", emoji: "🤠", source: "store", price: 140, rarity: "raro" },
+  { id: "store-tiara-flores", label: "Tiara de flores", slot: "cabeca", emoji: "🌸", source: "store", price: 150, rarity: "raro" },
+  { id: "store-chapeu-festa", label: "Chapéu de festa", slot: "cabeca", emoji: "🥳", source: "store", price: 160, rarity: "raro" },
+  { id: "store-chapeu-mago", label: "Chapéu de mago", slot: "cabeca", emoji: "🧙", source: "store", price: 280, rarity: "epico" },
+  { id: "store-aureola", label: "Auréola", slot: "cabeca", emoji: "😇", source: "store", price: 320, rarity: "epico" },
+  { id: "store-capacete-astronauta", label: "Capacete de astronauta", slot: "cabeca", emoji: "🧑‍🚀", source: "store", price: 350, rarity: "epico" },
+  { id: "store-chifres-neon", label: "Chifres neon", slot: "cabeca", emoji: "😈", source: "store", price: 380, rarity: "epico" },
+  { id: "store-coroa-diamante", label: "Coroa de diamante", slot: "cabeca", emoji: "💎", source: "store", price: 800, rarity: "lendario" },
+  { id: "store-coroa-louros", label: "Coroa de louros olímpica", slot: "cabeca", emoji: "🌿", source: "store", price: 1000, rarity: "lendario" },
+  { id: "store-apito", label: "Apito de treinador", slot: "pescoco", emoji: "📯", source: "store", price: 40, rarity: "comum" },
+  { id: "store-gravata", label: "Gravata", slot: "pescoco", emoji: "👔", source: "store", price: 60, rarity: "comum" },
+  { id: "store-numero-peito", label: "Número de peito", slot: "pescoco", emoji: "🔢", source: "store", price: 70, rarity: "comum" },
+  { id: "store-colar-perolas", label: "Colar de pérolas", slot: "pescoco", emoji: "📿", source: "store", price: 90, rarity: "comum" },
+  { id: "store-cronometro", label: "Cronômetro de pescoço", slot: "pescoco", emoji: "⏲️", source: "store", price: 120, rarity: "raro" },
+  { id: "store-sino", label: "Sininho", slot: "pescoco", emoji: "🔔", source: "store", price: 130, rarity: "raro" },
+  { id: "store-colar-trevo", label: "Colar de trevo", slot: "pescoco", emoji: "🍀", source: "store", price: 150, rarity: "raro" },
+  { id: "store-medalha-bronze", label: "Medalha de bronze", slot: "pescoco", emoji: "🥉", source: "store", price: 180, rarity: "raro" },
+  { id: "store-medalha-prata", label: "Medalha de prata", slot: "pescoco", emoji: "🥈", source: "store", price: 300, rarity: "epico" },
+  { id: "store-colar-raio", label: "Colar relâmpago", slot: "pescoco", emoji: "⚡", source: "store", price: 340, rarity: "epico" },
+  { id: "store-amuleto-lua", label: "Amuleto lunar", slot: "pescoco", emoji: "🌙", source: "store", price: 360, rarity: "epico" },
+  { id: "store-medalha-ouro", label: "Medalha de ouro", slot: "pescoco", emoji: "🥇", source: "store", price: 700, rarity: "lendario" },
+  { id: "store-capa-heroi", label: "Capa de herói", slot: "pescoco", emoji: "🦸", source: "store", price: 900, rarity: "lendario" },
+  { id: "store-parque", label: "Parque da cidade", slot: "fundo", emoji: "🏞️", source: "store", price: 60, rarity: "comum" },
+  { id: "store-praia", label: "Orla da praia", slot: "fundo", emoji: "🏖️", source: "store", price: 80, rarity: "comum" },
+  { id: "store-pista", label: "Pista de atletismo", slot: "fundo", emoji: "🏟️", source: "store", price: 90, rarity: "comum" },
+  { id: "store-chuva", label: "Treino na chuva", slot: "fundo", emoji: "🌧️", source: "store", price: 70, rarity: "comum" },
+  { id: "store-trilha", label: "Trilha na floresta", slot: "fundo", emoji: "🌲", source: "store", price: 120, rarity: "raro" },
+  { id: "store-deserto", label: "Deserto ao entardecer", slot: "fundo", emoji: "🏜️", source: "store", price: 140, rarity: "raro" },
+  { id: "store-neve", label: "Corrida na neve", slot: "fundo", emoji: "❄️", source: "store", price: 160, rarity: "raro" },
+  { id: "store-cerejeiras", label: "Cerejeiras em flor", slot: "fundo", emoji: "🌸", source: "store", price: 180, rarity: "raro" },
+  { id: "store-vulcao", label: "Vulcão", slot: "fundo", emoji: "🌋", source: "store", price: 320, rarity: "epico" },
+  { id: "store-aurora", label: "Aurora boreal", slot: "fundo", emoji: "🌌", source: "store", price: 380, rarity: "epico" },
+  { id: "store-fogos", label: "Fogos de artifício", slot: "fundo", emoji: "🎆", source: "store", price: 400, rarity: "epico" },
+  { id: "store-oceano", label: "Fundo do oceano", slot: "fundo", emoji: "🌊", source: "store", price: 350, rarity: "epico" },
+  { id: "store-espaco", label: "Corrida no espaço", slot: "fundo", emoji: "🪐", source: "store", price: 900, rarity: "lendario" },
+  { id: "store-podio", label: "Pódio olímpico", slot: "fundo", emoji: "🏆", source: "store", price: 1200, rarity: "lendario" },
 ];
 
 export function getAccessoryById(id: string | null | undefined): PetAccessory | null {

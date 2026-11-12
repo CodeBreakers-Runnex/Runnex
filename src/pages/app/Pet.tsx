@@ -20,6 +20,7 @@ import {
   PET_ACCESSORIES,
   PET_SPECIES,
   PET_MOOD_LABEL,
+  RARITY_INFO,
   getAccessoryById,
   getPetMood,
   getPetSpeciesInfo,
@@ -59,6 +60,7 @@ type PetTab = "acessorios" | "loja";
 function PetOnboarding({ onAdopt, adopting }: { onAdopt: (species: PetSpecies, name: string) => void; adopting: boolean }) {
   const [species, setSpecies] = useState<PetSpecies | null>(null);
   const [name, setName] = useState("");
+  const selectedInfo = getPetSpeciesInfo(species);
 
   const handleSubmit = () => {
     if (!species) {
@@ -95,6 +97,23 @@ function PetOnboarding({ onAdopt, adopting }: { onAdopt: (species: PetSpecies, n
         ))}
       </div>
 
+      <AnimatePresence mode="wait">
+        {selectedInfo ? (
+          <motion.div
+            key={selectedInfo.id}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mt-4 w-full max-w-sm rounded-2xl border border-purple-500/30 bg-purple-500/5 p-4 text-left"
+          >
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-purple-400">{selectedInfo.tagline}</p>
+            <p className="mt-1 text-sm leading-relaxed text-foreground/85">{selectedInfo.description}</p>
+          </motion.div>
+        ) : (
+          <p className="mt-4 max-w-sm text-xs text-muted-foreground">Toque num pet pra ver com que tipo de corredor ele combina.</p>
+        )}
+      </AnimatePresence>
+
       <div className="mt-8 w-full max-w-sm text-left">
         <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">Nome do pet</label>
         <input
@@ -129,6 +148,7 @@ export default function Pet() {
   const [loadError, setLoadError] = useState(false);
   const [adopting, setAdopting] = useState(false);
   const [tab, setTab] = useState<PetTab>("acessorios");
+  const [storeSlot, setStoreSlot] = useState<PetAccessorySlot | "todos">("todos");
   const [busyAccessoryId, setBusyAccessoryId] = useState<string | null>(null);
 
   const loadPetData = useCallback(async () => {
@@ -268,7 +288,12 @@ export default function Pet() {
   const unlockedAccessories = PET_ACCESSORIES.filter((accessory) => accessory.source === "achievement" && isAccessoryOwned(accessory));
   const lockedAchievementAccessories = PET_ACCESSORIES.filter((accessory) => accessory.source === "achievement" && !isAccessoryOwned(accessory));
   const ownedStoreAccessories = PET_ACCESSORIES.filter((accessory) => accessory.source === "store" && isAccessoryOwned(accessory));
-  const storeAccessories = PET_ACCESSORIES.filter((accessory) => accessory.source === "store" && !isAccessoryOwned(accessory));
+  const storeAccessories = PET_ACCESSORIES.filter(
+    (accessory) =>
+      accessory.source === "store" &&
+      !isAccessoryOwned(accessory) &&
+      (storeSlot === "todos" || accessory.slot === storeSlot),
+  ).sort((a, b) => (a.price || 0) - (b.price || 0));
 
   return (
     <div className="app-shell pb-24 safe-top">
@@ -321,6 +346,7 @@ export default function Pet() {
 
         <p className="mt-5 font-display text-2xl font-black uppercase tracking-tighter">{profile.petName}</p>
         <p className="mt-1 text-xs font-black uppercase tracking-widest text-muted-foreground">{speciesInfo?.label}</p>
+        {speciesInfo && <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-purple-400">{speciesInfo.tagline}</p>}
         <div className="mt-3 rounded-full border border-border bg-card px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {PET_MOOD_LABEL[mood]}
         </div>
@@ -405,9 +431,22 @@ export default function Pet() {
             exit={{ opacity: 0 }}
             className="px-6 mt-5 space-y-3"
           >
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {[{ id: "todos" as const, label: "Todos" }, ...ACCESSORY_SLOTS].map((slot) => (
+                <button
+                  key={slot.id}
+                  onClick={() => setStoreSlot(slot.id)}
+                  className={`shrink-0 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest transition ${
+                    storeSlot === slot.id ? "bg-purple-600 text-white" : "bg-card border border-border text-muted-foreground"
+                  }`}
+                >
+                  {slot.label}
+                </button>
+              ))}
+            </div>
             {storeAccessories.length === 0 ? (
               <div className={cn(GLASS_CARD_CLASS, "p-8 text-center")}>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">Você já tem todos os itens da loja!</p>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">Você já tem todos os itens desta categoria!</p>
               </div>
             ) : (
               storeAccessories.map((accessory) => (
@@ -458,6 +497,9 @@ function AccessoryRow({
         <p className="truncate text-sm font-black">{accessory.label}</p>
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {locked ? lockedHint : ACCESSORY_SLOTS.find((slot) => slot.id === accessory.slot)?.label}
+          {!locked && accessory.rarity && (
+            <span className={`ml-2 ${RARITY_INFO[accessory.rarity].className}`}>· {RARITY_INFO[accessory.rarity].label}</span>
+          )}
         </p>
       </div>
       {!locked && onAction && (
