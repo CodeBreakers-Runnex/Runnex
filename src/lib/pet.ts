@@ -8,6 +8,15 @@ import tartarugaImg from "@/assets/pets/tartaruga.webp";
 import coroaDiamanteImg from "@/assets/accessories/store-coroa-diamante.webp";
 import coroaLourosImg from "@/assets/accessories/store-coroa-louros.webp";
 import chifresNeonImg from "@/assets/accessories/store-chifres-neon.webp";
+import cartolaImg from "@/assets/accessories/store-cartola.webp";
+import bone5kImg from "@/assets/accessories/acc-5k.webp";
+import viseira1horaImg from "@/assets/accessories/acc-1hora.webp";
+import coroa1anoImg from "@/assets/accessories/acc-1ano.webp";
+import chapeuMagoImg from "@/assets/accessories/store-chapeu-mago.webp";
+import aureolaImg from "@/assets/accessories/store-aureola.webp";
+import capaceteAstronautaImg from "@/assets/accessories/store-capacete-astronauta.webp";
+import oculosImg from "@/assets/accessories/store-oculos.webp";
+import oculosSub10kImg from "@/assets/accessories/acc-sub10k.webp";
 import bandanaImg from "@/assets/accessories/store-bandana.webp";
 import faixaImg from "@/assets/accessories/store-faixa.webp";
 import gorroImg from "@/assets/accessories/store-gorro.webp";
@@ -162,21 +171,21 @@ export const ACCESSORY_SLOTS: { id: PetAccessorySlot; label: string }[] = [
 export const PET_ACCESSORIES: PetAccessory[] = [
   // Desbloqueados por conquista (ver lib/achievements.ts)
   { id: "acc-primeira-corrida", label: "Lenço de estreia", slot: "pescoco", emoji: "🎽", source: "achievement", achievementId: "primeira-corrida" },
-  { id: "acc-5k", label: "Boné 5K", slot: "cabeca", emoji: "🧢", source: "achievement", achievementId: "5k-completo" },
+  { id: "acc-5k", label: "Boné 5K", slot: "cabeca", emoji: "🧢", source: "achievement", achievementId: "5k-completo", image: bone5kImg, fit: { scale: 1.2, dy: 0.03 } },
   { id: "acc-25km", label: "Paisagem 25K", slot: "fundo", emoji: "🌄", source: "achievement", achievementId: "25km-acumulados" },
   { id: "acc-streak3", label: "Coleira de fogo", slot: "pescoco", emoji: "🔥", source: "achievement", achievementId: "sequencia-3-dias" },
   { id: "acc-250km", label: "Cenário montanhas", slot: "fundo", emoji: "🏔️", source: "achievement", achievementId: "250km-acumulados" },
-  { id: "acc-1hora", label: "Viseira cronometrada", slot: "cabeca", emoji: "⏱️", source: "achievement", achievementId: "uma-hora-corrida" },
-  { id: "acc-sub10k", label: "Óculos de velocidade", slot: "cabeca", emoji: "🥽", source: "achievement", achievementId: "sub-10k" },
+  { id: "acc-1hora", label: "Viseira cronometrada", slot: "cabeca", emoji: "⏱️", source: "achievement", achievementId: "uma-hora-corrida", image: viseira1horaImg, fit: { scale: 1.15, dy: 0.05 } },
+  { id: "acc-sub10k", label: "Óculos de velocidade", slot: "cabeca", emoji: "🥽", source: "achievement", achievementId: "sub-10k", image: oculosSub10kImg, anchorBySpecies: { cavalo: { x: 0.38, y: 0.17, width: 0.2, rotate: 18 }, falcao: { x: 0.47, y: 0.1, width: 0.22, rotate: 0 }, guepardo: { x: 0.44, y: 0.15, width: 0.24, rotate: 0 }, lebre: { x: 0.5, y: 0.32, width: 0.2, rotate: 0 }, galgo: { x: 0.44, y: 0.19, width: 0.24, rotate: 0 }, tartaruga: { x: 0.81, y: 0.45, width: 0.13, rotate: 5 } } },
   { id: "acc-100treinos", label: "Medalha de veterano", slot: "pescoco", emoji: "🎖️", source: "achievement", achievementId: "100-treinos" },
   { id: "acc-metabatida", label: "Bandeira de chegada", slot: "fundo", emoji: "🏁", source: "achievement", achievementId: "meta-semanal-batida" },
   { id: "acc-amanheceres", label: "Amanhecer dourado", slot: "fundo", emoji: "🌅", source: "achievement", achievementId: "dez-amanheceres" },
   { id: "acc-noites", label: "Céu noturno", slot: "fundo", emoji: "🌙", source: "achievement", achievementId: "dez-noites" },
-  { id: "acc-1ano", label: "Coroa do ano", slot: "cabeca", emoji: "👑", source: "achievement", achievementId: "um-ano-ativo" },
+  { id: "acc-1ano", label: "Coroa do ano", slot: "cabeca", emoji: "👑", source: "achievement", achievementId: "um-ano-ativo", image: coroa1anoImg, fit: { scale: 0.9, dy: 0.0 } },
 
   // Comprados na loja com RunCoin
-  { id: "store-cartola", label: "Cartola clássica", slot: "cabeca", emoji: "🎩", source: "store", price: 80, rarity: "comum" },
-  { id: "store-oculos", label: "Óculos escuros", slot: "cabeca", emoji: "🕶️", source: "store", price: 60, rarity: "comum" },
+  { id: "store-cartola", label: "Cartola clássica", slot: "cabeca", emoji: "🎩", source: "store", price: 80, rarity: "comum", image: cartolaImg, fit: { scale: 1.0, dy: 0.0 } },
+  { id: "store-oculos", label: "Óculos escuros", slot: "cabeca", emoji: "🕶️", source: "store", price: 60, rarity: "comum", image: oculosImg, anchorBySpecies: { cavalo: { x: 0.38, y: 0.17, width: 0.2, rotate: 18 }, falcao: { x: 0.47, y: 0.1, width: 0.22, rotate: 0 }, guepardo: { x: 0.44, y: 0.15, width: 0.24, rotate: 0 }, lebre: { x: 0.5, y: 0.32, width: 0.2, rotate: 0 }, galgo: { x: 0.44, y: 0.19, width: 0.24, rotate: 0 }, tartaruga: { x: 0.81, y: 0.45, width: 0.13, rotate: 5 } } },
   { id: "store-cachecol", label: "Cachecol", slot: "pescoco", emoji: "🧣", source: "store", price: 50, rarity: "comum" },
   { id: "store-laco", label: "Laço", slot: "pescoco", emoji: "🎀", source: "store", price: 40, rarity: "comum" },
   { id: "store-skyline", label: "Skyline noturno", slot: "fundo", emoji: "🌆", source: "store", price: 100, rarity: "comum" },
@@ -190,9 +199,9 @@ export const PET_ACCESSORIES: PetAccessory[] = [
   { id: "store-chapeu-cowboy", label: "Chapéu de cowboy", slot: "cabeca", emoji: "🤠", source: "store", price: 140, rarity: "raro", image: chapeuCowboyImg, fit: { scale: 1.3, dy: 0.0 } },
   { id: "store-tiara-flores", label: "Tiara de flores", slot: "cabeca", emoji: "🌸", source: "store", price: 150, rarity: "raro", image: tiaraFloresImg, fit: { scale: 1.0, dy: 0.02 } },
   { id: "store-chapeu-festa", label: "Chapéu de festa", slot: "cabeca", emoji: "🥳", source: "store", price: 160, rarity: "raro", image: chapeuFestaImg, fit: { scale: 1.0, dy: 0.0 } },
-  { id: "store-chapeu-mago", label: "Chapéu de mago", slot: "cabeca", emoji: "🧙", source: "store", price: 280, rarity: "epico" },
-  { id: "store-aureola", label: "Auréola", slot: "cabeca", emoji: "😇", source: "store", price: 320, rarity: "epico" },
-  { id: "store-capacete-astronauta", label: "Capacete de astronauta", slot: "cabeca", emoji: "🧑‍🚀", source: "store", price: 350, rarity: "epico" },
+  { id: "store-chapeu-mago", label: "Chapéu de mago", slot: "cabeca", emoji: "🧙", source: "store", price: 280, rarity: "epico", image: chapeuMagoImg, fit: { scale: 1.2, dy: -0.02 } },
+  { id: "store-aureola", label: "Auréola", slot: "cabeca", emoji: "😇", source: "store", price: 320, rarity: "epico", image: aureolaImg, fit: { scale: 1.0, dy: -0.07 } },
+  { id: "store-capacete-astronauta", label: "Capacete de astronauta", slot: "cabeca", emoji: "🧑‍🚀", source: "store", price: 350, rarity: "epico", image: capaceteAstronautaImg, fit: { scale: 1.6, dy: 0.09 }, anchorBySpecies: { tartaruga: { x: 0.81, y: 0.43, width: 0.22, rotate: 0 } } },
   { id: "store-chifres-neon", label: "Chifres neon", slot: "cabeca", emoji: "😈", source: "store", price: 380, rarity: "epico", image: chifresNeonImg,
     anchorBySpecies: {
       cavalo: { x: 0.4, y: 0.1, width: 0.2, rotate: 18 },
