@@ -4,6 +4,7 @@ import falcaoImg from "@/assets/pets/falcao.webp";
 import guepardoImg from "@/assets/pets/guepardo.webp";
 import lebreImg from "@/assets/pets/lebre.webp";
 import galgoImg from "@/assets/pets/galgo.webp";
+import tartarugaImg from "@/assets/pets/tartaruga.webp";
 
 export interface PetSpeciesInfo {
   id: PetSpecies;
@@ -11,13 +12,14 @@ export interface PetSpeciesInfo {
   image: string;
 }
 
-// 5 espécies, todas ligadas ao tema velocidade.
+// 6 espécies (5 de velocidade + a tartaruga do "devagar e sempre").
 export const PET_SPECIES: PetSpeciesInfo[] = [
   { id: "guepardo", label: "Guepardo", image: guepardoImg },
   { id: "lebre", label: "Lebre", image: lebreImg },
   { id: "cavalo", label: "Cavalo", image: cavaloImg },
   { id: "falcao", label: "Falcão", image: falcaoImg },
   { id: "galgo", label: "Galgo", image: galgoImg },
+  { id: "tartaruga", label: "Tartaruga", image: tartarugaImg },
 ];
 
 export function getPetSpeciesInfo(species: PetSpecies | undefined | null): PetSpeciesInfo | null {

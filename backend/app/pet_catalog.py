@@ -7,7 +7,7 @@ qualquer item de graca - inclusive acessorios de conquista e ids
 inventados. O preco agora vem daqui.
 """
 
-PET_SPECIES = frozenset({"guepardo", "lebre", "cavalo", "falcao", "galgo"})
+PET_SPECIES = frozenset({"guepardo", "lebre", "cavalo", "falcao", "galgo", "tartaruga"})
 
 # id -> slot. Desbloqueados por conquista, calculada no app a partir das
 # corridas (lib/achievements.ts) - o servidor ainda nao recalcula conquistas,

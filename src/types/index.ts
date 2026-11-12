@@ -188,7 +188,7 @@ export interface UserStats {
 }
 
 // ═══ PET ═══
-export type PetSpecies = "guepardo" | "lebre" | "cavalo" | "falcao" | "galgo";
+export type PetSpecies = "guepardo" | "lebre" | "cavalo" | "falcao" | "galgo" | "tartaruga";
 export type PetAccessorySlot = "cabeca" | "pescoco" | "fundo";
 
 // ═══ GAMIFICATION ═══
