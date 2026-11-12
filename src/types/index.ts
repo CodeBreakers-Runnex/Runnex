@@ -32,6 +32,8 @@ export interface UserProfile {
   petEquippedCabeca?: string | null;
   petEquippedPescoco?: string | null;
   petEquippedFundo?: string | null;
+  petEquippedCorpo?: string | null;
+  petEquippedPes?: string | null;
 }
 
 // ═══ ACTIVITY (CORRIDA) ═══
@@ -189,7 +191,7 @@ export interface UserStats {
 
 // ═══ PET ═══
 export type PetSpecies = "guepardo" | "lebre" | "cavalo" | "falcao" | "galgo" | "tartaruga";
-export type PetAccessorySlot = "cabeca" | "pescoco" | "fundo";
+export type PetAccessorySlot = "cabeca" | "pescoco" | "corpo" | "pes" | "fundo";
 
 // ═══ GAMIFICATION ═══
 export interface LevelInfo {

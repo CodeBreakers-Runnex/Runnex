@@ -41,7 +41,67 @@ export interface PetAccessory {
   /** Presente quando source === "store": preço em RunCoin. */
   price?: number;
   rarity?: PetAccessoryRarity;
+  /**
+   * Arte do acessório (PNG/WebP com fundo transparente, ~512px, item centralizado
+   * e olhando pra direita, igual aos pets). Sem image, o app mostra o emoji.
+   * Fundo: imagem quadrada que cobre o quadro todo atrás do pet.
+   */
+  image?: string;
 }
+
+export type PetBodySlot = Exclude<PetAccessorySlot, "fundo">;
+
+export interface PetAnchor {
+  /** Centro do acessório, em fração (0–1) do quadro quadrado do pet. */
+  x: number;
+  y: number;
+  /** Largura do acessório em fração do quadro. */
+  width: number;
+  /** Rotação em graus. */
+  rotate: number;
+}
+
+// Onde cada parte do corpo fica em cada ilustração (as imagens de
+// src/assets/pets são quadradas e recortadas igual). Valores iniciais
+// estimados a olho: ajuste aqui quando a arte real dos acessórios chegar.
+export const PET_ANCHORS: Record<PetSpecies, Record<PetBodySlot, PetAnchor>> = {
+  cavalo: {
+    cabeca: { x: 0.47, y: 0.08, width: 0.3, rotate: 0 },
+    pescoco: { x: 0.37, y: 0.4, width: 0.3, rotate: 0 },
+    corpo: { x: 0.33, y: 0.53, width: 0.5, rotate: 0 },
+    pes: { x: 0.42, y: 0.95, width: 0.6, rotate: 0 },
+  },
+  falcao: {
+    cabeca: { x: 0.44, y: 0.1, width: 0.28, rotate: 0 },
+    pescoco: { x: 0.4, y: 0.3, width: 0.3, rotate: 0 },
+    corpo: { x: 0.39, y: 0.46, width: 0.45, rotate: 0 },
+    pes: { x: 0.52, y: 0.94, width: 0.4, rotate: 0 },
+  },
+  guepardo: {
+    cabeca: { x: 0.41, y: 0.06, width: 0.28, rotate: 0 },
+    pescoco: { x: 0.38, y: 0.3, width: 0.3, rotate: 0 },
+    corpo: { x: 0.41, y: 0.46, width: 0.45, rotate: 0 },
+    pes: { x: 0.4, y: 0.93, width: 0.55, rotate: 0 },
+  },
+  lebre: {
+    cabeca: { x: 0.49, y: 0.2, width: 0.26, rotate: 0 },
+    pescoco: { x: 0.45, y: 0.5, width: 0.28, rotate: 0 },
+    corpo: { x: 0.43, y: 0.61, width: 0.42, rotate: 0 },
+    pes: { x: 0.42, y: 0.93, width: 0.5, rotate: 0 },
+  },
+  galgo: {
+    cabeca: { x: 0.4, y: 0.08, width: 0.28, rotate: 0 },
+    pescoco: { x: 0.39, y: 0.44, width: 0.3, rotate: 0 },
+    corpo: { x: 0.39, y: 0.54, width: 0.42, rotate: 0 },
+    pes: { x: 0.42, y: 0.95, width: 0.55, rotate: 0 },
+  },
+  tartaruga: {
+    cabeca: { x: 0.8, y: 0.38, width: 0.22, rotate: 10 },
+    pescoco: { x: 0.8, y: 0.48, width: 0.2, rotate: 0 },
+    corpo: { x: 0.46, y: 0.3, width: 0.6, rotate: 0 },
+    pes: { x: 0.5, y: 0.82, width: 0.7, rotate: 0 },
+  },
+};
 
 export type PetAccessoryRarity = "comum" | "raro" | "epico" | "lendario";
 
@@ -55,6 +115,8 @@ export const RARITY_INFO: Record<PetAccessoryRarity, { label: string; className:
 export const ACCESSORY_SLOTS: { id: PetAccessorySlot; label: string }[] = [
   { id: "cabeca", label: "Cabeça" },
   { id: "pescoco", label: "Pescoço" },
+  { id: "corpo", label: "Corpo" },
+  { id: "pes", label: "Pés" },
   { id: "fundo", label: "Fundo" },
 ];
 
@@ -122,6 +184,39 @@ export const PET_ACCESSORIES: PetAccessory[] = [
   { id: "store-oceano", label: "Fundo do oceano", slot: "fundo", emoji: "🌊", source: "store", price: 350, rarity: "epico" },
   { id: "store-espaco", label: "Corrida no espaço", slot: "fundo", emoji: "🪐", source: "store", price: 900, rarity: "lendario" },
   { id: "store-podio", label: "Pódio olímpico", slot: "fundo", emoji: "🏆", source: "store", price: 1200, rarity: "lendario" },
+  { id: "store-regata", label: "Regata de treino", slot: "corpo", emoji: "🎽", source: "store", price: 40, rarity: "comum" },
+  { id: "store-camiseta-prova", label: "Camiseta de prova", slot: "corpo", emoji: "👕", source: "store", price: 50, rarity: "comum" },
+  { id: "store-corta-vento", label: "Corta-vento", slot: "corpo", emoji: "🧥", source: "store", price: 80, rarity: "comum" },
+  { id: "store-colete-refletivo", label: "Colete refletivo", slot: "corpo", emoji: "🦺", source: "store", price: 70, rarity: "comum" },
+  { id: "store-pochete", label: "Pochete de hidratação", slot: "corpo", emoji: "👝", source: "store", price: 60, rarity: "comum" },
+  { id: "store-mochila", label: "Mochila de trail", slot: "corpo", emoji: "🎒", source: "store", price: 90, rarity: "comum" },
+  { id: "store-capa-chuva", label: "Capa de chuva", slot: "corpo", emoji: "☔", source: "store", price: 80, rarity: "comum" },
+  { id: "store-moletom", label: "Moletom do clube", slot: "corpo", emoji: "🧶", source: "store", price: 120, rarity: "raro" },
+  { id: "store-colete-hidratacao", label: "Colete de hidratação", slot: "corpo", emoji: "💧", source: "store", price: 140, rarity: "raro" },
+  { id: "store-kimono", label: "Kimono", slot: "corpo", emoji: "🥋", source: "store", price: 160, rarity: "raro" },
+  { id: "store-havaiana", label: "Camisa havaiana", slot: "corpo", emoji: "🌺", source: "store", price: 130, rarity: "raro" },
+  { id: "store-uniforme-futebol", label: "Camisa do Brasil", slot: "corpo", emoji: "🇧🇷", source: "store", price: 180, rarity: "raro" },
+  { id: "store-asas-anjo", label: "Asas de anjo", slot: "corpo", emoji: "🪽", source: "store", price: 320, rarity: "epico" },
+  { id: "store-armadura", label: "Armadura medieval", slot: "corpo", emoji: "🛡️", source: "store", price: 380, rarity: "epico" },
+  { id: "store-traje-espacial", label: "Traje espacial", slot: "corpo", emoji: "🚀", source: "store", price: 400, rarity: "epico" },
+  { id: "store-jaqueta-neon", label: "Jaqueta neon", slot: "corpo", emoji: "💜", source: "store", price: 350, rarity: "epico" },
+  { id: "store-smoking", label: "Smoking de gala", slot: "corpo", emoji: "🤵", source: "store", price: 300, rarity: "epico" },
+  { id: "store-asas-fenix", label: "Asas de fênix", slot: "corpo", emoji: "🔥", source: "store", price: 950, rarity: "lendario" },
+  { id: "store-armadura-ouro", label: "Armadura dourada", slot: "corpo", emoji: "✨", source: "store", price: 1100, rarity: "lendario" },
+  { id: "store-tenis-basico", label: "Tênis básico", slot: "pes", emoji: "👟", source: "store", price: 50, rarity: "comum" },
+  { id: "store-meias-listradas", label: "Meias listradas", slot: "pes", emoji: "🧦", source: "store", price: 30, rarity: "comum" },
+  { id: "store-chinelo", label: "Chinelo de recuperação", slot: "pes", emoji: "🩴", source: "store", price: 40, rarity: "comum" },
+  { id: "store-galochas", label: "Galochas", slot: "pes", emoji: "🥾", source: "store", price: 70, rarity: "comum" },
+  { id: "store-caneleira", label: "Caneleira de compressão", slot: "pes", emoji: "🦵", source: "store", price: 90, rarity: "comum" },
+  { id: "store-sapatilha-pista", label: "Sapatilha de pista", slot: "pes", emoji: "⚡", source: "store", price: 130, rarity: "raro" },
+  { id: "store-tenis-trail", label: "Tênis de trail", slot: "pes", emoji: "⛰️", source: "store", price: 150, rarity: "raro" },
+  { id: "store-patins", label: "Patins", slot: "pes", emoji: "🛼", source: "store", price: 170, rarity: "raro" },
+  { id: "store-botas-neve", label: "Botas de neve", slot: "pes", emoji: "❄️", source: "store", price: 160, rarity: "raro" },
+  { id: "store-tenis-carbono", label: "Tênis de placa de carbono", slot: "pes", emoji: "🏎️", source: "store", price: 380, rarity: "epico" },
+  { id: "store-botas-foguete", label: "Botas-foguete", slot: "pes", emoji: "🚀", source: "store", price: 400, rarity: "epico" },
+  { id: "store-tenis-led", label: "Tênis de LED", slot: "pes", emoji: "💡", source: "store", price: 340, rarity: "epico" },
+  { id: "store-sandalias-aladas", label: "Sandálias aladas", slot: "pes", emoji: "🪶", source: "store", price: 900, rarity: "lendario" },
+  { id: "store-tenis-ouro", label: "Tênis de ouro", slot: "pes", emoji: "🏅", source: "store", price: 1100, rarity: "lendario" },
 ];
 
 export function getAccessoryById(id: string | null | undefined): PetAccessory | null {

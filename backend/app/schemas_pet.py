@@ -7,7 +7,7 @@ class ChoosePetIn(BaseModel):
 
 
 class EquipPetAccessoryIn(BaseModel):
-    slot: str  # cabeca | pescoco | fundo
+    slot: str  # cabeca | pescoco | corpo | pes | fundo
     accessory_id: str | None = Field(default=None, validation_alias="accessoryId")
 
 

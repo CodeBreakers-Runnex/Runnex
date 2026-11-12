@@ -16,6 +16,8 @@ SLOT_FIELD = {
     "cabeca": "pet_equipped_cabeca",
     "pescoco": "pet_equipped_pescoco",
     "fundo": "pet_equipped_fundo",
+    "corpo": "pet_equipped_corpo",
+    "pes": "pet_equipped_pes",
 }
 
 

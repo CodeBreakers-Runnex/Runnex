@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS users (
     pet_equipped_cabeca        VARCHAR,
     pet_equipped_pescoco       VARCHAR,
     pet_equipped_fundo         VARCHAR,
+    pet_equipped_corpo         VARCHAR,
+    pet_equipped_pes           VARCHAR,
     CONSTRAINT users_pkey PRIMARY KEY (uid)
 );
 

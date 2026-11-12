@@ -35,6 +35,8 @@ class UserProfileOut(BaseModel):
     pet_equipped_cabeca: str | None = Field(serialization_alias="petEquippedCabeca")
     pet_equipped_pescoco: str | None = Field(serialization_alias="petEquippedPescoco")
     pet_equipped_fundo: str | None = Field(serialization_alias="petEquippedFundo")
+    pet_equipped_corpo: str | None = Field(default=None, serialization_alias="petEquippedCorpo")
+    pet_equipped_pes: str | None = Field(default=None, serialization_alias="petEquippedPes")
 
 
 class UserProfileCreate(BaseModel):

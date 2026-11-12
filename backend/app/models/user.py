@@ -39,6 +39,8 @@ class User(Base):
     pet_equipped_cabeca: Mapped[str | None] = mapped_column(String, nullable=True)
     pet_equipped_pescoco: Mapped[str | None] = mapped_column(String, nullable=True)
     pet_equipped_fundo: Mapped[str | None] = mapped_column(String, nullable=True)
+    pet_equipped_corpo: Mapped[str | None] = mapped_column(String, nullable=True)
+    pet_equipped_pes: Mapped[str | None] = mapped_column(String, nullable=True)
 
     activities = relationship("Activity", back_populates="user", cascade="all, delete-orphan")
     group_memberships = relationship("GroupMember", back_populates="user", cascade="all, delete-orphan")

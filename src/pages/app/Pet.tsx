@@ -19,6 +19,7 @@ import {
   ACCESSORY_SLOTS,
   PET_ACCESSORIES,
   PET_SPECIES,
+  PET_ANCHORS,
   PET_MOOD_LABEL,
   RARITY_INFO,
   getAccessoryById,
@@ -56,6 +57,9 @@ const EMPTY_STATS: UserStats = {
 };
 
 type PetTab = "acessorios" | "loja";
+
+// Ordem de empilhamento no corpo: pés por baixo, chapéu por cima.
+const SLOT_LAYER: Record<PetAccessorySlot, number> = { fundo: 0, pes: 1, corpo: 2, pescoco: 3, cabeca: 4 };
 
 function PetOnboarding({ onAdopt, adopting }: { onAdopt: (species: PetSpecies, name: string) => void; adopting: boolean }) {
   const [species, setSpecies] = useState<PetSpecies | null>(null);
@@ -196,6 +200,8 @@ export default function Pet() {
     cabeca: profile?.petEquippedCabeca || null,
     pescoco: profile?.petEquippedPescoco || null,
     fundo: profile?.petEquippedFundo || null,
+    corpo: profile?.petEquippedCorpo || null,
+    pes: profile?.petEquippedPes || null,
   };
 
   const isAccessoryOwned = useCallback((accessory: (typeof PET_ACCESSORIES)[number]) => {
@@ -216,6 +222,8 @@ export default function Pet() {
         petEquippedCabeca: accessory.slot === "cabeca" ? (currentlyEquipped ? null : accessory.id) : prev.petEquippedCabeca,
         petEquippedPescoco: accessory.slot === "pescoco" ? (currentlyEquipped ? null : accessory.id) : prev.petEquippedPescoco,
         petEquippedFundo: accessory.slot === "fundo" ? (currentlyEquipped ? null : accessory.id) : prev.petEquippedFundo,
+        petEquippedCorpo: accessory.slot === "corpo" ? (currentlyEquipped ? null : accessory.id) : prev.petEquippedCorpo,
+        petEquippedPes: accessory.slot === "pes" ? (currentlyEquipped ? null : accessory.id) : prev.petEquippedPes,
       } : prev);
     } catch (error) {
       console.error("Erro ao equipar acessorio:", error);
@@ -284,6 +292,9 @@ export default function Pet() {
   const equippedAccessories = ACCESSORY_SLOTS
     .map((slot) => getAccessoryById(equippedBySlot[slot.id]))
     .filter((accessory): accessory is NonNullable<typeof accessory> => Boolean(accessory));
+  const backgroundAccessory = equippedAccessories.find((accessory) => accessory.slot === "fundo");
+  const wornWithImage = equippedAccessories.filter((accessory) => accessory.slot !== "fundo" && accessory.image);
+  const emojiOnly = equippedAccessories.filter((accessory) => !accessory.image);
 
   const unlockedAccessories = PET_ACCESSORIES.filter((accessory) => accessory.source === "achievement" && isAccessoryOwned(accessory));
   const lockedAchievementAccessories = PET_ACCESSORIES.filter((accessory) => accessory.source === "achievement" && !isAccessoryOwned(accessory));
@@ -321,27 +332,56 @@ export default function Pet() {
             `0 0 ${glowSize}px rgba(147,51,234,0.25)`,
           ] }}
           transition={{ duration: PET_IDLE_ANIMATION[mood].duration * 1.5, repeat: Infinity, ease: "easeInOut" }}
-          className="relative flex h-40 w-40 items-center justify-center rounded-[2.5rem] border border-purple-500/25 bg-purple-500/10"
+          className="relative flex h-48 w-48 items-center justify-center rounded-[2.5rem] border border-purple-500/25 bg-purple-500/10"
         >
-          <motion.img
-            src={speciesInfo?.image}
-            alt={speciesInfo?.label}
-            className="h-40 w-40 object-contain"
+          {backgroundAccessory?.image && (
+            <img src={backgroundAccessory.image} alt="" className="absolute inset-0 h-full w-full rounded-[2.5rem] object-cover" />
+          )}
+          <motion.div
+            className="relative h-full w-full"
             animate={{ y: PET_IDLE_ANIMATION[mood].y, rotate: PET_IDLE_ANIMATION[mood].rotate }}
             transition={{ duration: PET_IDLE_ANIMATION[mood].duration, repeat: Infinity, ease: "easeInOut" }}
-          />
-          {equippedAccessories.map((accessory, index) => (
-            <motion.span
-              key={accessory.id}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring", stiffness: 400, damping: 18, delay: index * 0.08 }}
-              className="absolute -bottom-2 -right-2 text-3xl drop-shadow"
-              title={accessory.label}
-            >
-              {accessory.emoji}
-            </motion.span>
-          ))}
+          >
+            <img src={speciesInfo?.image} alt={speciesInfo?.label} className="h-full w-full object-contain" />
+            {/* Acessórios com arte ficam presos no corpo e se mexem junto com o pet. */}
+            {profile.petSpecies && wornWithImage.map((accessory) => {
+              const anchor = PET_ANCHORS[profile.petSpecies!][accessory.slot as Exclude<PetAccessorySlot, "fundo">];
+              return (
+                <motion.img
+                  key={accessory.id}
+                  src={accessory.image}
+                  alt={accessory.label}
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="pointer-events-none absolute"
+                  style={{
+                    left: `${anchor.x * 100}%`,
+                    top: `${anchor.y * 100}%`,
+                    width: `${anchor.width * 100}%`,
+                    translateX: "-50%",
+                    translateY: "-50%",
+                    rotate: anchor.rotate,
+                    zIndex: SLOT_LAYER[accessory.slot],
+                  }}
+                />
+              );
+            })}
+          </motion.div>
+          {/* Acessórios ainda sem arte aparecem como selos no canto. */}
+          <div className="absolute -bottom-3 -right-3 flex gap-0.5">
+            {emojiOnly.map((accessory, index) => (
+              <motion.span
+                key={accessory.id}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 18, delay: index * 0.08 }}
+                className="text-2xl drop-shadow"
+                title={accessory.label}
+              >
+                {accessory.emoji}
+              </motion.span>
+            ))}
+          </div>
         </motion.div>
 
         <p className="mt-5 font-display text-2xl font-black uppercase tracking-tighter">{profile.petName}</p>
