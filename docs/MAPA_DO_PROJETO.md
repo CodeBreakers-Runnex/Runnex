@@ -88,7 +88,6 @@ Postgres (Neon) — estrutura criada pelas migrações em backend/alembic/versio
 | `capacitor.config.ts` | Configuração do app Android (id `br.com.runnex.app`, login Google nativo). | Em uso |
 | `firebase.json`, `.firebaserc` | Hospedagem no Firebase Hosting e onde ficam as regras do Firestore. | Em uso |
 | `firestore.rules` | Regras de segurança do Firestore. Hoje só liberam o documento `users/{uid}` do próprio dono. | Legado |
-| `storage.rules` | Regras do Firebase Storage. **O Storage não é usado** (fotos vão em base64 para o Postgres). | Morto |
 | `.env.example` | Modelo das variáveis do frontend (Firebase, URL do backend, chave do mapa). | Em uso |
 | `.gitignore`, `.vscode/settings.json` | Arquivos fora do git; configuração do editor. | Em uso |
 
@@ -128,7 +127,7 @@ Postgres (Neon) — estrutura criada pelas migrações em backend/alembic/versio
 | `app/Social.tsx` | `/social` e `/feed` | Abas Feed, Grupos e Ranking; criar grupo. | Em uso |
 | `app/Feed.tsx` | (dentro de Social) | Feed global de corridas, curtidas, "ver mais". Só é usado embutido na tela Social. | Em uso |
 | `app/Group.tsx` | `/grupo/:id` | Tela de um grupo: posts, comentários, chat. | Em uso |
-| `app/RunTracking.tsx` | `/run` | Gravar a corrida com GPS (o arquivo mais importante e o maior: ~1.100 linhas). | Em uso |
+| `app/RunTracking.tsx` | `/run` | Gravar a corrida com GPS: GPS, cronômetro, salvamento e recuperação (o arquivo mais importante e o maior: ~1.030 linhas). | Em uso |
 | `app/Dashboard.tsx` | `/dashboard` e `/stats` | Estatísticas, recordes e evolução. | Em uso |
 | `app/Events.tsx` | `/events` | Provas de corrida; salvar no perfil. | Em uso |
 | `app/Profile.tsx` | `/profile` | Perfil, edição, configurações, tema, excluir conta. | Em uso |
@@ -140,6 +139,24 @@ Postgres (Neon) — estrutura criada pelas migrações em backend/alembic/versio
 | `app/Sleep.tsx` | `/sono` | Sono e recuperação. | Desligado |
 | `app/ConnectedDevices.tsx` | `/dispositivos` | Importar corridas do relógio (Health Connect). | Desligado |
 | `NotFound.tsx` | qualquer outra | Página 404. | Em uso |
+
+### Subpastas de telas grandes
+
+Telas que passavam de 800 linhas foram divididas (movimentação pura, ver PRs #25, #26 e #27):
+
+| Arquivo | Para que serve | Status |
+|---|---|---|
+| `pages/app/profile/SettingsModal.tsx` | Modal de configurações do Perfil. | Em uso |
+| `pages/app/profile/EditProfileModal.tsx` | Modal de edição do Perfil (nome, foto, bio, meta). | Em uso |
+| `pages/app/profile/theme.ts` | Tema claro/escuro. | Em uso |
+| `pages/app/group/GroupFeedPanel.tsx` | Feed do grupo: publicar, curtir, comentar. | Em uso |
+| `pages/app/group/GroupChatPanel.tsx` | Chat do grupo. | Em uso |
+| `pages/app/group/GroupOptionsModal.tsx` | Dados do grupo e "Sair do grupo". | Em uso |
+| `pages/app/group/GroupStateScreens.tsx` | Carregando e telas de erro do grupo. | Em uso |
+| `pages/app/run/ShoePicker.tsx` | Seletor de tênis da tela de corrida. | Em uso |
+| `pages/app/run/RecoverRunDialog.tsx` | Aviso de corrida não finalizada. | Em uso |
+| `pages/app/run/MusicSheet.tsx` | Atalhos de música da corrida. | Desligado |
+| `components/LoadRetry.tsx` | Mensagem "não carregou" com "Tentar de novo". | Em uso |
 
 ### `components/` — pedaços de tela
 
@@ -388,7 +405,6 @@ Gerado pelo Capacitor; quase tudo é padrão. O que é do Runnex:
 
 **Morto (pode apagar sem mudar nada no app):**
 
-- `storage.rules` (o Storage não é usado)
 - `backend/scripts/create_database.sql` (desatualizado)
 - os dois testes de exemplo do Android
 
