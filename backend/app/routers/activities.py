@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import desc, func
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 
 from app.activity_rules import MAX_DURATION_PER_DAY_SECONDS
 from app.auth import FirebaseUser, get_current_user, require_verified_email
@@ -184,7 +184,14 @@ def get_performance(
 ):
     if not -720 <= utc_offset_minutes <= 840:
         raise HTTPException(status_code=422, detail="Fuso inválido.")
-    rows = db.query(Activity).filter(Activity.user_id == current_user.uid).order_by(desc(Activity.created_at)).all()
+    # A rota (ate 4.500 pontos por corrida) nao entra no calculo: so as amostras.
+    rows = (
+        db.query(Activity)
+        .options(defer(Activity.route))
+        .filter(Activity.user_id == current_user.uid)
+        .order_by(desc(Activity.created_at))
+        .all()
+    )
     return performance_summary(rows, datetime.now(timezone.utc), utc_offset_minutes)
 
 

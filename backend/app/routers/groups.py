@@ -75,10 +75,18 @@ def _serialize_group(group: Group, users: UserCache) -> GroupOut:
 
 
 def _get_group_or_404(db: Session, group_id: int) -> Group:
-    group = db.query(Group).options(selectinload(Group.members)).get(group_id)
+    # db.get no lugar de Query.get, API legada no SQLAlchemy 2.
+    group = db.get(Group, group_id, options=[selectinload(Group.members)])
     if not group:
         raise HTTPException(status_code=404, detail="Grupo nao encontrado.")
     return group
+
+
+def _group_out(db: Session, group_id: int) -> GroupOut:
+    """Grupo atualizado (membros inclusos) pronto para a resposta. Repetido
+    antes em cada rota que devolve o grupo."""
+    group = _get_group_or_404(db, group_id)
+    return _serialize_group(group, _load_users(db, [group.created_by]))
 
 
 def _is_group_member(db: Session, group_id: int, user_id: str) -> bool:
@@ -125,9 +133,7 @@ def create_group(
     db.add(GroupMember(group_id=group.id, user_id=current_user.uid))
     db.commit()
 
-    group = _get_group_or_404(db, group.id)
-    users = _load_users(db, [group.created_by])
-    return _serialize_group(group, users)
+    return _group_out(db, group.id)
 
 
 def _check_membership(group_id: int, uid: str) -> bool:
@@ -173,9 +179,7 @@ async def group_websocket(group_id: int, websocket: WebSocket, token: str = ""):
 
 @router.get("/{group_id}", response_model=GroupOut)
 def get_group(group_id: int, db: Session = Depends(get_db), _: FirebaseUser = Depends(get_current_user)):
-    group = _get_group_or_404(db, group_id)
-    users = _load_users(db, [group.created_by])
-    return _serialize_group(group, users)
+    return _group_out(db, group_id)
 
 
 @router.put("/{group_id}/photo", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:photo", 10, 600))])
@@ -193,9 +197,7 @@ def update_group_photo(
     group.updated_at = datetime.now(timezone.utc)
     db.commit()
 
-    group = _get_group_or_404(db, group_id)
-    users = _load_users(db, [group.created_by])
-    return _serialize_group(group, users)
+    return _group_out(db, group_id)
 
 
 @router.post("/{group_id}/join", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:membership", 20, 60))])
@@ -209,9 +211,7 @@ def join_group(
         group.updated_at = datetime.now(timezone.utc)
         db.commit()
 
-    group = _get_group_or_404(db, group_id)
-    users = _load_users(db, [group.created_by])
-    return _serialize_group(group, users)
+    return _group_out(db, group_id)
 
 
 @router.post("/{group_id}/leave", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:membership", 20, 60))])
@@ -225,9 +225,7 @@ def leave_group(
     group.updated_at = datetime.now(timezone.utc)
     db.commit()
 
-    group = _get_group_or_404(db, group_id)
-    users = _load_users(db, [group.created_by])
-    return _serialize_group(group, users)
+    return _group_out(db, group_id)
 
 
 # ─── Posts ──────────────────────────────────────────────────────────────────

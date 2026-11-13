@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import DateTime, and_, cast, func, or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 
 from app.auth import FirebaseUser, require_verified_email
 from app.database import get_db
@@ -51,7 +51,8 @@ def summary(week: date, zone: str = "America/Sao_Paulo", db: Session = Depends(g
     completed = [w for w in eligible if w.status == "completed"]
     start_utc = datetime.combine(week, time.min, ZoneInfo(zone)).astimezone(timezone.utc)
     end_utc = datetime.combine(end, time.min, ZoneInfo(zone)).astimezone(timezone.utc)
-    runs = db.query(Activity).filter(Activity.user_id == user.uid, Activity.created_at >= start_utc, Activity.created_at < end_utc).all()
+    # So distancia e duracao entram no resumo; rota e amostras ficam no banco.
+    runs = db.query(Activity).options(load_only(Activity.id, Activity.distance, Activity.duration_seconds)).filter(Activity.user_id == user.uid, Activity.created_at >= start_utc, Activity.created_at < end_utc).all()
     closed = end <= utcnow().astimezone(ZoneInfo(zone)).date()
     return {"week": week, "end": end - timedelta(days=1), "timezone": zone, "plannedCount": len(eligible), "completedCount": len(completed), "manualCount": sum(w.completion_source == "manual" for w in completed), "skippedCount": sum(w.status == "skipped" for w in eligible), "restCount": sum(w.category == "rest" and w.status != "cancelled" for w in rows), "targetKm": round(sum(w.target_distance_km or 0 for w in eligible), 2), "targetMinutes": sum(w.target_duration_minutes or 0 for w in eligible), "recordedKm": round(sum(a.distance for a in runs), 2), "recordedMinutes": round(sum(a.duration_seconds for a in runs) / 60, 1), "runCount": len(runs), "closed": closed, "completionRate": round(len(completed) / len(eligible) * 100, 1) if closed and eligible else None}
 
