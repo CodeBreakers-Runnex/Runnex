@@ -26,7 +26,8 @@ def signing_key(monkeypatch):
         serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
     ).decode()
     public_jwk = {**jwk.construct(public_pem, "RS256").to_dict(), "kid": "chave-1"}
-    monkeypatch.setattr(auth, "_get_jwks", lambda: {"chave-1": public_jwk})
+    # *args: aceita _get_jwks() e _get_jwks(kid) (PR que trata kid desconhecido).
+    monkeypatch.setattr(auth, "_get_jwks", lambda *args, **kwargs: {"chave-1": public_jwk})
     return private_pem
 
 
