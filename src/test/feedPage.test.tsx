@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   more: [] as FeedActivity[],
   toggleLike: vi.fn(),
   loadMore: vi.fn(),
+  getFeed: vi.fn(),
   unsubscribe: vi.fn(),
   success: vi.fn(),
   info: vi.fn(),
@@ -24,10 +25,18 @@ vi.mock("@/services/database", () => ({
   toggleLike: (...a: unknown[]) => mocks.toggleLike(...a),
   getUserStats: () => Promise.resolve({ totalKm: "12.5", runsCount: 3, totalTime: "1h 5m" }),
   loadMoreActivities: (...a: unknown[]) => mocks.loadMore(...a),
+  getFeed: (...a: unknown[]) => mocks.getFeed(...a),
 }));
 vi.mock("sonner", () => ({ toast: { success: (...a: unknown[]) => mocks.success(...a), info: (...a: unknown[]) => mocks.info(...a), error: (...a: unknown[]) => mocks.error(...a) } }));
 
 import Feed from "@/pages/app/Feed";
+
+// Puxar para atualizar: arrasta de cima para baixo com a página no topo.
+function pullToRefresh() {
+  fireEvent.touchStart(document, { touches: [{ clientY: 10 }] });
+  fireEvent.touchMove(document, { touches: [{ clientY: 310 }] });
+  fireEvent.touchEnd(document);
+}
 
 function run(id: string, userId: string, userName: string, extra: Partial<FeedActivity> = {}): FeedActivity {
   return {
@@ -51,7 +60,9 @@ describe("feed", () => {
   beforeEach(() => {
     localStorage.clear();
     mocks.feed = [];
-    mocks.toggleLike.mockReset().mockResolvedValue(undefined);
+    // O backend devolve a lista de curtidas já atualizada.
+    mocks.toggleLike.mockReset().mockResolvedValue([]);
+    mocks.getFeed.mockReset().mockResolvedValue([]);
     mocks.loadMore.mockReset().mockResolvedValue([]);
     mocks.unsubscribe.mockReset();
     mocks.success.mockReset();
@@ -90,6 +101,47 @@ describe("feed", () => {
     renderFeed();
     fireEvent.click(await screen.findByRole("button", { name: "Curtir corrida" }));
     await waitFor(() => expect(mocks.error).toHaveBeenCalledWith("Não foi possível salvar a curtida. Tente de novo."));
+  });
+
+  it("a curtida aparece na hora, sem esperar a próxima atualização do feed", async () => {
+    mocks.toggleLike.mockResolvedValue(["ana"]);
+    mocks.feed = [run("1", "bruno", "Bruno")];
+    renderFeed();
+    fireEvent.click(await screen.findByRole("button", { name: "Curtir corrida" }));
+    expect(await screen.findByRole("button", { name: "Descurtir corrida" })).toBeInTheDocument();
+  });
+
+  it("a curtida também aparece nas corridas carregadas por \"ver mais\"", async () => {
+    mocks.feed = Array.from({ length: 10 }, (_, i) => run(String(10 - i), "bruno", "Bruno", { likes: ["ana"] }));
+    mocks.loadMore.mockResolvedValue([run("0", "dani", "Dani")]);
+    mocks.toggleLike.mockResolvedValue(["ana"]);
+    renderFeed();
+    fireEvent.click(await screen.findByRole("button", { name: /Ver mais atividades/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Curtir corrida" }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Curtir corrida" })).toBeNull());
+    expect(mocks.toggleLike).toHaveBeenCalledWith("0", "ana", false);
+  });
+
+  it("puxar para atualizar busca o feed de novo", async () => {
+    mocks.feed = [run("1", "bruno", "Bruno")];
+    mocks.getFeed.mockResolvedValue([run("2", "carla", "Carla"), run("1", "bruno", "Bruno")]);
+    renderFeed();
+    await screen.findAllByText("Bruno");
+    pullToRefresh();
+    expect((await screen.findAllByText("Carla")).length).toBeGreaterThan(0);
+    expect(mocks.getFeed).toHaveBeenCalledWith(10);
+    await waitFor(() => expect(mocks.success).toHaveBeenCalledWith("Feed atualizado!"));
+  });
+
+  it("se a atualização falhar, avisa em vez de dizer que atualizou", async () => {
+    mocks.feed = [run("1", "bruno", "Bruno")];
+    mocks.getFeed.mockRejectedValue(new Error("offline"));
+    renderFeed();
+    await screen.findAllByText("Bruno");
+    pullToRefresh();
+    await waitFor(() => expect(mocks.error).toHaveBeenCalledWith("Não foi possível atualizar o feed. Tente de novo."));
+    expect(mocks.success).not.toHaveBeenCalledWith("Feed atualizado!");
+    expect(screen.getAllByText("Bruno").length).toBeGreaterThan(0);
   });
 
   it("a busca filtra pelo nome do atleta e avisa quando não acha ninguém", async () => {
