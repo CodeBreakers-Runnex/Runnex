@@ -1,0 +1,369 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+html,body{margin:0;padding:0;background:#000;overflow:hidden}
+#stage{width:540px;height:960px;position:relative;overflow:hidden;font-family:Inter,sans-serif}
+svg{display:block}
+.cap{position:absolute;left:0;right:0;text-align:center;font-family:'Inter';font-weight:900;font-size:40px;line-height:1.05;letter-spacing:.5px;color:#fff;
+ -webkit-text-stroke:9px #111;paint-order:stroke fill;text-transform:uppercase;padding:0 24px}
+.cap span{display:inline-block;margin:0 6px}
+</style></head>
+<body><div id="stage"><div id="scene"></div><div id="cap" class="cap"></div></div>
+<script>
+const W=540,H=960;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const prog=(t,a,b)=>clamp((t-a)/(b-a));
+const io=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const out=t=>1-Math.pow(1-t,3);
+const back=t=>{const c=1.9;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)};
+const lerp=(a,b,t)=>a+(b-a)*t;
+const K='#111', SK='#C98A5B', SKD='#A86F45', HAIR='#2A1A12', PUR='#9B4DFF', PURD='#6E22D9', PINK='#FF4FA3', YEL='#FFD23F', RED='#FF3B3B';
+
+/* ---------- BETO HEAD (origin = face center, ~220 wide) ---------- */
+function heart(x,y,s,fill){return `<path transform="translate(${x},${y}) scale(${s})" d="M0,8 C-14,-6 -26,4 -18,16 L0,32 L18,16 C26,4 14,-6 0,8Z" fill="${fill}" stroke="${K}" stroke-width="${4/s}"/>`}
+function head(o){
+  const {x=0,y=0,s=1,eyes='normal',mouth='smile',sweat=0,brow='normal',t=0,glow=0,look=0,blink=0}=o;
+  let g=`<g transform="translate(${x},${y}) scale(${s})">`;
+  // hood/neck
+  g+=`<path d="M-120,190 Q-110,95 -40,92 L40,92 Q110,95 120,190Z" fill="#8A909B" stroke="${K}" stroke-width="6"/>`;
+  g+=`<rect x="-28" y="70" width="56" height="40" fill="${SKD}" stroke="${K}" stroke-width="6"/>`;
+  // afro back
+  [[-82,-62,46],[-48,-105,48],[0,-122,50],[48,-105,48],[82,-62,46],[-100,-18,38],[100,-18,38]].forEach(c=>g+=`<circle cx="${c[0]}" cy="${c[1]}" r="${c[2]}" fill="${HAIR}" stroke="${K}" stroke-width="6"/>`);
+  // ears
+  g+=`<circle cx="-92" cy="12" r="20" fill="${SK}" stroke="${K}" stroke-width="6"/><circle cx="92" cy="12" r="20" fill="${SK}" stroke="${K}" stroke-width="6"/>`;
+  // face
+  g+=`<ellipse cx="0" cy="8" rx="92" ry="104" fill="${SK}" stroke="${K}" stroke-width="6"/>`;
+  if(glow) g+=`<ellipse cx="0" cy="20" rx="88" ry="96" fill="#7FB3FF" opacity="${0.28*glow}"/>`;
+  // stubble
+  for(let i=0;i<14;i++){const a=Math.PI*(0.15+0.7*i/13);g+=`<circle cx="${Math.cos(a)*70}" cy="${40+Math.sin(a)*58}" r="2.2" fill="${SKD}"/>`}
+  // fringe
+  [[-50,-84,30],[-10,-94,32],[34,-88,30],[66,-66,22]].forEach(c=>g+=`<circle cx="${c[0]}" cy="${c[1]}" r="${c[2]}" fill="${HAIR}"/>`);
+  // eyes
+  const ex=[-38,38], ey=6;
+  ex.forEach((cx,i)=>{
+    if(eyes==='heart'){const p=1+0.18*Math.sin(t*14);g+=heart(cx,ey-14,1.15*p,RED);}
+    else{
+      const r=eyes==='wide'?26:20, pr=eyes==='wide'?6:9;
+      g+=`<circle cx="${cx}" cy="${ey}" r="${r}" fill="#fff" stroke="${K}" stroke-width="4"/>`;
+      if(blink>0.5) g+=`<rect x="${cx-r-2}" y="${ey-r-2}" width="${2*r+4}" height="${2*r+4}" fill="${SK}"/><path d="M${cx-r},${ey} L${cx+r},${ey}" stroke="${K}" stroke-width="5"/>`;
+      else g+=`<circle cx="${cx+look*8}" cy="${ey+(eyes==='wide'?0:2)}" r="${pr}" fill="${K}"/><circle cx="${cx+look*8+3}" cy="${ey-2}" r="2.5" fill="#fff"/>`;
+      if(eyes==='determined') g+=`<path d="M${cx-24},${ey-24} L${cx+24},${ey-24} L${cx+24},${ey+(i?-12:-2)} L${cx-24},${ey+(i?-2:-12)}Z" fill="${SK}" stroke="${K}" stroke-width="4"/>`;
+    }
+  });
+  // glasses
+  g+=`<circle cx="-38" cy="6" r="32" fill="rgba(255,255,255,.12)" stroke="${K}" stroke-width="6"/><circle cx="38" cy="6" r="32" fill="rgba(255,255,255,.12)" stroke="${K}" stroke-width="6"/><path d="M-8,4 Q0,-2 8,4" stroke="${K}" stroke-width="6" fill="none"/><path d="M-70,0 L-88,-4 M70,0 L88,-4" stroke="${K}" stroke-width="6"/>`;
+  // brows
+  const by=-38;
+  if(brow==='angry') g+=`<path d="M-66,${by-10} L-14,${by+6}" stroke="${K}" stroke-width="10" stroke-linecap="round"/><path d="M66,${by-10} L14,${by+6}" stroke="${K}" stroke-width="10" stroke-linecap="round"/>`;
+  else if(brow==='up') g+=`<path d="M-64,${by-4} Q-40,${by-26} -16,${by-12}" stroke="${K}" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M64,${by-4} Q40,${by-26} 16,${by-12}" stroke="${K}" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+  else g+=`<path d="M-62,${by} Q-40,${by-10} -18,${by-2}" stroke="${K}" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M62,${by} Q40,${by-10} 18,${by-2}" stroke="${K}" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+  // nose
+  g+=`<path d="M-6,30 Q0,44 10,36" stroke="${K}" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+  // mouth
+  if(mouth==='open') g+=`<path d="M-34,58 Q0,50 34,58 Q30,104 0,106 Q-30,104 -34,58Z" fill="#7A1020" stroke="${K}" stroke-width="6"/><path d="M-26,64 L26,64 L22,72 L-22,72Z" fill="#fff"/><ellipse cx="0" cy="94" rx="18" ry="9" fill="${PINK}"/>`;
+  else if(mouth==='flat') g+=`<path d="M-24,66 Q0,62 24,66" stroke="${K}" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+  else if(mouth==='grin') g+=`<path d="M-36,56 Q0,96 36,56Z" fill="#fff" stroke="${K}" stroke-width="6" stroke-linejoin="round"/>`;
+  else if(mouth==='dreamy') g+=`<path d="M-30,58 Q0,86 30,58" stroke="${K}" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="-62" cy="44" rx="14" ry="8" fill="${PINK}" opacity=".6"/><ellipse cx="62" cy="44" rx="14" ry="8" fill="${PINK}" opacity=".6"/>`;
+  else g+=`<path d="M-28,60 Q0,80 28,60" stroke="${K}" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+  // sweat
+  if(sweat>0){const sy=-50+sweat*70;g+=`<path transform="translate(96,${sy})" d="M0,-22 Q16,4 0,14 Q-16,4 0,-22Z" fill="#59C3FF" stroke="${K}" stroke-width="4"/>`;}
+  return g+`</g>`;
+}
+
+/* ---------- BETO FULL BODY (origin = feet center, ~ 300 tall at s=1) ---------- */
+function body(o){
+  const {x,y,s=1,rot=0,headOpt={},arms='down',t=0}=o;
+  let g=`<g transform="translate(${x},${y}) rotate(${rot}) scale(${s})">`;
+  // legs
+  g+=`<rect x="-34" y="-90" width="26" height="80" rx="10" fill="${SK}" stroke="${K}" stroke-width="5"/><rect x="8" y="-90" width="26" height="80" rx="10" fill="${SK}" stroke="${K}" stroke-width="5"/>`;
+  g+=`<ellipse cx="-24" cy="-6" rx="24" ry="9" fill="#2F7BFF" stroke="${K}" stroke-width="5"/><ellipse cx="24" cy="-6" rx="24" ry="9" fill="#2F7BFF" stroke="${K}" stroke-width="5"/>`;
+  // shorts
+  g+=`<path d="M-50,-140 L50,-140 L48,-82 L4,-82 L0,-100 L-4,-82 L-48,-82Z" fill="#3B5BA9" stroke="${K}" stroke-width="5" stroke-linejoin="round"/>`;
+  // arms
+  const ar = arms==='up'? `<path d="M-62,-230 Q-110,-300 -96,-330" stroke="#8A909B" stroke-width="30" fill="none" stroke-linecap="round"/><path d="M62,-230 Q110,-300 96,-330" stroke="#8A909B" stroke-width="30" fill="none" stroke-linecap="round"/><circle cx="-96" cy="-336" r="15" fill="${SK}" stroke="${K}" stroke-width="5"/><circle cx="96" cy="-336" r="15" fill="${SK}" stroke="${K}" stroke-width="5"/>`
+   : arms==='hips'? `<path d="M-64,-230 Q-110,-190 -60,-160" stroke="#8A909B" stroke-width="30" fill="none" stroke-linecap="round"/><path d="M64,-230 Q110,-190 60,-160" stroke="#8A909B" stroke-width="30" fill="none" stroke-linecap="round"/>`
+   : `<path d="M-64,-230 Q-84,-180 -76,-140" stroke="#8A909B" stroke-width="30" fill="none" stroke-linecap="round"/><path d="M64,-230 Q84,-180 76,-140" stroke="#8A909B" stroke-width="30" fill="none" stroke-linecap="round"/><circle cx="-76" cy="-132" r="15" fill="${SK}" stroke="${K}" stroke-width="5"/><circle cx="76" cy="-132" r="15" fill="${SK}" stroke="${K}" stroke-width="5"/>`;
+  // torso (hoodie, belly)
+  g+=`<path d="M-62,-250 Q-92,-160 -58,-130 L58,-130 Q92,-160 62,-250 Q0,-266 -62,-250Z" fill="#8A909B" stroke="${K}" stroke-width="5"/>`;
+  g+=`<path d="M-30,-190 q8,-10 18,-2 q10,8 2,16 q-14,6 -20,-14z" fill="#B5462E" opacity=".85"/>`; // stain
+  g+=`<rect x="-34" y="-170" width="68" height="24" rx="8" fill="none" stroke="${K}" stroke-width="4"/>`; // pocket
+  g+=ar;
+  g+=head({x:0,y:-330,s:.62,t,...headOpt});
+  return g+`</g>`;
+}
+
+/* ---------- ROOM ---------- */
+function room(t,o={}){
+  const fl=0.55+0.25*Math.sin(t*23)+0.15*Math.sin(t*7.3);
+  let g=`<rect width="${W}" height="${H}" fill="#1D2546"/>`;
+  g+=`<rect x="300" y="110" width="170" height="150" rx="6" fill="#0E1430" stroke="${K}" stroke-width="6"/><circle cx="420" cy="160" r="26" fill="#F3EFC8"/><path d="M385,110 L385,260 M300,185 L470,185" stroke="${K}" stroke-width="6"/>`;
+  g+=`<rect x="70" y="140" width="110" height="140" rx="4" fill="#E24E62" stroke="${K}" stroke-width="5" transform="rotate(-6 125 210)"/><circle cx="125" cy="200" r="28" fill="${YEL}" stroke="${K}" stroke-width="4" transform="rotate(-6 125 210)"/>`;
+  g+=`<rect y="640" width="${W}" height="${H-640}" fill="#2B2440"/>`;
+  // TV glow
+  g+=`<defs><radialGradient id="tvg"><stop offset="0" stop-color="#5AA9FF" stop-opacity="${0.55*fl}"/><stop offset="1" stop-color="#5AA9FF" stop-opacity="0"/></radialGradient></defs>`;
+  g+=`<circle cx="70" cy="560" r="330" fill="url(#tvg)"/>`;
+  g+=`<rect x="-10" y="470" width="120" height="90" rx="8" fill="#0B0F1E" stroke="${K}" stroke-width="6"/><rect x="2" y="482" width="96" height="66" fill="#6FB6FF" opacity="${0.6+0.4*fl}"/><rect x="20" y="560" width="60" height="80" fill="#3A2F55" stroke="${K}" stroke-width="5"/>`;
+  // clock
+  const cz=o.clockZoom||0;
+  g+=`<g transform="translate(400,330) scale(${1+cz*0.9})"><rect x="-60" y="-26" width="120" height="52" rx="10" fill="#0B0F1E" stroke="${K}" stroke-width="5"/><text x="0" y="13" text-anchor="middle" font-family="JetBrains Mono" font-weight="800" font-size="34" fill="#FF4040">${o.clock||'02:13'}</text></g>`;
+  // ventilator laundry
+  g+=`<path d="M200,40 L200,90" stroke="${K}" stroke-width="5"/><circle cx="200" cy="96" r="12" fill="#555" stroke="${K}" stroke-width="4"/><path d="M180,98 Q170,140 150,150 L200,128Z" fill="#E7C35A" stroke="${K}" stroke-width="4"/>`;
+  return g;
+}
+function clutter(){
+  let g='';
+  [[150,700,-10],[180,712,8],[430,820,20]].forEach(c=>g+=`<g transform="translate(${c[0]},${c[1]}) rotate(${c[2]})"><rect x="-12" y="-26" width="24" height="44" rx="5" fill="#2EE59D" stroke="${K}" stroke-width="4"/><rect x="-12" y="-8" width="24" height="10" fill="#111"/></g>`);
+  g+=pizzaBox(80,850,-8);
+  return g;
+}
+function pizzaBox(x,y,r,open=0){return `<g transform="translate(${x},${y}) rotate(${r})"><path d="M-70,-14 L70,-14 L76,14 L-76,14Z" fill="#D9A55B" stroke="${K}" stroke-width="5"/><path d="M-70,-14 L70,-14 L60,-24 L-60,-24Z" fill="#E8BD78" stroke="${K}" stroke-width="5"/><text x="0" y="8" text-anchor="middle" font-family="Inter" font-weight="900" font-size="14" fill="#B5462E">PIZZA</text></g>`}
+function bed(){return `<rect x="120" y="560" width="400" height="150" rx="16" fill="#5B3B8C" stroke="${K}" stroke-width="6"/><rect x="430" y="470" width="40" height="240" rx="8" fill="#6B4A2E" stroke="${K}" stroke-width="6"/>`}
+
+/* ---------- PHONE + FINGER ---------- */
+const PH={x:95,y:120,w:350,h:720};
+function phone(inner,o={}){
+  const {sc=1,cx=270,cy=480}=o;
+  return `<g transform="translate(${cx},${cy}) scale(${sc}) translate(${-cx},${-cy})">
+  <defs><clipPath id="scr"><rect x="${PH.x+12}" y="${PH.y+12}" width="${PH.w-24}" height="${PH.h-24}" rx="38"/></clipPath></defs>
+  <rect x="${PH.x}" y="${PH.y}" width="${PH.w}" height="${PH.h}" rx="50" fill="#0A0A0A" stroke="${K}" stroke-width="6"/>
+  <g clip-path="url(#scr)">${inner}</g>
+  <rect x="${PH.x+130}" y="${PH.y+22}" width="90" height="24" rx="12" fill="#000"/>
+  </g>`;
+}
+function finger(x,y,press=0,rot=-14){
+  const s=1-press*0.06;
+  return `<g transform="translate(${x},${y}) rotate(${rot}) scale(${s})">
+   <path d="M-34,40 L-34,-4 Q-34,-40 0,-40 Q34,-40 34,-4 L38,700 L-44,700Z" fill="#E8B08A" stroke="${K}" stroke-width="6"/>
+   <path d="M-20,-14 Q-20,-30 0,-30 Q20,-30 20,-14 L20,6 Q0,14 -20,6Z" fill="#F6D2BA" stroke="${K}" stroke-width="3"/>
+   <path d="M-24,80 Q0,90 24,80 M-24,96 Q0,104 24,96" stroke="#B47B5A" stroke-width="4" fill="none"/>
+   ${press>0.3?`<circle cx="0" cy="-40" r="${30+press*20}" fill="none" stroke="#fff" stroke-width="4" opacity="${1-press}"/>`:''}</g>`;
+}
+const SX=PH.x+12, SY=PH.y+12, SW=PH.w-24, SH=PH.h-24;
+
+function storyBars(n,i,p){let g='';const w=(SW-30)/n;for(let k=0;k<n;k++){g+=`<rect x="${SX+12+k*w}" y="${SY+46}" width="${w-6}" height="5" rx="3" fill="rgba(255,255,255,.4)"/><rect x="${SX+12+k*w}" y="${SY+46}" width="${(w-6)*(k<i?1:k==i?p:0)}" height="5" rx="3" fill="#fff"/>`}return g}
+function storyHeader(name,col){return `<circle cx="${SX+34}" cy="${SY+80}" r="16" fill="${col}" stroke="#fff" stroke-width="3"/><text x="${SX+58}" y="${SY+86}" font-family="Inter" font-weight="700" font-size="17" fill="#fff">${name}</text>`}
+
+/* ---------- JÚLIA running (side view) ---------- */
+function julia(x,y,s,t){
+  const ph=t*11, l1=Math.sin(ph)*34, l2=-l1, bob=Math.abs(Math.sin(ph))*-8, pony=Math.sin(ph*0.5)*14;
+  const leg=(a,c)=>{const kx=Math.sin(a*Math.PI/180)*40, ky=-60;const fx=kx+Math.sin((a-30)*Math.PI/180)*44, fy=ky+Math.cos(a*Math.PI/180)*50+10;
+    return `<path d="M0,-110 L${kx},${ky} L${fx},${fy}" stroke="${c}" stroke-width="20" fill="none" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="${fx+8}" cy="${fy+4}" rx="18" ry="9" fill="${PINK}" stroke="${K}" stroke-width="4"/>`};
+  return `<g transform="translate(${x},${y+bob}) scale(${s})">
+   ${leg(l2,'#B07850')}
+   <path d="M-6,-200 Q-40,-160 -50,-130" stroke="#B07850" stroke-width="16" fill="none" stroke-linecap="round"/>
+   ${leg(l1,'#C68A5E')}
+   <path d="M-24,-215 Q-30,-150 -20,-110 L22,-110 Q30,-160 20,-215Z" fill="${PUR}" stroke="${K}" stroke-width="5"/>
+   <rect x="-24" y="-120" width="46" height="26" rx="6" fill="#222" stroke="${K}" stroke-width="5"/>
+   <path d="M6,-200 Q40,-170 46,-140" stroke="#C68A5E" stroke-width="16" fill="none" stroke-linecap="round"/>
+   <path d="M-30,-262 Q-70,${-250+pony} -66,${-214+pony}" stroke="#3B2216" stroke-width="18" fill="none" stroke-linecap="round"/>
+   <circle cx="0" cy="-250" r="34" fill="#C68A5E" stroke="${K}" stroke-width="5"/>
+   <path d="M-34,-258 Q-20,-296 20,-284 Q30,-270 34,-256 L-34,-256Z" fill="#3B2216" stroke="${K}" stroke-width="4"/>
+   <path d="M-30,-268 L44,-268 L56,-262 L-30,-260Z" fill="#fff" stroke="${K}" stroke-width="4"/>
+   <circle cx="14" cy="-246" r="4" fill="${K}"/><path d="M8,-228 Q18,-222 26,-230" stroke="${K}" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g>`;
+}
+
+/* ---------- speed lines ---------- */
+function speedLines(t,col='#fff'){let g='';for(let i=0;i<40;i++){const a=i/40*Math.PI*2+t*0.6, r1=230+((i*53+Math.floor(t*20))%7)*12;g+=`<path d="M${270+Math.cos(a)*r1},${480+Math.sin(a)*r1} L${270+Math.cos(a)*700},${480+Math.sin(a)*700}" stroke="${col}" stroke-width="${3+(i%3)*3}" opacity=".7"/>`}return g}
+
+/* ---------- CAPTIONS ---------- */
+const LINES=[
+ [0.3,3.0,"O *BETO TÁ ACORDADO ÀS ^DUAS ^DA ^MANHÃ…"],
+ [6.0,9.0,"…VENDO A ~JÚLIA ACORDAR PRA !CORRER."],
+ [11.0,13.0,"ELA VAI CORRER UMA !MARATONA."],
+ [13.0,15.0,"EM ^30 ^DIAS."],
+ [15.2,18.0,"O *BETO NÃO CORRE NEM PRO !ÔNIBUS."],
+ [18.2,22.0,"E ACABOU DE !PROMETER QUE VAI CORRER ^TAMBÉM."],
+ [22.2,25.0,"O ^AMIGO DELE ACHOU !ENGRAÇADO."],
+ [25.2,28.0,"O *BETO ACHOU QUE ERA UM !DESAFIO."],
+ [28.5,33.0,"AGORA ELE TEM ^30 ^DIAS…"],
+ [33.0,36.0,"…E !ZERO CONDICIONAMENTO."],
+ [36.3,40.0,"MAS TEM UMA COISA QUE ELE NUNCA TEVE ANTES…"],
+ [40.2,42.0,"…UM *MOTIVO."],
+];
+const COL={'*':PUR,'^':YEL,'!':RED,'~':PINK};
+function chunks(str){const w=str.split(' ');const out=[];let i=0;while(i<w.length){const n=(w.length-i===4)?2:Math.min(3,w.length-i);out.push(w.slice(i,i+n));i+=n}return out}
+function caption(t,y){
+  const el=document.getElementById('cap');
+  el.style.top=y+'px';
+  for(const [a,b,s] of LINES){ if(t>=a&&t<b){
+    const ch=chunks(s), d=(b-a)/ch.length, k=Math.min(ch.length-1,Math.floor((t-a)/d)), lt=(t-a)-k*d;
+    const sc=lerp(0.6,1,back(clamp(lt/0.18)));
+    el.innerHTML=`<div style="transform:scale(${sc})">`+ch[k].map(w=>{const c=COL[w[0]];return c?`<span style="color:${c}">${w.slice(1)}</span>`:`<span>${w}</span>`}).join('')+`</div>`;
+    return;}}
+  el.innerHTML='';
+}
+
+/* ---------- SCENES ---------- */
+function svgWrap(inner,shake=0,t=0){const dx=shake?Math.sin(t*90)*shake:0,dy=shake?Math.cos(t*77)*shake:0;return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><g transform="translate(${dx},${dy})">${inner}</g></svg>`}
+
+function S1(t){ // 0-3 room
+  const cz=io(prog(t,1.2,1.8))*(1-io(prog(t,2.4,2.9)));
+  const z=1+t*0.03;
+  let g=`<g transform="translate(270,480) scale(${z}) translate(-270,-480)">`+room(t,{clockZoom:cz})+bed();
+  // Beto sitting in bed, blanket
+  g+=body({x:300,y:700,s:.78,headOpt:{eyes:'normal',mouth:'flat',glow:1,look:-0.3,blink:(t%2.2<0.12)?1:0}});
+  g+=`<path d="M120,620 Q300,590 520,610 L520,710 L120,710Z" fill="#7650B5" stroke="${K}" stroke-width="6"/>`;
+  g+=`<rect x="342" y="470" width="40" height="70" rx="8" fill="#111" stroke="${K}" stroke-width="4"/><rect x="346" y="476" width="32" height="58" rx="5" fill="#BFE0FF"/>`;
+  g+=clutter()+`</g>`;
+  return svgWrap(g);
+}
+function S2(t){ // 3-6 stories swipe
+  const cards=[['#FF9F43','🐱','gato.oficial'],['#2EC4B6','🍕','pizzaria_top'],['#5F27CD','😂','memes.br'],['#FF6B6B','🎮','gamerzao']];
+  const i=Math.min(3,Math.floor(t/0.75)), lt=t-i*0.75, sw=out(clamp(lt/0.2));
+  let inner=`<rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" fill="#000"/>`;
+  [i-1,i].forEach((k,j)=>{ if(k<0)return; const c=cards[k]; const off=j===0?-SW*sw:SW*(1-sw);
+    inner+=`<g transform="translate(${off},0)"><rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" fill="${c[0]}"/><text x="270" y="520" text-anchor="middle" font-size="150">${c[1]}</text>${storyBars(4,k,0.5)}${storyHeader(c[2],'#fff')}</g>`;});
+  const fx=lerp(400,200,io(clamp(lt/0.3))), press=lt<0.12?1-lt/0.12:0;
+  return svgWrap(`<rect width="${W}" height="${H}" fill="#151A30"/>`+phone(inner)+finger(fx,640,press,-10));
+}
+function juliaStory(t,zoomText=0){
+  let inner=`<defs><linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF7A59"/><stop offset=".55" stop-color="#FFB86B"/><stop offset="1" stop-color="#FFD9A0"/></linearGradient></defs>`;
+  inner+=`<rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" fill="url(#sun)"/><circle cx="330" cy="480" r="70" fill="#FFF1B8"/>`;
+  inner+=`<path d="M${SX},560 Q200,520 300,545 T${SX+SW},530 L${SX+SW},${SY+SH} L${SX},${SY+SH}Z" fill="#6C4AB6"/><rect x="${SX}" y="640" width="${SW}" height="200" fill="#4A2F87"/>`;
+  [0,1,2,3].forEach(k=>{const px=((k*120 - t*160)%480+480)%480+SX-40;inner+=`<rect x="${px}" y="690" width="60" height="8" rx="4" fill="#fff" opacity=".5"/>`});
+  inner+=julia(250,690,1.05,t);
+  inner+=storyBars(1,0,clamp(t/6))+storyHeader('julia.corre',PINK);
+  const zs=1+zoomText*0.35, ty=lerp(260,300,zoomText);
+  inner+=`<g transform="translate(270,${ty}) scale(${zs})"><rect x="-140" y="-34" width="280" height="68" rx="14" fill="#fff" stroke="${K}" stroke-width="4"/><text x="0" y="-4" text-anchor="middle" font-family="Inter" font-weight="900" font-size="19" fill="#111">30 dias pra minha</text><text x="0" y="22" text-anchor="middle" font-family="Inter" font-weight="900" font-size="19" fill="#111">maratona 🏃‍♀️ #foco</text></g>`;
+  return inner;
+}
+function S3(t){ // 6-9
+  const press=t<0.15?1-t/0.15:0;
+  return svgWrap(`<rect width="${W}" height="${H}" fill="#151A30"/>`+phone(juliaStory(t+0.5))+finger(220,700,press,-10));
+}
+function S4(t){ // 9-11 heart eyes close
+  const z=1.9+t*0.05;
+  let g=`<rect width="${W}" height="${H}" fill="#1D2546"/><circle cx="270" cy="460" r="${300+20*Math.sin(t*6)}" fill="${PINK}" opacity=".18"/>`;
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2+t;const r=260+20*Math.sin(t*5+i);g+=heart(270+Math.cos(a)*r*0.8,430+Math.sin(a)*r,0.9,PINK)}
+  g+=head({x:270,y:470,s:z,eyes:'heart',mouth:'dreamy',t,glow:1});
+  return svgWrap(g);
+}
+function S5(t){ // 11-15 zoom on story text
+  const zt=io(clamp(t/0.6)), sc=1+0.55*io(clamp(t/0.8));
+  const beat=t>2.0&&t<2.25?1.06:1;
+  return svgWrap(`<rect width="${W}" height="${H}" fill="#151A30"/>`+phone(juliaStory(t+3.5,zt),{sc:sc*beat,cx:270,cy:300}));
+}
+function S6(t){ // 15-18 chips
+  let g=room(t+15,{})+bed();
+  const z=1.55;
+  g=`<g transform="translate(300,520) scale(${z}) translate(-300,-520)">${g}`;
+  g+=body({x:300,y:700,s:.78,headOpt:{eyes:'normal',mouth:t%0.6<0.3?'flat':'smile',glow:1,look:-0.3}});
+  g+=`<path d="M120,620 Q300,590 520,610 L520,710 L120,710Z" fill="#7650B5" stroke="${K}" stroke-width="6"/>`;
+  // chips bag on belly
+  g+=`<g transform="translate(300,585) rotate(-8)"><path d="M-40,-30 L40,-30 L46,34 L-46,34Z" fill="${RED}" stroke="${K}" stroke-width="5"/><text x="0" y="8" text-anchor="middle" font-family="Inter" font-weight="900" font-size="16" fill="${YEL}">CHIPS</text></g>`;
+  // hand to mouth
+  const hp=(Math.sin(t*5)+1)/2;
+  g+=`<circle cx="${lerp(330,300,hp)}" cy="${lerp(560,520,hp)}" r="12" fill="${SK}" stroke="${K}" stroke-width="4"/>`;
+  for(let i=0;i<6;i++){const cy=520+((t*120+i*37)%120);g+=`<circle cx="${280+i*9}" cy="${cy}" r="3" fill="${YEL}"/>`}
+  g+=`<rect x="352" y="460" width="34" height="60" rx="7" fill="#111" stroke="${K}" stroke-width="4"/><rect x="355" y="465" width="28" height="50" rx="4" fill="#BFE0FF"/>`;
+  g+=`</g>`;
+  return svgWrap(g);
+}
+function chatBase(){
+  let i=`<rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" fill="#0E1621"/>`;
+  i+=`<rect x="${SX}" y="${SY}" width="${SW}" height="96" fill="#17212B"/><circle cx="${SX+44}" cy="${SY+64}" r="20" fill="#FFB347" stroke="#fff" stroke-width="2"/><text x="${SX+44}" y="${SY+72}" text-anchor="middle" font-size="20">🍔</text><text x="${SX+74}" y="${SY+62}" font-family="Inter" font-weight="800" font-size="18" fill="#fff">Dudu</text><text x="${SX+74}" y="${SY+82}" font-family="Inter" font-size="13" fill="#7FA2C2">online</text>`;
+  return i;
+}
+function bubble(x,y,w,h,txt,me,fs=17){
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16" fill="${me?'#6E3FD1':'#24303D'}"/>${txt}`;
+}
+function S7(t){ // 18-22 typing + send
+  const msg='vou correr a maratona'; const n=Math.floor(clamp((t-0.4)/2.0)*msg.length);
+  const sent=t>2.9, sp=out(clamp((t-2.9)/0.3));
+  let i=chatBase();
+  i+=`<rect x="${SX+10}" y="${SY+SH-70}" width="${SW-20}" height="54" rx="27" fill="#24303D"/><text x="${SX+30}" y="${SY+SH-37}" font-family="Inter" font-size="18" fill="#fff">${sent?'':msg.slice(0,n)}${(!sent&&t%0.5<0.25)?'|':''}</text>`;
+  if(sent){const y=lerp(SY+SH-80,SY+150,sp);i+=bubble(SX+SW-250,y,236,52,`<text x="${SX+SW-236}" y="${y+33}" font-family="Inter" font-weight="600" font-size="18" fill="#fff">vou correr a maratona</text><text x="${SX+SW-38}" y="${y+46}" font-family="Inter" font-size="11" fill="#CFC2FF">✓✓</text>`,true)}
+  const typing=!sent;
+  const fx=typing?lerp(250,330,(Math.sin(t*18)+1)/2):(t<3.1?430:430), fy=typing?760:770;
+  const press=typing?((t*9)%1<0.3?0.6:0):(t>2.75&&t<2.95?0.9:0);
+  return svgWrap(`<rect width="${W}" height="${H}" fill="#151A30"/>`+phone(i)+finger(fx,fy,press,-12));
+}
+function S8(t){ // 22-25 KKKK
+  let i=chatBase();
+  i+=bubble(SX+SW-250,SY+150,236,52,`<text x="${SX+SW-236}" y="${SY+183}" font-family="Inter" font-weight="600" font-size="18" fill="#fff">vou correr a maratona</text>`,true);
+  const kp=out(clamp((t-0.2)/0.5)), nK=Math.floor(4+clamp((t-0.2)/1.8)*60);
+  if(t>0.2){ const rows=Math.ceil(nK/14); const h=24+rows*30; const s=lerp(0.4,1,back(kp));
+    let tx=''; for(let r=0;r<rows;r++){tx+=`<text x="${SX+28}" y="${SY+250+r*30}" font-family="Inter" font-weight="900" font-size="24" fill="#fff">${'K'.repeat(Math.min(14,nK-r*14))}</text>`}
+    i+=`<g transform="translate(${SX+14},${SY+218}) scale(${s}) translate(${-SX-14},${-SY-218})">${bubble(SX+14,SY+218,286,h,tx,false)}</g>`;
+    if(t>1.6){const yy=SY+218+h+14, p2=back(clamp((t-1.6)/0.3));i+=`<g transform="translate(${SX+14},${yy}) scale(${p2}) translate(${-SX-14},${-yy})">${bubble(SX+14,yy,290,78,`<text x="${SX+30}" y="${yy+32}" font-family="Inter" font-weight="600" font-size="17" fill="#fff">vc não corre nem até</text><text x="${SX+30}" y="${yy+58}" font-family="Inter" font-weight="600" font-size="17" fill="#fff">a esquina 💀</text>`,false)}</g>`}
+  }
+  const sh=t>0.2&&t<1.4?3:0;
+  return svgWrap(`<rect width="${W}" height="${H}" fill="#151A30"/>`+phone(i),sh,t);
+}
+function S9(t){ // 25-28 determined
+  let g=`<rect width="${W}" height="${H}" fill="${PURD}"/>`+speedLines(t,'#C9A6FF');
+  const pop=back(clamp(t/0.25));
+  g+=head({x:270,y:480,s:1.75*lerp(0.85,1,pop),eyes:'determined',brow:'angry',mouth:'flat',t});
+  return svgWrap(g, t<0.25?6:0, t);
+}
+function runnex(t){
+  let i=`<rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" fill="#120A22"/>`;
+  i+=`<image href="../../../src/assets/LogoNova-login.png" x="${SX+16}" y="${SY+50}" width="40" height="40"/><text x="${SX+62}" y="${SY+78}" font-family="Inter" font-weight="900" font-size="22" fill="#fff" letter-spacing="2">RUNNEX</text>`;
+  const tabs=['Feed','Eventos','Perfil']; tabs.forEach((tb,k)=>{const x=SX+24+k*104;const on=k===1&&t>0.7;i+=`<text x="${x}" y="${SY+130}" font-family="Inter" font-weight="800" font-size="17" fill="${on?'#fff':'#7C6A9E'}">${tb}</text>${on?`<rect x="${x}" y="${SY+140}" width="70" height="4" rx="2" fill="${PUR}"/>`:''}`});
+  if(t>0.9){ const cp=out(clamp((t-0.9)/0.4)); const cy=SY+170+ (1-cp)*60;
+    i+=`<g opacity="${cp}"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B3DFF"/><stop offset="1" stop-color="#C13DFF"/></linearGradient></defs>
+    <rect x="${SX+14}" y="${cy}" width="${SW-28}" height="430" rx="22" fill="#1E1236" stroke="#3A2766" stroke-width="2"/>
+    <rect x="${SX+14}" y="${cy}" width="${SW-28}" height="150" rx="22" fill="url(#cg)"/>
+    <text x="${SX+34}" y="${cy+50}" font-family="Inter" font-weight="900" font-size="15" fill="#fff" opacity=".85">EVENTO</text>
+    <text x="${SX+SW-40}" y="${cy+110}" text-anchor="end" font-size="70">🏃</text>
+    <text x="${SX+34}" y="${cy+196}" font-family="Inter" font-weight="900" font-size="24" fill="#fff">Maratona da Cidade</text>
+    <text x="${SX+34}" y="${cy+224}" font-family="Inter" font-weight="600" font-size="15" fill="#A99BC9">42 km · 5 km · Domingo 6h</text>
+    <text x="${SX+SW/2}" y="${cy+300}" text-anchor="middle" font-family="Inter" font-weight="900" font-size="58" fill="${YEL}">30 DIAS</text>
+    <text x="${SX+SW/2}" y="${cy+326}" text-anchor="middle" font-family="Inter" font-weight="700" font-size="13" fill="#A99BC9" letter-spacing="2">PARA A LARGADA</text></g>`;
+    const tapped=t>3.3, bp=tapped?back(clamp((t-3.3)/0.3)):0;
+    const by=cy+352;
+    if(tapped) i+=`<rect x="${SX+30-10*bp}" y="${by-10*bp}" width="${SW-60+20*bp}" height="${56+20*bp}" rx="${28+10*bp}" fill="${PUR}" opacity="${0.35*(1-clamp((t-3.6)/1))}"/>`;
+    i+=`<rect x="${SX+30}" y="${by}" width="${SW-60}" height="56" rx="28" fill="${tapped?'#2EE59D':'url(#cg)'}" opacity="${cp}"/><text x="${SX+SW/2}" y="${by+36}" text-anchor="middle" font-family="Inter" font-weight="900" font-size="19" fill="${tapped?'#0B2B1D':'#fff'}" opacity="${cp}">${tapped?'✓ TENHO INTERESSE':'TENHO INTERESSE'}</text>`;
+  }
+  return i;
+}
+function S10(t){ // 28-33
+  let fx,fy,press=0;
+  if(t<0.7){fx=lerp(420,300,io(t/0.7));fy=lerp(760,280,io(t/0.7));press=t>0.55?0.8:0}
+  else if(t<3.0){fx=lerp(300,270,io(prog(t,0.8,2.4)));fy=lerp(280,720,io(prog(t,0.8,2.4)))}
+  else {fx=270;fy=720;press=(t>3.15&&t<3.4)?0.9:0}
+  return svgWrap(`<rect width="${W}" height="${H}" fill="#151A30"/>`+phone(runnex(t))+finger(fx,fy+40,press,-8));
+}
+function S11(t){ // 33-36 panic
+  let g=`<rect width="${W}" height="${H}" fill="#0F1428"/>`;
+  g+=`<circle cx="270" cy="470" r="380" fill="#1D2546"/>`;
+  g+=head({x:270,y:470,s:2.15,eyes:'wide',brow:'up',mouth:'open',sweat:clamp(t/2.5),t});
+  // crickets text
+  if(t>1.2) g+=`<text x="450" y="200" font-family="Inter" font-weight="900" font-size="26" fill="#6E7AA8" opacity="${0.5+0.5*Math.sin(t*20)}" transform="rotate(10 450 200)">cri cri</text>`;
+  return svgWrap(g,2.2,t);
+}
+function S12and13(t){ // 36-42 heroic stand then trip at 40
+  const tripT=t-4.0;
+  let g=`<rect width="${W}" height="${H}" fill="#1D2546"/>`;
+  if(tripT<0){ // rays
+    const rp=clamp(t/1.5);
+    for(let i=0;i<16;i++){const a=i/16*Math.PI*2+t*0.3;g+=`<path d="M270,420 L${270+Math.cos(a)*900},${420+Math.sin(a)*900} L${270+Math.cos(a+0.12)*900},${420+Math.sin(a+0.12)*900}Z" fill="${YEL}" opacity="${0.18*rp}"/>`}
+  }
+  g+=`<rect y="760" width="${W}" height="200" fill="#2B2440"/>`;
+  const rise=io(clamp(t/0.8));
+  let rot=0, by=780, bx=420;
+  if(tripT>0){const f=clamp(tripT/0.45); rot=lerp(0,-86,f*f); bx=420-f*10; by=780+ (f>0.95?Math.sin((tripT-0.43)*40)*4*Math.exp(-tripT*6):0);}
+  const hopt=tripT>0.45?{eyes:'wide',mouth:'open',brow:'up'}:{eyes:'determined',brow:'angry',mouth:'grin'};
+  g+=body({x:bx,y:by+ (1-rise)*30,s:1.05,rot,arms:tripT>0?'up':'hips',headOpt:{...hopt,t}});
+  g+=pizzaBox(320,792,tripT>0?25:6);
+  if(tripT>0.45&&tripT<1.1){for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const r=40+ (tripT-0.45)*160;g+=`<circle cx="${90+Math.cos(a)*r}" cy="${740+Math.sin(a)*r*0.5}" r="10" fill="#fff" opacity="${1-(tripT-0.45)/0.65}"/>`}
+    g+=`<text x="110" y="620" font-family="Inter" font-weight="900" font-size="64" fill="${YEL}" stroke="${K}" stroke-width="6" paint-order="stroke" transform="rotate(-12 110 620)">POF!</text>`}
+  if(tripT>0.6) for(let i=0;i<3;i++){const a=tripT*6+i*2.1;g+=`<text x="${100+Math.cos(a)*40}" y="${700+Math.sin(a)*14}" font-size="26">⭐</text>`}
+  return svgWrap(g, tripT>0.42&&tripT<0.7?8:0, t);
+}
+function S14(t){ // 42-45 card
+  const p=back(clamp(t/0.4)), lp=back(clamp((t-0.7)/0.4));
+  let g=`<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B3DFF"/><stop offset="1" stop-color="#5B12C9"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#bg)"/>`;
+  g+=`<g transform="translate(270,380) scale(${p})"><text x="0" y="0" text-anchor="middle" font-family="Inter" font-weight="900" font-size="74" fill="#fff" stroke="${K}" stroke-width="10" paint-order="stroke">DIA 1</text><text x="0" y="70" text-anchor="middle" font-family="Inter" font-weight="900" font-size="46" fill="${YEL}" stroke="${K}" stroke-width="8" paint-order="stroke">DE 30</text></g>`;
+  if(t>0.7) g+=`<g transform="translate(270,640) scale(${lp})"><circle r="78" fill="#fff" stroke="${K}" stroke-width="6"/><image href="../../../src/assets/LogoNova-login.png" x="-62" y="-62" width="124" height="124"/><text y="130" text-anchor="middle" font-family="Inter" font-weight="900" font-size="38" fill="#fff" letter-spacing="6">RUNNEX</text><text y="164" text-anchor="middle" font-family="Inter" font-weight="700" font-size="15" fill="#E6D6FF" letter-spacing="2">SUA EVOLUÇÃO COMEÇA AGORA</text></g>`;
+  return svgWrap(g);
+}
+
+const SCENES=[[0,3,S1,800],[3,6,S2,860],[6,9,S3,860],[9,11,S4,800],[11,15,S5,860],[15,18,S6,800],[18,22,S7,860],[22,25,S8,860],[25,28,S9,800],[28,33,S10,860],[33,36,S11,800],[36,42,S12and13,140],[42,45,S14,-200]];
+window.DUR=45;
+window.render=function(t){
+  for(const [a,b,f,cy] of SCENES){ if(t>=a&&t<b || (b===45&&t>=a)){document.getElementById('scene').innerHTML=f(t-a);caption(t,cy);return}}
+};
+render(0);
+</script></body></html>
