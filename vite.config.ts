@@ -56,7 +56,6 @@ export default defineConfig(({ mode }) => ({
             "firebase/app",
             "firebase/auth",
             "firebase/firestore",
-            "firebase/storage",
           ],
           maps: ["leaflet", "react-leaflet"],
           motion: ["framer-motion"],
