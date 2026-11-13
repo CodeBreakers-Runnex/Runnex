@@ -1,14 +1,20 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 from app.activity_rules import check_run_is_plausible
 from app.validators import OptionalImageUrl
 
 
 class RoutePoint(BaseModel):
-    lat: float
-    lng: float
+    lat: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    lng: float = Field(ge=-180, le=180, allow_inf_nan=False)
+
+
+# Nome que aparece no feed, ranking e grupos de todo mundo: sem espacos nas
+# pontas, nao vazio e com o mesmo teto de userName na corrida.
+DisplayName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
 
 
 class UserProfileOut(BaseModel):
@@ -40,9 +46,9 @@ class UserProfileOut(BaseModel):
 
 
 class UserProfileCreate(BaseModel):
-    display_name: str | None = Field(default=None, validation_alias="displayName")
+    display_name: DisplayName | None = Field(default=None, validation_alias="displayName")
     photo_url: OptionalImageUrl = Field(default=None, validation_alias="photoURL")
-    terms_version: str | None = Field(default=None, validation_alias="termsVersion")
+    terms_version: str | None = Field(default=None, validation_alias="termsVersion", max_length=40)
     bio: str | None = Field(default=None, max_length=150)
     location: str | None = Field(default=None, max_length=120)
     onboarded: bool | None = Field(default=None)
@@ -69,11 +75,14 @@ class ActivityCreate(BaseModel):
     user_name: str = Field(validation_alias="userName", min_length=1, max_length=80)
     user_avatar: OptionalImageUrl = Field(default=None, validation_alias="userAvatar")
     distance: float = Field(gt=0, le=500)
-    time: str
+    # time/pace/type sao exibidos no feed dos outros. O app manda "mm:ss",
+    # m'ss" e "RUNNING"; os tetos so barram texto arbitrario.
+    time: str = Field(max_length=32)
     duration_seconds: int = Field(validation_alias="durationSeconds", gt=0, le=24 * 3600)
-    pace: str
-    calories: int | None = Field(default=None, ge=0)
-    type: str
+    pace: str = Field(max_length=32)
+    # O app estima 60 kcal/km; 500 km (teto de distance) dariam 30.000.
+    calories: int | None = Field(default=None, ge=0, le=50_000)
+    type: str = Field(max_length=32)
     route: list[RoutePoint] | None = Field(default=None, max_length=5000)
     shoe_id: int | None = Field(default=None, validation_alias="shoeId", gt=0)
 
