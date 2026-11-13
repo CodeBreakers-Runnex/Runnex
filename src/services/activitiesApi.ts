@@ -131,57 +131,35 @@ type UserStatsResponse = {
 // para a sequência, o gráfico da semana e as conquistas de horário.
 export const getUserStats = async (userId: string): Promise<UserStats> => {
   void userId; // o backend sempre usa o usuário autenticado
-  try {
-    const utcOffsetMinutes = -new Date().getTimezoneOffset();
-    const stats = await api.get<UserStatsResponse>(`/activities/stats/me?utc_offset_minutes=${utcOffsetMinutes}`, {
-      cacheMs: OWN_DATA_CACHE_MS,
-    });
-    const normalize = (activity: FeedActivity | null) =>
-      activity ? normalizeActivity(activity.id, activity) : null;
+  // Sem try/catch de propósito: antes uma falha virava estatísticas zeradas,
+  // e a tela mostrava uma conta "nova" em vez de avisar do erro.
+  const utcOffsetMinutes = -new Date().getTimezoneOffset();
+  const stats = await api.get<UserStatsResponse>(`/activities/stats/me?utc_offset_minutes=${utcOffsetMinutes}`, {
+    cacheMs: OWN_DATA_CACHE_MS,
+  });
+  const normalize = (activity: FeedActivity | null) =>
+    activity ? normalizeActivity(activity.id, activity) : null;
 
-    return {
-      totalKm: stats.totalKm.toFixed(1),
-      runsCount: stats.runsCount,
-      totalTime: formatTotalTime(stats.totalSeconds),
-      totalCalories: Math.round(stats.totalCalories),
-      averagePace: formatPace(stats.totalSeconds, stats.totalKm),
-      currentStreak: stats.currentStreak,
-      weeklyTotalKm: stats.weeklyTotalKm,
-      bestActivity: normalize(stats.bestActivity),
-      lastActivity: normalize(stats.lastActivity),
-      weeklyData: stats.weeklyData,
-      hasHourLongRun: stats.hasHourLongRun,
-      hasSub10kRun: stats.hasSub10kRun,
-      dawnRunsCount: stats.dawnRunsCount,
-      nightRunsCount: stats.nightRunsCount,
-    };
-  } catch (error) {
-    console.error("Erro ao buscar estatísticas:", error);
-    return {
-      totalKm: "0.0",
-      runsCount: 0,
-      totalTime: "0m",
-      totalCalories: 0,
-      averagePace: "0'00\"",
-      currentStreak: 0,
-      weeklyTotalKm: 0,
-      bestActivity: null,
-      lastActivity: null,
-      weeklyData: [],
-      hasHourLongRun: false,
-      hasSub10kRun: false,
-      dawnRunsCount: 0,
-      nightRunsCount: 0,
-    };
-  }
+  return {
+    totalKm: stats.totalKm.toFixed(1),
+    runsCount: stats.runsCount,
+    totalTime: formatTotalTime(stats.totalSeconds),
+    totalCalories: Math.round(stats.totalCalories),
+    averagePace: formatPace(stats.totalSeconds, stats.totalKm),
+    currentStreak: stats.currentStreak,
+    weeklyTotalKm: stats.weeklyTotalKm,
+    bestActivity: normalize(stats.bestActivity),
+    lastActivity: normalize(stats.lastActivity),
+    weeklyData: stats.weeklyData,
+    hasHourLongRun: stats.hasHourLongRun,
+    hasSub10kRun: stats.hasSub10kRun,
+    dawnRunsCount: stats.dawnRunsCount,
+    nightRunsCount: stats.nightRunsCount,
+  };
 };
 
+// Lança em caso de erro (antes devolvia lista vazia, que parecia "nenhuma corrida").
 export const getUserActivities = async (userId: string, limitCount = 10): Promise<FeedActivity[]> => {
-  try {
-    const activities = await api.get<FeedActivity[]>(`/activities/user/${userId}?limit=${limitCount}`);
-    return activities.map((activity) => normalizeActivity(activity.id, activity));
-  } catch (error) {
-    console.error("Erro ao buscar corridas do usuario:", error);
-    return [];
-  }
+  const activities = await api.get<FeedActivity[]>(`/activities/user/${userId}?limit=${limitCount}`);
+  return activities.map((activity) => normalizeActivity(activity.id, activity));
 };

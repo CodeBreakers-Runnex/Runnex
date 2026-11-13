@@ -619,7 +619,9 @@ export default function Group() {
     try {
       const [groupData, profileData] = await Promise.all([
         getGroupById(groupId),
-        getUserProfile(user.uid),
+        // Perfil só conta para grupos de demonstração; nos reais quem decide
+        // é group.memberIds. Sem ele, o membro continua vendo o grupo.
+        getUserProfile(user.uid).catch(() => null),
       ]);
       setGroup(groupData);
       setProfile(profileData);

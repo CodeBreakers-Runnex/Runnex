@@ -92,6 +92,9 @@ export default function Home() {
       setStats(statsData);
       setActivities(runs);
       setProfile(userProfile);
+    } catch (error) {
+      console.error("Erro ao carregar a tela inicial:", error);
+      toast.error("Não foi possível carregar seus dados. Confira sua conexão e tente de novo.");
     } finally {
       setLoading(false);
     }
