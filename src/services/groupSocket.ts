@@ -10,7 +10,17 @@ type GroupConnection = {
   listeners: Set<Listener>;
   reconnectTimer: ReturnType<typeof setTimeout> | null;
   closed: boolean;
+  // Espera até a próxima tentativa: dobra a cada queda, volta ao mínimo
+  // quando chega uma mensagem do servidor.
+  retryDelayMs: number;
 };
+
+const MIN_RETRY_MS = 3_000;
+const MAX_RETRY_MS = 30_000;
+// Recusa definitiva do servidor (backend/app/routers/groups.py): token
+// inválido ou não é membro. Tentar de novo não muda nada; o polling de
+// segurança das telas continua trazendo os dados.
+const REFUSAL_CODES = new Set([4401, 4403]);
 
 const connections = new Map<string, GroupConnection>();
 
@@ -27,6 +37,9 @@ async function openSocket(groupId: string, conn: GroupConnection) {
   conn.ws = ws;
 
   ws.onmessage = (event) => {
+    // Chegou mensagem: a conexão está saudável (com o servidor atual, a
+    // primeira é o "ready" logo após autenticar).
+    conn.retryDelayMs = MIN_RETRY_MS;
     try {
       const data = JSON.parse(event.data) as GroupEvent;
       conn.listeners.forEach((listener) => listener(data));
@@ -35,11 +48,14 @@ async function openSocket(groupId: string, conn: GroupConnection) {
     }
   };
 
-  ws.onclose = () => {
-    if (conn.closed) return;
-    // Backoff simples: reconecta em 3s enquanto alguem ainda estiver
-    // inscrito nesse grupo (rede caiu, backend reiniciou, etc.).
-    conn.reconnectTimer = setTimeout(() => openSocket(groupId, conn), 3000);
+  ws.onclose = (event) => {
+    if (conn.closed || REFUSAL_CODES.has(event.code)) return;
+    // Rede caiu, backend reiniciou ou está acordando: tenta de novo,
+    // esperando cada vez mais (3 s, 6 s, 12 s... até 30 s) para não
+    // martelar o servidor nem gastar bateria.
+    const delay = conn.retryDelayMs;
+    conn.retryDelayMs = Math.min(delay * 2, MAX_RETRY_MS);
+    conn.reconnectTimer = setTimeout(() => openSocket(groupId, conn), delay);
   };
 }
 
@@ -52,7 +68,7 @@ async function openSocket(groupId: string, conn: GroupConnection) {
 export function subscribeToGroupEvents(groupId: string, onEvent: Listener): () => void {
   let conn = connections.get(groupId);
   if (!conn) {
-    conn = { ws: null, listeners: new Set(), reconnectTimer: null, closed: false };
+    conn = { ws: null, listeners: new Set(), reconnectTimer: null, closed: false, retryDelayMs: MIN_RETRY_MS };
     connections.set(groupId, conn);
     openSocket(groupId, conn);
   }

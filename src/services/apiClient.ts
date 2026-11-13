@@ -26,17 +26,37 @@ function getErrorDetail(detail: unknown): string | undefined {
   return undefined;
 }
 
-async function send<T>(path: string, options: RequestInit = {}): Promise<T> {
+// Sem prazo, uma requisição presa (rede ruim, servidor travado) deixava a
+// tela em "carregando" para sempre. Escrita tem mais folga: salvar uma
+// corrida longa manda a rota inteira. O servidor dormindo do Render é
+// esperado antes, pelo ServerWakeGate (até 2 min).
+export const READ_TIMEOUT_MS = 30_000;
+export const WRITE_TIMEOUT_MS = 60_000;
+
+async function send<T>(path: string, options: RequestInit = {}, timeoutMs = READ_TIMEOUT_MS): Promise<T> {
   const token = await auth.currentUser?.getIdToken();
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    });
+  } catch (error) {
+    // 408: a fila offline de corridas (offlineRuns.ts) já trata como
+    // "tentar depois", igual a ficar sem rede.
+    if (controller.signal.aborted) throw new ApiError(408, "O servidor demorou para responder. Tente de novo.");
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({ detail: response.statusText }));
@@ -107,7 +127,7 @@ async function get<T>(path: string, { cacheMs = 0 }: { cacheMs?: number } = {}):
 
 function write<T>(path: string, method: string, body?: unknown): Promise<T> {
   clearApiCache();
-  return send<T>(path, { method, body: body ? JSON.stringify(body) : undefined }).finally(clearApiCache);
+  return send<T>(path, { method, body: body ? JSON.stringify(body) : undefined }, WRITE_TIMEOUT_MS).finally(clearApiCache);
 }
 
 export const api = {
