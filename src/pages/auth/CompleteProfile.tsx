@@ -198,6 +198,7 @@ export default function CompleteProfile() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            maxLength={80}
             placeholder="Escolha seu nome ou apelido"
             className="w-full bg-secondary border border-input rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-gray-500 outline-none focus:border-purple-500 transition"
           />
