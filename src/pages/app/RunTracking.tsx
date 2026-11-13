@@ -205,6 +205,9 @@ const RunTracking = () => {
   // Stats Reais
   const [distance, setDistance] = useState(0);
   const [seconds, setSeconds] = useState(0);
+  // Lido pelo cronômetro ao (re)começar, sem reiniciar o efeito a cada segundo.
+  const secondsRef = useRef(0);
+  secondsRef.current = seconds;
   const [path, setPath] = useState<[number, number][]>([]);
   const [currentPos, setCurrentPos] = useState<[number, number] | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -418,13 +421,18 @@ const RunTracking = () => {
     };
   }, [isRunning, isSimulating, isNativeAndroid]);
 
+  // Cronômetro pelo relógio, não pela contagem de tiques: com a tela
+  // bloqueada o WebView pode atrasar ou pular tiques do setInterval enquanto
+  // o GPS nativo continua somando distância. Contando tiques, o tempo saía
+  // menor que o real (ritmo errado e, no limite, velocidade acima de 30 km/h,
+  // que o servidor recusa). O tique agora só atualiza a tela.
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | undefined;
-    if (isRunning && !isPaused) {
-      interval = setInterval(() => {
-        setSeconds(s => s + 1);
-      }, 1000);
-    }
+    if (!isRunning || isPaused) return undefined;
+    const startedAt = Date.now();
+    const base = secondsRef.current;
+    const interval = setInterval(() => {
+      setSeconds(base + Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
     return () => clearInterval(interval);
   }, [isRunning, isPaused]);
 
@@ -920,7 +928,7 @@ const RunTracking = () => {
             </div>
             <div className="text-center">
               <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1">Velocidade</p>
-              <p className="font-display font-black text-lg">{(distance > 0 ? (distance / (seconds / 3600)) : 0).toFixed(1)}</p>
+              <p className="font-display font-black text-lg">{(distance > 0 && seconds > 0 ? (distance / (seconds / 3600)) : 0).toFixed(1)}</p>
             </div>
           </div>
         </motion.div>
