@@ -113,3 +113,13 @@ describe("calendário de treinos", () => {
     expect(screen.queryByText("Leve 5 km")).toBeNull();
   });
 });
+
+describe("calendário de treinos sem o histórico de corridas", () => {
+  it("se as corridas não carregarem, a agenda aparece mesmo assim", async () => {
+    // As corridas só servem para vincular a um treino; antes o serviço
+    // devolvia lista vazia em caso de erro e a agenda abria normalmente.
+    mocks.activities.mockRejectedValue(new Error("offline"));
+    mount();
+    expect(await screen.findByText("Leve 5 km")).toBeInTheDocument();
+  });
+});

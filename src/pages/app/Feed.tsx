@@ -66,7 +66,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
     setLastSeenLikes(stored);
     getUserStats(user.uid).then((s) =>
       setStats({ totalKm: s.totalKm, runsCount: s.runsCount, totalTime: s.totalTime })
-    );
+    ).catch(() => { /* resumo do topo: sem ele, o feed continua */ });
   }, [user]);
 
   useEffect(() => {
@@ -110,7 +110,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
     if (user) {
       await getUserStats(user.uid).then((s) =>
         setStats({ totalKm: s.totalKm, runsCount: s.runsCount, totalTime: s.totalTime })
-      );
+      ).catch(() => { /* resumo do topo: sem ele, o feed continua */ });
     }
     toast.success("Feed atualizado!");
   }, [user]);

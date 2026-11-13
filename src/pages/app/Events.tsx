@@ -71,7 +71,8 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
             try {
                 
                 // Pegar cidade do perfil
-                const profile = await getUserProfile(user.uid);
+                // Perfil só ordena pela cidade e marca os salvos: sem ele, a lista aparece.
+                const profile = await getUserProfile(user.uid).catch(() => null);
                 const city = profile?.location || "";
                 setUserCity(city);
                 setEnrolledIds(profile?.enrolledEvents || []);
