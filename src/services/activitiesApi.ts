@@ -57,6 +57,10 @@ export const deleteUserActivity = async (activityId: string, userId: string) => 
   void userId; // mantido na assinatura por compatibilidade com os chamadores existentes
 };
 
+// Primeira página do feed. Lança em caso de erro: quem chama decide como avisar.
+export const getFeed = (limitCount = 10): Promise<FeedActivity[]> =>
+  api.get<FeedActivity[]>(`/activities/feed?limit=${limitCount}`);
+
 // Feed de atividades — Fase 1: sem onSnapshot ainda (real-time via WebSocket
 // é a Fase 2 do plano de migração). Por enquanto, poll simples a cada 15s.
 // Interface mantida igual (retorna uma função de "unsubscribe") para não
@@ -69,7 +73,7 @@ export const subscribeToFeed = (
 
   const fetchFeed = async () => {
     try {
-      const activities = await api.get<FeedActivity[]>(`/activities/feed?limit=${limitCount}`);
+      const activities = await getFeed(limitCount);
       if (!cancelled) callback(activities);
     } catch (error) {
       console.error("Erro ao buscar feed:", error);
@@ -99,14 +103,17 @@ export const loadMoreActivities = async (
 };
 
 // Curtir/Descurtir uma atividade
-export const toggleLike = async (activityId: string, userId: string, isLiked: boolean) => {
+// Devolve a lista de curtidas já atualizada pelo backend, para a tela
+// mostrar o resultado sem esperar a próxima busca do feed.
+export const toggleLike = async (activityId: string, userId: string, isLiked: boolean): Promise<string[]> => {
+  void userId; // mantido na assinatura: quem curte é sempre o usuario autenticado no backend
   try {
-    await api.post(`/activities/${activityId}/like`, { isLiked });
+    const { likes } = await api.post<{ likes: string[] }>(`/activities/${activityId}/like`, { isLiked });
+    return likes;
   } catch (error) {
     console.error("Erro ao dar like:", error);
     throw error;
   }
-  void userId; // mantido na assinatura: quem curte é sempre o usuario autenticado no backend
 };
 
 // Resposta de GET /activities/stats/me: números brutos, o app só formata.
