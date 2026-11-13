@@ -170,3 +170,54 @@ def test_unverified_email_cannot_write_in_groups(client, group, login):
     assert client.post(f"/groups/{group}/posts/{post_id}/comments", json={"text": "spam"}).status_code == 403
     # Leitura continua liberada
     assert client.get(f"/groups/{group}/posts").status_code == 200
+
+
+# ─── Token fora da URL ──────────────────────────────────────────────────────
+# A URL do WebSocket (com ?token=) fica em log de acesso do Render e de
+# proxies, e o token vale 1 h. O app novo abre sem token e manda
+# {"type": "auth", "token": ...} como primeira mensagem. O ?token= continua
+# aceito para o APK 0.2.0 ja instalado (testes acima).
+
+
+def _auth_message(ws, token="x"):
+    ws.send_json({"type": "auth", "token": token})
+
+
+def test_websocket_auth_by_first_message(client, group, monkeypatch):
+    fake_token(monkeypatch, "bruno")
+    with client.websocket_connect(f"/groups/{group}/ws") as ws:
+        _auth_message(ws)
+        assert ws.receive_json() == {"type": "ready"}
+        client.post(f"/groups/{group}/messages", json={"text": "Oi"})
+        assert ws.receive_json() == {"type": "message_created"}
+
+
+@pytest.mark.parametrize("uid, code", [(None, 4401), ("intruso", 4403)])
+def test_websocket_first_message_rejects_invalid_token_and_non_members(client, group, monkeypatch, uid, code):
+    fake_token(monkeypatch, uid)
+    with pytest.raises(WebSocketDisconnect) as exc, client.websocket_connect(f"/groups/{group}/ws") as ws:
+        _auth_message(ws)
+        ws.receive_json()
+    assert exc.value.code == code
+
+
+@pytest.mark.parametrize("first", [{"type": "hello"}, {"type": "auth"}, ["auth", "x"], "nao e json"])
+def test_websocket_first_message_must_be_auth(client, group, monkeypatch, first):
+    fake_token(monkeypatch, "bruno")
+    with pytest.raises(WebSocketDisconnect) as exc, client.websocket_connect(f"/groups/{group}/ws") as ws:
+        if isinstance(first, str):
+            ws.send_text(first)
+        else:
+            ws.send_json(first)
+        ws.receive_json()
+    assert exc.value.code == 4401
+
+
+def test_websocket_without_auth_message_is_closed(client, group, monkeypatch):
+    from app.routers import groups as groups_router
+
+    fake_token(monkeypatch, "bruno")
+    monkeypatch.setattr(groups_router, "WS_AUTH_TIMEOUT_SECONDS", 0.2)
+    with pytest.raises(WebSocketDisconnect) as exc, client.websocket_connect(f"/groups/{group}/ws") as ws:
+        ws.receive_json()
+    assert exc.value.code == 4401
