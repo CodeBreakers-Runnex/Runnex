@@ -58,7 +58,8 @@ def summary(week: date, zone: str = "America/Sao_Paulo", db: Session = Depends(g
 
 @router.post("/workouts", response_model=WorkoutOut, status_code=201)
 def create(payload: WorkoutInput, db: Session = Depends(get_db), user: FirebaseUser = Depends(require_verified_email)):
-    get_or_create_user(db, user.uid, user.uid, None)
+    # Mesmo nome padrao de pet, tenis e treinador: o uid aparecia no feed.
+    get_or_create_user(db, user.uid, "Corredor", None)
     workout = PlannedWorkout(user_id=user.uid, **payload.model_dump(), original_date=payload.planned_date, scheduled_at=scheduled_instant(payload.planned_date, payload.planned_time, payload.timezone))
     db.add(workout)
     db.commit()
