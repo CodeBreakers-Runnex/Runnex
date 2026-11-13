@@ -14,17 +14,23 @@ type GroupConnection = {
 
 const connections = new Map<string, GroupConnection>();
 
-function wsUrl(groupId: string, token: string): string {
+// Sem token na URL: URLs ficam em log de servidor e de proxy. O token vai na
+// primeira mensagem, logo que a conexão abre (backend/app/routers/groups.py).
+function wsUrl(groupId: string): string {
   const base = (API_URL || "").replace(/^http/, "ws");
-  return `${base}/groups/${groupId}/ws?token=${encodeURIComponent(token)}`;
+  return `${base}/groups/${groupId}/ws`;
 }
 
 async function openSocket(groupId: string, conn: GroupConnection) {
   const token = await auth.currentUser?.getIdToken();
   if (!token || conn.closed) return;
 
-  const ws = new WebSocket(wsUrl(groupId, token));
+  const ws = new WebSocket(wsUrl(groupId));
   conn.ws = ws;
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: "auth", token }));
+  };
 
   ws.onmessage = (event) => {
     try {

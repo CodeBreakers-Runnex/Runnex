@@ -16,6 +16,10 @@ class GroupConnectionManager:
 
     async def connect(self, group_id: int, websocket: WebSocket) -> None:
         await websocket.accept()
+        self.add(group_id, websocket)
+
+    def add(self, group_id: int, websocket: WebSocket) -> None:
+        """Registra uma conexao ja aceita (autenticacao pela primeira mensagem)."""
         self.active.setdefault(group_id, set()).add(websocket)
 
     def disconnect(self, group_id: int, websocket: WebSocket) -> None:
