@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
@@ -139,28 +140,71 @@ def _check_membership(group_id: int, uid: str) -> bool:
         db.close()
 
 
-@router.websocket("/{group_id}/ws")
-async def group_websocket(group_id: int, websocket: WebSocket, token: str = ""):
-    """Substitui o polling de 15s do chat/feed/comentarios do grupo. O
-    browser nao consegue mandar header Authorization no handshake do
-    WebSocket, entao o ID token do Firebase chega via query param
-    (?token=...) em vez do Bearer normal."""
-    # Validar o token pode buscar as chaves do Google (requests, ate 5 s) e a
-    # checagem de membro usa o banco sincrono: as duas vao para uma thread
-    # para nao travar o loop de eventos, que atende todos os usuarios.
+# Prazo para o app mandar {"type": "auth", "token": ...} depois de conectar.
+WS_AUTH_TIMEOUT_SECONDS = 5
+
+
+async def _authorize(group_id: int, token: str) -> tuple[FirebaseUser | None, int | None]:
+    """(usuario, None) se pode ouvir o grupo; (None, codigo de fechamento)
+    se nao. Validar o token pode buscar as chaves do Google (requests, ate
+    5 s) e a checagem de membro usa o banco sincrono: as duas vao para uma
+    thread para nao travar o loop de eventos, que atende todos os usuarios."""
     try:
         user = await run_in_threadpool(decode_firebase_token, token)
     except HTTPException:
-        await websocket.close(code=4401)
-        return
+        return None, 4401
+    if not await run_in_threadpool(_check_membership, group_id, user.uid):
+        return None, 4403
+    return user, None
 
-    is_member = await run_in_threadpool(_check_membership, group_id, user.uid)
 
-    if not is_member:
-        await websocket.close(code=4403)
-        return
+async def _token_from_first_message(websocket: WebSocket) -> str | None:
+    try:
+        first = await asyncio.wait_for(websocket.receive_json(), WS_AUTH_TIMEOUT_SECONDS)
+    except WebSocketDisconnect:
+        raise
+    except Exception:  # prazo esgotado, texto que nao e JSON
+        return None
+    if isinstance(first, dict) and first.get("type") == "auth" and isinstance(first.get("token"), str):
+        return first["token"]
+    return None
 
-    await manager.connect(group_id, websocket)
+
+@router.websocket("/{group_id}/ws")
+async def group_websocket(group_id: int, websocket: WebSocket, token: str = ""):
+    """Push do chat/feed/comentarios do grupo (substitui o polling de 15 s).
+
+    O navegador nao manda header Authorization no handshake do WebSocket.
+    O app atual conecta sem token e manda {"type": "auth", "token": ...}
+    como primeira mensagem: o token nao aparece na URL, que fica em log de
+    acesso do Render e de proxies. Recusa depois de aceitar, para o app
+    receber o codigo (4401 token invalido, 4403 nao e membro) e parar de
+    reconectar.
+
+    ?token= na URL continua aceito para o APK 0.2.0 ja instalado, com o
+    comportamento antigo (recusa antes de aceitar)."""
+    if token:
+        _, refusal = await _authorize(group_id, token)
+        if refusal:
+            await websocket.close(code=refusal)
+            return
+        await manager.connect(group_id, websocket)
+    else:
+        await websocket.accept()
+        try:
+            first_token = await _token_from_first_message(websocket)
+        except WebSocketDisconnect:
+            return
+        if first_token is None:
+            await websocket.close(code=4401)
+            return
+        _, refusal = await _authorize(group_id, first_token)
+        if refusal:
+            await websocket.close(code=refusal)
+            return
+        manager.add(group_id, websocket)
+        await websocket.send_json({"type": "ready"})
+
     try:
         while True:
             # Conexao e so push (servidor -> cliente); ainda precisamos
