@@ -81,7 +81,7 @@ Postgres (Neon) — estrutura criada pelas migrações em backend/alembic/versio
 | `index.html` | Página que carrega o app; título, ícones e prévia de link (`og-image`). | Em uso |
 | `vite.config.ts` | Build do frontend e configuração do PWA (ícones, manifesto). Lista `firebase/storage` num chunk, mas o Storage não é usado. | Em uso |
 | `vitest.config.ts` | Configuração dos testes do frontend. | Em uso |
-| `tsconfig*.json` | Configuração do TypeScript. `noUnusedLocals` desligado: por isso imports mortos passam sem aviso. | Em uso |
+| `tsconfig*.json` | Configuração do TypeScript. `noUnusedLocals` ligado: import morto quebra o `npm run lint`. | Em uso |
 | `eslint.config.js` | Regras do lint. Regra de variável sem uso desligada. | Em uso |
 | `tailwind.config.ts`, `postcss.config.js` | Tailwind v3 (cores e fontes do app). | Em uso |
 | `components.json` | Configuração do shadcn/ui (gerador de componentes de `src/components/ui`). | Em uso (só ao gerar componente) |
@@ -171,7 +171,6 @@ Postgres (Neon) — estrutura criada pelas migrações em backend/alembic/versio
 | `sleep/SleepEntryForm.tsx`, `sleep/SleepCheckInForm.tsx` | Sono | Formulários de sono. | Desligado |
 | `training/*.tsx` (5 arquivos) | Agenda, Home | Calendário, formulário, detalhes e card "próximo treino". | Em uso |
 | `ui/sonner.tsx`, `ui/tooltip.tsx`, `ui/skeleton.tsx` | App, Feed, Dashboard | Avisos (toast), dicas e "esqueleto" de carregamento (shadcn/ui). | Em uso |
-| `StatCard.tsx` | **ninguém** | Card de estatística antigo. | **Morto** |
 
 ### `hooks/` — estado compartilhado
 
@@ -389,13 +388,11 @@ Gerado pelo Capacitor; quase tudo é padrão. O que é do Runnex:
 
 **Morto (pode apagar sem mudar nada no app):**
 
-- `src/components/StatCard.tsx`
 - `storage.rules` (o Storage não é usado)
 - `backend/scripts/create_database.sql` (desatualizado)
 - os dois testes de exemplo do Android
-- 10 imports/variáveis sem uso espalhados pelas telas (lista na auditoria, achado M2)
 
-Está no PR `chore/codigo-morto-e-lint` da etapa 2.
+O `StatCard.tsx` e os imports sem uso já saíram no PR `chore/codigo-morto-e-lint`; os itens acima ficam para um PR separado (confirme antes se o documento do TCC usa o `create_database.sql`).
 
 **Legado (sai junto, se vocês decidirem remover os grupos e eventos de demonstração):**
 
