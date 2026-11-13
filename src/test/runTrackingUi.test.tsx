@@ -79,3 +79,18 @@ describe("tela de corrida: seletor de tênis e corrida não finalizada", () => {
     expect(mocks.info).toHaveBeenCalledWith("Corrida descartada.");
   });
 });
+
+describe("folha de música (recurso desligado, mas o código fica)", () => {
+  it("lista os três atalhos e fecha", async () => {
+    const { default: MusicSheet } = await import("@/pages/app/run/MusicSheet");
+    const onClose = vi.fn();
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    render(<MusicSheet onClose={onClose} />);
+    fireEvent.click(screen.getByRole("button", { name: /Spotify/ }));
+    expect(open).toHaveBeenCalledWith("https://open.spotify.com/search/running%20playlist", "_blank", "noopener,noreferrer");
+    expect(screen.getByRole("button", { name: /YouTube Music/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Deezer/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Fechar musica" }));
+    expect(onClose).toHaveBeenCalled();
+  });
+});
