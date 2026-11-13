@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import desc
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth import FirebaseUser, decode_firebase_token, get_current_user, require_verified_email
@@ -203,11 +204,17 @@ def join_group(
     group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(get_current_user)
 ):
     group = _get_group_or_404(db, group_id)
-    already_member = any(m.user_id == current_user.uid for m in group.members)
-    if not already_member:
-        db.add(GroupMember(group_id=group_id, user_id=current_user.uid))
+    # ON CONFLICT em vez de "ja e membro?" + INSERT: com dois toques rapidos,
+    # as duas requisicoes passavam pela checagem e a segunda dava 500 na
+    # constraint unica.
+    inserted = db.execute(
+        insert(GroupMember)
+        .values(group_id=group_id, user_id=current_user.uid)
+        .on_conflict_do_nothing(index_elements=["group_id", "user_id"])
+    ).rowcount
+    if inserted:
         group.updated_at = datetime.now(timezone.utc)
-        db.commit()
+    db.commit()
 
     group = _get_group_or_404(db, group_id)
     users = _load_users(db, [group.created_by])

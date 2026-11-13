@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.auth import FirebaseUser, get_current_user
@@ -53,13 +54,15 @@ def join_event(
     if not event:
         raise HTTPException(status_code=404, detail="Evento nao encontrado.")
 
-    already_joined = db.query(EventParticipant).filter(
-        EventParticipant.event_id == event_id, EventParticipant.user_id == current_user.uid
-    ).first()
-    if not already_joined:
-        db.add(EventParticipant(event_id=event_id, user_id=current_user.uid))
-        db.commit()
-        db.refresh(event)
+    # ON CONFLICT: dois toques rapidos davam 500 na constraint unica (ver
+    # join_group em routers/groups.py).
+    db.execute(
+        insert(EventParticipant)
+        .values(event_id=event_id, user_id=current_user.uid)
+        .on_conflict_do_nothing(index_elements=["event_id", "user_id"])
+    )
+    db.commit()
+    db.refresh(event)
 
     return _serialize_event(event)
 
