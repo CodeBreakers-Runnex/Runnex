@@ -129,7 +129,6 @@ export default function Home() {
   };
 
   const maxKm = Math.max(...stats.weeklyData.map((day) => day.km), 1);
-  const lastRun = stats.lastActivity;
 
   const summaryCards = useMemo(() => [
     { label: "Semana", value: formatDistance(stats.weeklyTotalKm, unit), unit, icon: TrendingIcon },

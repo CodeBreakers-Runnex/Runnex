@@ -15,10 +15,9 @@ import { ptBR } from "date-fns/locale";
 
 // Custom Hooks & Utils
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { initials, toDateSafe } from "@/lib/feed-utils";
+import { toDateSafe } from "@/lib/feed-utils";
 import ActivityCard from "@/components/ActivityCard";
 import SafeAvatar from "@/components/SafeAvatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getBestUserPhotoURL } from "@/lib/user-photo";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";

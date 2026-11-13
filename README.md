@@ -61,7 +61,7 @@ src/
   lib/          Utilitarios e regras de negocio (gamificacao, conquistas, pet, etc.)
   pages/        Telas da aplicacao (auth/ e app/)
   services/     Acesso a dados, dividido por dominio (usersApi, activitiesApi,
-                groupsApi, eventsApi, petApi, productsApi) + apiClient e groupSocket.
+                groupsApi, eventsApi, petApi, coinsApi...) + apiClient e groupSocket.
                 database.ts e' um barrel que reexporta os arquivos acima, mantido
                 para compatibilidade de import.
   test/         Setup e testes automatizados
