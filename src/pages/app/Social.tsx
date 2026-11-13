@@ -223,7 +223,8 @@ export default function Social() {
     setGroupsLoading(true);
     try {
       const [profile, groupList] = await Promise.all([
-        getUserProfile(user.uid),
+        // Perfil só diz em quais grupos a pessoa está: sem ele, a lista aparece.
+        getUserProfile(user.uid).catch(() => null),
         getGroups(),
       ]);
       const joined = profile?.joinedGroupIds || [];

@@ -117,28 +117,24 @@ const applyEventDefaults = (event: RunningEvent): RunningEvent => {
 // Fase 1: eventos migraram para o backend próprio. Sem endpoint de criação
 // (igual ao Firestore antes: eventos são cadastrados fora do app) — se a API
 // não retornar nenhum, caem os eventos de demonstração locais.
+// Lança em caso de erro: a tela de eventos avisa e mostra a lista vazia.
 export const getEvents = async (cityFilter?: string): Promise<RunningEvent[]> => {
-  try {
-    const rawEvents = await api.get<RunningEvent[]>("/events");
-    let events = rawEvents.length > 0 ? rawEvents.map(applyEventDefaults) : getFallbackEvents();
+  const rawEvents = await api.get<RunningEvent[]>("/events");
+  let events = rawEvents.length > 0 ? rawEvents.map(applyEventDefaults) : getFallbackEvents();
 
-    if (cityFilter) {
-      const normalizedCity = cityFilter.toLowerCase().split(",")[0].trim();
-      // Ordenar: Primeiro os da mesma cidade, depois os outros
-      events = events.sort((a, b) => {
-        const aMatch = a.city.toLowerCase().includes(normalizedCity);
-        const bMatch = b.city.toLowerCase().includes(normalizedCity);
-        if (aMatch && !bMatch) return -1;
-        if (!aMatch && bMatch) return 1;
-        return 0;
-      });
-    }
-
-    return events;
-  } catch (error) {
-    console.error("Erro ao buscar eventos:", error);
-    return [];
+  if (cityFilter) {
+    const normalizedCity = cityFilter.toLowerCase().split(",")[0].trim();
+    // Ordenar: Primeiro os da mesma cidade, depois os outros
+    events = events.sort((a, b) => {
+      const aMatch = a.city.toLowerCase().includes(normalizedCity);
+      const bMatch = b.city.toLowerCase().includes(normalizedCity);
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return 0;
+    });
   }
+
+  return events;
 };
 
 // Inscreve o usuário em um evento. Eventos locais/demo (prefixo "local-",
