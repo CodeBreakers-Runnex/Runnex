@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.auth import FirebaseUser, get_current_user, require_verified_email
 from app.database import get_db
@@ -42,7 +42,8 @@ def _serialize_event(event: Event) -> RunningEventOut:
 
 @router.get("", response_model=list[RunningEventOut])
 def list_events(db: Session = Depends(get_db), _: FirebaseUser = Depends(get_current_user)):
-    events = db.query(Event).order_by(Event.event_timestamp.asc()).all()
+    # selectinload: participantes de todos os eventos numa consulta so (antes, uma por evento).
+    events = db.query(Event).options(selectinload(Event.participants)).order_by(Event.event_timestamp.asc()).all()
     return [_serialize_event(e) for e in events]
 
 
