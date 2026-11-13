@@ -7,7 +7,7 @@ export const features = {
   // Importação de corridas do relógio pelo Health Connect (/dispositivos).
   healthConnectRuns: false,
   // Sensor cardíaco Bluetooth na corrida e zonas cardíacas nas estatísticas.
-  heartRateSensor: false,
+  heartRateSensor: true,
   // Atalhos para Spotify, YouTube Music e Deezer na tela de corrida.
   music: false,
 } as const;
