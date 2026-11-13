@@ -170,3 +170,32 @@ def test_unverified_email_cannot_write_in_groups(client, group, login):
     assert client.post(f"/groups/{group}/posts/{post_id}/comments", json={"text": "spam"}).status_code == 403
     # Leitura continua liberada
     assert client.get(f"/groups/{group}/posts").status_code == 200
+
+
+# Imagem minima valida: JPEG comeca com FF D8 FF (app/validators.py confere).
+TINY_JPEG = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ=="
+
+
+def test_post_with_only_an_image(client, group):
+    # A tela permite publicar so com foto ("Escreva algo ou adicione uma
+    # imagem"), mas o backend exigia texto: a publicacao sempre falhava.
+    response = client.post(f"/groups/{group}/posts", json={"text": "", "imageURL": TINY_JPEG})
+    assert response.status_code == 200, response.text
+    assert response.json()["text"] == "" and response.json()["imageURL"] == TINY_JPEG
+
+
+def test_post_needs_text_or_image(client, group):
+    assert client.post(f"/groups/{group}/posts", json={"text": ""}).status_code == 422
+    # So espacos virava uma publicacao vazia (o texto e gravado sem espacos).
+    assert client.post(f"/groups/{group}/posts", json={"text": "   "}).status_code == 422
+    assert client.get(f"/groups/{group}/posts").json() == []
+
+
+def test_unverified_email_cannot_join_or_leave(client, group, make_user, login):
+    make_user("carla")
+    login("carla", email_verified=False)
+    assert client.post(f"/groups/{group}/join").status_code == 403
+    login("bruno", email_verified=False)
+    assert client.post(f"/groups/{group}/leave").status_code == 403
+    login("ana")
+    assert client.get(f"/groups/{group}").json()["membersCount"] == 2
