@@ -5,6 +5,8 @@ import type { FeedActivity } from "@/types";
 
 const mocks = vi.hoisted(() => ({
   feed: [] as FeedActivity[],
+  feedFails: false,
+  subscriptions: 0,
   more: [] as FeedActivity[],
   toggleLike: vi.fn(),
   loadMore: vi.fn(),
@@ -20,7 +22,11 @@ vi.mock("@/config/firebase", () => ({ auth: {}, db: {}, storage: {} }));
 const authState = vi.hoisted(() => ({ user: { uid: "ana", displayName: "Ana", photoURL: null, providerData: [] } }));
 vi.mock("@/hooks/useAuth", () => ({ useAuth: () => authState }));
 vi.mock("@/services/database", () => ({
-  subscribeToFeed: (cb: (data: FeedActivity[]) => void) => { cb(mocks.feed); return mocks.unsubscribe; },
+  subscribeToFeed: (cb: (data: FeedActivity[]) => void, _limit?: number, onError?: (e: unknown) => void) => {
+    mocks.subscriptions += 1;
+    if (mocks.feedFails) onError?.(new Error("offline")); else cb(mocks.feed);
+    return mocks.unsubscribe;
+  },
   toggleLike: (...a: unknown[]) => mocks.toggleLike(...a),
   getUserStats: () => Promise.resolve({ totalKm: "12.5", runsCount: 3, totalTime: "1h 5m" }),
   loadMoreActivities: (...a: unknown[]) => mocks.loadMore(...a),
@@ -51,6 +57,8 @@ describe("feed", () => {
   beforeEach(() => {
     localStorage.clear();
     mocks.feed = [];
+    mocks.feedFails = false;
+    mocks.subscriptions = 0;
     mocks.toggleLike.mockReset().mockResolvedValue(undefined);
     mocks.loadMore.mockReset().mockResolvedValue([]);
     mocks.unsubscribe.mockReset();
@@ -121,6 +129,27 @@ describe("feed", () => {
     renderFeed();
     fireEvent.click(await screen.findByRole("button", { name: "Ver curtidas recebidas" }));
     expect(mocks.success).toHaveBeenCalledWith("❤️ Suas atividades têm 2 curtidas no total!");
+  });
+
+  it("se o feed não carregar, mostra o erro e deixa tentar de novo", async () => {
+    mocks.feedFails = true;
+    renderFeed();
+    const retry = await screen.findByRole("button", { name: "Tentar carregar o feed de novo" });
+    expect(screen.queryByText("Nenhuma corrida ainda")).toBeNull();
+    mocks.feedFails = false;
+    mocks.feed = [run("1", "bruno", "Bruno")];
+    fireEvent.click(retry);
+    expect((await screen.findAllByText("Bruno")).length).toBeGreaterThan(0);
+    expect(mocks.subscriptions).toBe(2);
+  });
+
+  it("se \"ver mais\" falhar, avisa e deixa tentar de novo", async () => {
+    mocks.feed = Array.from({ length: 10 }, (_, i) => run(String(10 - i), "bruno", "Bruno"));
+    mocks.loadMore.mockRejectedValue(new Error("offline"));
+    renderFeed();
+    fireEvent.click(await screen.findByRole("button", { name: /Ver mais atividades/ }));
+    await waitFor(() => expect(mocks.error).toHaveBeenCalledWith("Não foi possível carregar mais corridas. Tente de novo."));
+    expect(screen.getByRole("button", { name: /Ver mais atividades/ })).toBeInTheDocument();
   });
 
   it("para de ouvir o feed ao sair da tela", async () => {
