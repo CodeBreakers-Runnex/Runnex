@@ -176,7 +176,8 @@ def _activity_by_client_id(db: Session, user_id: str, client_id: str | None) -> 
     return db.query(Activity).filter(Activity.user_id == user_id, Activity.client_id == client_id).first()
 
 
-@router.get("/performance/me")
+# Le todas as corridas do usuario com as amostras: a rota mais pesada da API.
+@router.get("/performance/me", dependencies=[Depends(rate_limit("activities:performance", 30, 60))])
 def get_performance(
     utc_offset_minutes: int = 0,
     db: Session = Depends(get_db),

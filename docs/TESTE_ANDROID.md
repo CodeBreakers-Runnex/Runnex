@@ -12,7 +12,7 @@ Leva cerca de 1h30, incluindo duas corridas curtas na rua.
 
 ## 0. Preparação
 
-- [ ] Backend no ar: abrir `https://<sua-api>.onrender.com/docs` no navegador do celular (o plano gratuito do Render hiberna; a primeira request pode levar ~1 min).
+- [ ] Backend no ar: abrir `https://<sua-api>.onrender.com/health` no navegador do celular (deve mostrar `{"status":"ok"}`) (o plano gratuito do Render hiberna; a primeira request pode levar ~1 min).
 - [ ] Desinstalar versões antigas do app antes de instalar o APK novo.
 - [ ] Deixar a bateria acima de 50% e desligar a economia de bateria no primeiro teste.
 

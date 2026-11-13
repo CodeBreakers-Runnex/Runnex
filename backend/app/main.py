@@ -6,8 +6,14 @@ from app.routers import recovery
 from app.routers import training
 from app.routers import health_imports
 from app.routers import coins
+from app.config import settings
 
-app = FastAPI(title="Runnex API")
+app = FastAPI(
+    title="Runnex API",
+    docs_url="/docs" if settings.api_docs else None,
+    redoc_url="/redoc" if settings.api_docs else None,
+    openapi_url="/openapi.json" if settings.api_docs else None,
+)
 
 app.add_middleware(
     CORSMiddleware,
