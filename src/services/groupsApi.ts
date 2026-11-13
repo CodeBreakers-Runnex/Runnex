@@ -47,14 +47,11 @@ const FALLBACK_GROUPS: RunningGroup[] = [
 // Fase 1: grupos migraram para o backend próprio. Se a API não retornar
 // nenhum grupo real ainda, mantém os grupos de demonstração (mesmo
 // comportamento de quando o Firestore estava vazio).
+// Em caso de erro, lança: antes caía nos grupos de demonstração, e com o
+// servidor fora a pessoa via grupos inventados no lugar dos dela.
 export const getGroups = async (): Promise<RunningGroup[]> => {
-  try {
-    const groups = await api.get<RunningGroup[]>("/groups");
-    return groups.length > 0 ? groups : FALLBACK_GROUPS;
-  } catch (error) {
-    console.error("Erro ao buscar grupos:", error);
-    return FALLBACK_GROUPS;
-  }
+  const groups = await api.get<RunningGroup[]>("/groups");
+  return groups.length > 0 ? groups : FALLBACK_GROUPS;
 };
 
 // Criar grupo: userId/userName não são mais enviados — o backend usa o
@@ -155,38 +152,59 @@ export const updateGroupPhoto = async (groupId: string, photoURL: string): Promi
   await api.put(`/groups/${groupId}/photo`, { photoURL });
 };
 
-// Feed do grupo — Fase 2: WebSocket (subscribeToGroupEvents) substitui o
-// polling de 15s da Fase 1. O fetch inicial continua igual; a partir daí,
-// so refaz a busca quando um evento relevante chega pelo socket. O
-// setInterval longo fica so como rede de seguranca caso o WebSocket caia
-// e a reconexao demore.
-export const subscribeToGroupPosts = (
+type GroupEvent = { type: string; postId?: string };
+
+// Busca inicial + nova busca a cada evento relevante do WebSocket + polling
+// longo de segurança (caso o socket caia e a reconexão demore). Comum ao
+// feed, aos comentários e ao chat do grupo. Uma falha na busca chama
+// onError, para a tela trocar o carregando por "tentar de novo"; a próxima
+// busca que der certo chama callback normalmente.
+function subscribeToGroupResource<T>(
   groupId: string,
-  callback: (posts: GroupPost[]) => void,
-  limitCount = 30
-) => {
+  path: string,
+  callback: (data: T) => void,
+  shouldRefetch: (event: GroupEvent) => boolean,
+  onError?: (error: unknown) => void,
+) {
   let cancelled = false;
-  const fetchPosts = async () => {
+  const fetchData = async () => {
     try {
-      const posts = await api.get<GroupPost[]>(`/groups/${groupId}/posts?limit=${limitCount}`);
-      if (!cancelled) callback(posts);
+      const data = await api.get<T>(path);
+      if (!cancelled) callback(data);
     } catch (error) {
-      console.error("Erro ao buscar feed do grupo:", error);
+      console.error(`Erro ao buscar ${path}:`, error);
+      if (!cancelled) onError?.(error);
     }
   };
-  fetchPosts();
+  fetchData();
 
   const unsubscribeWs = subscribeToGroupEvents(groupId, (event) => {
-    if (event.type === "post_created" || event.type === "post_like") fetchPosts();
+    if (shouldRefetch(event)) fetchData();
   });
-  const intervalId = setInterval(fetchPosts, 60_000);
+  const intervalId = setInterval(fetchData, 60_000);
 
   return () => {
     cancelled = true;
     unsubscribeWs();
     clearInterval(intervalId);
   };
-};
+}
+
+// Feed do grupo — o WebSocket (subscribeToGroupEvents) avisa quando há post
+// novo ou curtida; só então busca de novo.
+export const subscribeToGroupPosts = (
+  groupId: string,
+  callback: (posts: GroupPost[]) => void,
+  limitCount = 30,
+  onError?: (error: unknown) => void,
+) =>
+  subscribeToGroupResource<GroupPost[]>(
+    groupId,
+    `/groups/${groupId}/posts?limit=${limitCount}`,
+    callback,
+    (event) => event.type === "post_created" || event.type === "post_like",
+    onError,
+  );
 
 // authorId/authorName/authorPhoto não são mais enviados — o backend usa o
 // usuário autenticado e busca nome/foto atuais no perfil (evita que o
@@ -212,35 +230,21 @@ export const toggleGroupPostLike = async (groupId: string, postId: string, userI
   void userId; // mantido na assinatura: quem curte é sempre o usuario autenticado no backend
 };
 
-// Comentários de uma publicação — mesmo esquema via WebSocket do feed do
-// grupo, filtrando pelo postId (o evento do socket é por grupo, não por post).
+// Comentários de uma publicação — o evento do socket é por grupo, então
+// filtra pelo postId.
 export const subscribeToGroupPostComments = (
   groupId: string,
   postId: string,
-  callback: (comments: GroupPostComment[]) => void
-) => {
-  let cancelled = false;
-  const fetchComments = async () => {
-    try {
-      const comments = await api.get<GroupPostComment[]>(`/groups/${groupId}/posts/${postId}/comments`);
-      if (!cancelled) callback(comments);
-    } catch (error) {
-      console.error("Erro ao buscar comentarios do post:", error);
-    }
-  };
-  fetchComments();
-
-  const unsubscribeWs = subscribeToGroupEvents(groupId, (event) => {
-    if (event.type === "comment_created" && event.postId === postId) fetchComments();
-  });
-  const intervalId = setInterval(fetchComments, 60_000);
-
-  return () => {
-    cancelled = true;
-    unsubscribeWs();
-    clearInterval(intervalId);
-  };
-};
+  callback: (comments: GroupPostComment[]) => void,
+  onError?: (error: unknown) => void,
+) =>
+  subscribeToGroupResource<GroupPostComment[]>(
+    groupId,
+    `/groups/${groupId}/posts/${postId}/comments`,
+    callback,
+    (event) => event.type === "comment_created" && event.postId === postId,
+    onError,
+  );
 
 export const addGroupPostComment = async (
   groupId: string,
@@ -251,34 +255,20 @@ export const addGroupPostComment = async (
   return comment.id;
 };
 
-// Chat do grupo — mesmo esquema via WebSocket.
+// Chat do grupo.
 export const subscribeToGroupMessages = (
   groupId: string,
   callback: (messages: GroupMessage[]) => void,
-  limitCount = 100
-) => {
-  let cancelled = false;
-  const fetchMessages = async () => {
-    try {
-      const messages = await api.get<GroupMessage[]>(`/groups/${groupId}/messages?limit=${limitCount}`);
-      if (!cancelled) callback(messages);
-    } catch (error) {
-      console.error("Erro ao buscar mensagens do grupo:", error);
-    }
-  };
-  fetchMessages();
-
-  const unsubscribeWs = subscribeToGroupEvents(groupId, (event) => {
-    if (event.type === "message_created") fetchMessages();
-  });
-  const intervalId = setInterval(fetchMessages, 60_000);
-
-  return () => {
-    cancelled = true;
-    unsubscribeWs();
-    clearInterval(intervalId);
-  };
-};
+  limitCount = 100,
+  onError?: (error: unknown) => void,
+) =>
+  subscribeToGroupResource<GroupMessage[]>(
+    groupId,
+    `/groups/${groupId}/messages?limit=${limitCount}`,
+    callback,
+    (event) => event.type === "message_created",
+    onError,
+  );
 
 export const sendGroupMessage = async ({
   groupId,

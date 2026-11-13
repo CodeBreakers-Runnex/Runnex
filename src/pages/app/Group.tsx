@@ -43,6 +43,7 @@ import { formatCardDate, toDateSafe } from "@/lib/feed-utils";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { useBackHandler } from "@/hooks/useBackHandler";
+import LoadRetry from "@/components/LoadRetry";
 
 type GroupTab = "feed" | "chat";
 
@@ -226,16 +227,22 @@ function PostComments({ groupId, postId }: { groupId: string; postId: string }) 
   const { user } = useAuth();
   const [comments, setComments] = useState<GroupPostComment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeToGroupPostComments(groupId, postId, (data) => {
       setComments(data);
+      setLoadError(false);
+      setLoading(false);
+    }, () => {
+      setLoadError(true);
       setLoading(false);
     });
     return () => unsub();
-  }, [groupId, postId]);
+  }, [groupId, postId, attempt]);
 
   const handleSend = async () => {
     if (!user || !text.trim()) return;
@@ -262,6 +269,13 @@ function PostComments({ groupId, postId }: { groupId: string; postId: string }) 
         <div className="flex justify-center py-3">
           <Loader2 size={16} className="animate-spin text-purple-500" />
         </div>
+      ) : loadError && comments.length === 0 ? (
+        <LoadRetry
+          className="py-2"
+          message="Não foi possível carregar os comentários."
+          retryLabel="Tentar carregar os comentários de novo"
+          onRetry={() => { setLoading(true); setAttempt((a) => a + 1); }}
+        />
       ) : comments.length === 0 ? (
         <p className="py-2 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
           Nenhum comentário ainda
@@ -312,6 +326,7 @@ function PostCard({ post, groupId, userUid }: { post: GroupPost; groupId: string
       await toggleGroupPostLike(groupId, post.id, userUid, isLiked);
     } catch (error) {
       console.error("Erro ao curtir publicacao:", error);
+      toast.error("Não foi possível salvar a curtida. Tente de novo.");
     }
   };
 
@@ -369,15 +384,21 @@ function GroupFeedPanel({ group, authorName, authorPhoto, userUid }: {
 }) {
   const [posts, setPosts] = useState<GroupPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     setLoading(true);
     const unsub = subscribeToGroupPosts(group.id, (data) => {
       setPosts(data);
+      setLoadError(false);
+      setLoading(false);
+    }, undefined, () => {
+      setLoadError(true);
       setLoading(false);
     });
     return () => unsub();
-  }, [group.id]);
+  }, [group.id, attempt]);
 
   const handleSubmitPost = useCallback(async (text: string, imageFile: File | null) => {
     if (!userUid) return;
@@ -410,6 +431,13 @@ function GroupFeedPanel({ group, authorName, authorPhoto, userUid }: {
         <div className="flex justify-center py-16">
           <Loader2 className="animate-spin text-purple-500" size={30} />
         </div>
+      ) : loadError && posts.length === 0 ? (
+        <LoadRetry
+          className={cn(GLASS_CARD_CLASS, "p-10")}
+          message="Não foi possível carregar as publicações."
+          retryLabel="Tentar carregar as publicações de novo"
+          onRetry={() => setAttempt((a) => a + 1)}
+        />
       ) : posts.length === 0 ? (
         <div className={cn(GLASS_CARD_CLASS, "p-10 text-center")}>
           <Rss className="mx-auto text-muted-foreground/50" size={32} />
@@ -454,6 +482,8 @@ function GroupChatPanel({ group, senderName, senderPhoto, userUid }: {
 }) {
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -462,10 +492,14 @@ function GroupChatPanel({ group, senderName, senderPhoto, userUid }: {
     setLoading(true);
     const unsub = subscribeToGroupMessages(group.id, (data) => {
       setMessages(data);
+      setLoadError(false);
+      setLoading(false);
+    }, undefined, () => {
+      setLoadError(true);
       setLoading(false);
     });
     return () => unsub();
-  }, [group.id]);
+  }, [group.id, attempt]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -498,6 +532,13 @@ function GroupChatPanel({ group, senderName, senderPhoto, userUid }: {
           <div className="flex h-full items-center justify-center">
             <Loader2 className="animate-spin text-purple-500" size={28} />
           </div>
+        ) : loadError && messages.length === 0 ? (
+          <LoadRetry
+            className="h-full"
+            message="Não foi possível carregar as mensagens."
+            retryLabel="Tentar carregar as mensagens de novo"
+            onRetry={() => setAttempt((a) => a + 1)}
+          />
         ) : messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <MessageSquare className="text-muted-foreground/50" size={30} />

@@ -33,7 +33,9 @@ import {
   getGroups,
   joinGroup,
   leaveGroup,
+  subscribeToGroupMessages,
   subscribeToGroupPostComments,
+  subscribeToGroupPosts,
 } from "@/services/groupsApi";
 
 const realGroup = { id: "42", name: "Real", memberIds: ["ana"] } as RunningGroup;
@@ -57,14 +59,18 @@ describe("groupsApi", () => {
       await expect(getGroups()).resolves.toEqual([realGroup]);
     });
 
-    it("cai nos grupos de demonstração se não houver nenhum ou a API falhar", async () => {
+    it("sem nenhum grupo real, mostra os grupos de demonstração", async () => {
       mocks.api.get.mockResolvedValueOnce([]);
       const empty = await getGroups();
-      mocks.api.get.mockRejectedValueOnce(new Error("offline"));
-      const offline = await getGroups();
-
       expect(empty.map((g) => g.id)).toContain("sp-runners");
-      expect(offline).toEqual(empty);
+    });
+
+    // Antes a falha também caía nos grupos de demonstração: com o servidor
+    // fora, a pessoa via "128 membros" inventados no lugar dos grupos dela.
+    it("se a API falhar, avisa quem chamou em vez de mostrar grupos inventados", async () => {
+      const offline = new Error("offline");
+      mocks.api.get.mockRejectedValueOnce(offline);
+      await expect(getGroups()).rejects.toBe(offline);
     });
   });
 
@@ -133,5 +139,35 @@ describe("groupsApi", () => {
     await vi.advanceTimersByTimeAsync(120_000);
     expect(mocks.api.get).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
+  });
+
+  describe("falha ao buscar posts, comentários e chat", () => {
+    // Sem aviso de erro, a tela ficava com o carregando girando até o
+    // polling de 60 s tentar de novo.
+    it.each([
+      ["posts", (onData: () => void, onError: (e: unknown) => void) => subscribeToGroupPosts("42", onData, 30, onError)],
+      ["comentários", (onData: () => void, onError: (e: unknown) => void) => subscribeToGroupPostComments("42", "7", onData, onError)],
+      ["chat", (onData: () => void, onError: (e: unknown) => void) => subscribeToGroupMessages("42", onData, 100, onError)],
+    ])("%s: avisa quem assinou", async (_name, subscribe) => {
+      const offline = new Error("offline");
+      mocks.api.get.mockRejectedValue(offline);
+      const onData = vi.fn();
+      const onError = vi.fn();
+      const unsubscribe = subscribe(onData, onError);
+      await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(offline));
+      expect(onData).not.toHaveBeenCalled();
+      unsubscribe();
+    });
+
+    it("depois de cancelar, não avisa mais", async () => {
+      let reject: (e: unknown) => void = () => undefined;
+      mocks.api.get.mockReturnValue(new Promise((_, r) => { reject = r; }));
+      const onError = vi.fn();
+      const unsubscribe = subscribeToGroupMessages("42", vi.fn(), 100, onError);
+      unsubscribe();
+      reject(new Error("offline"));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(onError).not.toHaveBeenCalled();
+    });
   });
 });
