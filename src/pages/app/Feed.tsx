@@ -5,7 +5,7 @@ import {
   Loader2, Play, Search, X, Users,
   RotateCw, ChevronDown,
 } from "lucide-react";
-import { subscribeToFeed, toggleLike, getUserStats, loadMoreActivities } from "@/services/database";
+import { subscribeToFeed, toggleLike, getUserStats, loadMoreActivities, getFeed } from "@/services/database";
 import type { FeedActivity } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -105,6 +105,17 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
   };
 
   const handleRefresh = useCallback(async () => {
+    // Antes só limpava a paginação e dizia "Feed atualizado!" sem buscar o
+    // feed: as corridas novas só apareciam no polling seguinte.
+    let fresh: FeedActivity[];
+    try {
+      fresh = await getFeed(FEED_LIMIT);
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível atualizar o feed. Tente de novo.");
+      return;
+    }
+    setLiveActivities(fresh);
     setMoreActivities([]);
     setHasMore(true);
     if (user) {
@@ -120,7 +131,15 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
   const handleLike = useCallback(async (activityId: string, likes: string[] = []) => {
     if (!user) return;
     const isLiked = likes.includes(user.uid);
-    try { await toggleLike(activityId, user.uid, isLiked); }
+    try {
+      // Aplica a resposta na hora, inclusive nas corridas de "ver mais", que o
+      // polling do feed nunca atualiza.
+      const updatedLikes = await toggleLike(activityId, user.uid, isLiked);
+      const apply = (list: FeedActivity[]) =>
+        list.map((a) => (a.id === activityId ? { ...a, likes: updatedLikes } : a));
+      setLiveActivities(apply);
+      setMoreActivities(apply);
+    }
     catch (e) {
       console.error(e);
       toast.error("Não foi possível salvar a curtida. Tente de novo.");
