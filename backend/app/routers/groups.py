@@ -201,7 +201,7 @@ def update_group_photo(
 
 @router.post("/{group_id}/join", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:membership", 20, 60))])
 def join_group(
-    group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(get_current_user)
+    group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(require_verified_email)
 ):
     group = _get_group_or_404(db, group_id)
     # ON CONFLICT em vez de "ja e membro?" + INSERT: com dois toques rapidos,
@@ -223,7 +223,7 @@ def join_group(
 
 @router.post("/{group_id}/leave", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:membership", 20, 60))])
 def leave_group(
-    group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(get_current_user)
+    group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(require_verified_email)
 ):
     group = _get_group_or_404(db, group_id)
     db.query(GroupMember).filter(

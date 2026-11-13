@@ -190,3 +190,12 @@ def test_post_needs_text_or_image(client, group):
     assert client.post(f"/groups/{group}/posts", json={"text": "   "}).status_code == 422
     assert client.get(f"/groups/{group}/posts").json() == []
 
+
+def test_unverified_email_cannot_join_or_leave(client, group, make_user, login):
+    make_user("carla")
+    login("carla", email_verified=False)
+    assert client.post(f"/groups/{group}/join").status_code == 403
+    login("bruno", email_verified=False)
+    assert client.post(f"/groups/{group}/leave").status_code == 403
+    login("ana")
+    assert client.get(f"/groups/{group}").json()["membersCount"] == 2
