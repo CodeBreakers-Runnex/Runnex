@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
   ArrowLeft,
-  Camera,
   Heart,
   Image as ImageIcon,
   Loader2,
