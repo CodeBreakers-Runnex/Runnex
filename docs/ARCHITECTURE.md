@@ -19,7 +19,7 @@ src/
   lib/          Funcoes utilitarias e regras de dominio
   pages/        Telas agrupadas por area da aplicacao
   services/     Acesso a dados, um arquivo por dominio (usersApi, activitiesApi,
-                groupsApi, eventsApi, petApi, productsApi) + apiClient e
+                groupsApi, eventsApi, petApi, coinsApi...) + apiClient e
                 groupSocket. database.ts e' um barrel que reexporta os demais,
                 mantido so por compatibilidade de import.
   test/         Setup e testes automatizados
@@ -33,7 +33,7 @@ src/
 3. `src/config/firebase.ts` centraliza as instancias do Firebase (Auth + Firestore residual).
 4. `src/services/*Api.ts` concentra leitura e escrita de dados, um arquivo por
    dominio (`usersApi.ts`, `activitiesApi.ts`, `groupsApi.ts`, `eventsApi.ts`,
-   `petApi.ts`, `productsApi.ts`), falando majoritariamente com o backend
+   `petApi.ts`, `coinsApi.ts`...), falando majoritariamente com o backend
    proprio (via `apiClient.ts`) e, pontualmente, com o Firestore — ver
    "Backend e migracao" abaixo.
 5. `src/pages/*` monta as experiencias de login, feed, corrida, grupos, eventos,
@@ -59,7 +59,9 @@ Firestore. O que resta de Firestore no frontend e pontual:
 - `groupsApi.ts` / `eventsApi.ts`: `joinGroup`/`leaveGroup`/`joinEvent` gravam
   no Firestore só para os grupos/eventos de demonstracao (hardcoded, sem linha
   real no Postgres) — para os reais, vao direto no backend.
-- `productsApi.ts` e `petApi.ts` ja sao 100% backend (nenhum import de Firestore).
+- `petApi.ts`, `coinsApi.ts` e os demais ja sao 100% backend (nenhum import de Firestore).
+  O catalogo de produtos (`GET /products`) existe no backend, mas nao tem tela
+  nem servico no app (ver docs/BANCA_TRABALHOS_FUTUROS.md).
 
 Isso muda com o tempo — para saber o estado exato de um dominio, olhe o arquivo
 `src/services/*Api.ts` correspondente em vez de confiar numa lista fixa aqui ou

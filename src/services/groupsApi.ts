@@ -148,8 +148,9 @@ export const getGroupById = async (groupId: string): Promise<RunningGroup | null
   }
 };
 
-// Grava a foto do grupo já enviada ao Storage. Backend restringe a troca a
-// quem criou o grupo (mesma regra que existia em firestore.rules).
+// Grava a foto do grupo (data URL base64 gerada por resizeImageToDataUrl; o
+// app não usa Firebase Storage). O backend restringe a troca a quem criou o
+// grupo (mesma regra que existia em firestore.rules).
 export const updateGroupPhoto = async (groupId: string, photoURL: string): Promise<void> => {
   await api.put(`/groups/${groupId}/photo`, { photoURL });
 };
