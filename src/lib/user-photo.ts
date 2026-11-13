@@ -1,6 +1,4 @@
 import { updateProfile, type User } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/config/firebase";
 
 export function getGooglePhotoURL(user: User | null | undefined) {
   return user?.providerData.find((provider) => provider.providerId === "google.com")?.photoURL || null;
@@ -20,14 +18,8 @@ export async function syncGoogleProfilePhoto(user: User | null | undefined) {
     await updateProfile(user, { photoURL: googlePhoto });
   }
 
-  await setDoc(
-    doc(db, "users", user.uid),
-    {
-      photoURL: googlePhoto,
-      displayName: user.displayName || user.providerData[0]?.displayName || "Corredor",
-    },
-    { merge: true }
-  );
-
+  // Não grava mais nome/foto no documento antigo do Firestore: ninguém lê
+  // (perfil, feed e ranking usam o Postgres), e o login com Google espera
+  // esta função - um Firestore lento ou bloqueado atrapalhava o login.
   return googlePhoto;
 }
