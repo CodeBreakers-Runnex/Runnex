@@ -24,8 +24,6 @@ import {
   Navigation,
   Loader2,
   Music,
-  X,
-  ExternalLink
 } from "lucide-react";
 import { MapContainer, TileLayer, Polyline, useMap, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -46,7 +44,9 @@ import type { Workout } from "@/types/training";
 import { getShoes } from "@/services/shoesApi";
 import { enqueueRun, isRetryableSaveError, newClientId, type QueuedRunPayload } from "@/services/offlineRuns";
 import type { RunningShoe } from "@/types";
-import ShoeStatusBadge from "@/components/ShoeStatusBadge";
+import ShoePicker from "@/pages/app/run/ShoePicker";
+import RecoverRunDialog from "@/pages/app/run/RecoverRunDialog";
+import MusicSheet from "@/pages/app/run/MusicSheet";
 import { useBackHandler } from "@/hooks/useBackHandler";
 
 const BackgroundGeolocation =
@@ -781,22 +781,18 @@ const RunTracking = () => {
 
       {features.heartRateSensor && <HeartRateControls running={isRunning} reference={recoverableRun?.performance?.heartRateMaxBpm ?? performance.snapshot().heartRateMaxBpm} onReading={performance.recordHeartRate} onBreak={performance.breakHeartRateSegment} />}
 
-      <section className="mx-4 mt-2 rounded-2xl border border-border bg-card px-3 py-2.5" aria-label="Tênis da corrida">
-        <div className="flex items-center gap-2">
-          <label htmlFor="run-shoe" className="shrink-0 text-xs font-bold">Tênis</label>
-        <select id="run-shoe" value={selectedShoeId ?? ""} disabled={loadingShoes || isSaving || (isRunning && !isPaused)} onChange={(e) => { shoeSelectionMade.current = true; setSelectedShoeId(e.target.value || null); }} className="min-w-0 flex-1 rounded-xl border border-input bg-background px-2 py-1.5 text-sm disabled:opacity-60">
-          <option value="">{loadingShoes ? "Carregando tênis..." : "Sem tênis vinculado"}</option>
-          {shoes.filter((shoe) => !shoe.retired || shoe.id === selectedShoeId).map((shoe) => <option key={shoe.id} value={shoe.id} disabled={shoe.retired}>{shoe.name}{shoe.isDefault ? " (padrão)" : ""}{shoe.retired ? " (aposentado)" : ""}</option>)}
-          {selectedShoeId && !selectedShoe && <option value={selectedShoeId}>Tênis salvo com o treino</option>}
-        </select>
-          {selectedShoe && <span className="shrink-0 text-[11px] text-muted-foreground">{selectedShoe.totalKm.toLocaleString("pt-BR")}/{selectedShoe.limitKm.toLocaleString("pt-BR")} km</span>}
-          {!isRunning && <button type="button" onClick={() => navigate("/tenis")} className="shrink-0 text-xs font-bold text-primary">Meus tênis</button>}
-        </div>
-        {shoeLoadError && <p className="mt-2 text-xs text-amber-500">Não foi possível carregar os tênis. Você pode continuar sem vínculo e associá-lo depois em Meus tênis.</p>}
-        {selectedShoe && selectedShoe.status !== "good" && <div className="mt-2"><ShoeStatusBadge status={selectedShoe.status} /></div>}
-        {selectedShoe && (selectedShoe.status === "attention" || selectedShoe.status === "worn" || selectedShoe.retired) && <p className="mt-2 text-xs text-amber-500">{selectedShoe.retired ? "Tênis aposentado. Pause e escolha outro tênis para salvar a corrida." : "Confira o desgaste deste tênis antes do treino."}</p>}
-        {isRunning && <p className="mt-2 text-xs text-muted-foreground">Pause a corrida para corrigir o tênis escolhido.</p>}
-      </section>
+      <ShoePicker
+        shoes={shoes}
+        selectedShoeId={selectedShoeId}
+        selectedShoe={selectedShoe}
+        loadingShoes={loadingShoes}
+        shoeLoadError={shoeLoadError}
+        isSaving={isSaving}
+        isRunning={isRunning}
+        isPaused={isPaused}
+        onSelect={(shoeId) => { shoeSelectionMade.current = true; setSelectedShoeId(shoeId); }}
+        onOpenShoes={() => navigate("/tenis")}
+      />
 
       {/* Map Content Section */}
       <motion.div
@@ -1012,97 +1008,13 @@ const RunTracking = () => {
 
       <AnimatePresence key={`recovery-${user?.uid}`}>
         {recoverableRun?.userId === user?.uid && recoverableRun && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[1200] bg-background/75 backdrop-blur-md"
-            />
-            <div className="fixed inset-0 z-[1210] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
-                initial={{ opacity: 0, y: 28, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 28, scale: 0.96 }}
-                className={cn(GLASS_CARD_CLASS, "pointer-events-auto w-full max-w-md p-6")}
-              >
-                <p className="text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground">Runnex</p>
-                <h2 className="mt-1 font-display text-xl font-black text-purple-500 uppercase">Corrida nao finalizada</h2>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  Encontramos {recoverableRun.distance.toFixed(2)} km de uma corrida que nao chegou a ser salva. Quer continuar de onde parou ou descartar?
-                </p>
-                <div className="mt-6 flex gap-3">
-                  <button
-                    onClick={handleDiscardRun}
-                    className="flex-1 rounded-xl border border-input bg-secondary py-3 text-xs font-black uppercase tracking-widest text-foreground/80"
-                  >
-                    Descartar
-                  </button>
-                  <button
-                    onClick={handleResumeRun}
-                    className="flex-1 rounded-xl bg-purple-600 hover:bg-purple-700 transition py-3 text-xs font-black uppercase tracking-widest text-white"
-                  >
-                    Continuar
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </>
+          <RecoverRunDialog distanceKm={recoverableRun.distance} onDiscard={handleDiscardRun} onResume={handleResumeRun} />
         )}
       </AnimatePresence>
 
       <AnimatePresence key={`music-${user?.uid}`}>
         {isMusicOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[1200] bg-background/75 backdrop-blur-md"
-              onClick={() => setIsMusicOpen(false)}
-            />
-            <div className="fixed inset-0 z-[1210] flex items-end justify-center p-4 pointer-events-none sm:items-center">
-              <motion.div
-                initial={{ opacity: 0, y: 28, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 28, scale: 0.96 }}
-                className={cn(GLASS_CARD_CLASS, "pointer-events-auto w-full max-w-md p-5")}
-              >
-                <div className="mb-5 flex items-center justify-between">
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground">Treino</p>
-                    <h2 className="font-display text-2xl font-black text-purple-500">Musica</h2>
-                  </div>
-                  <button
-                    onClick={() => setIsMusicOpen(false)}
-                    className="bg-card border border-border flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground"
-                    aria-label="Fechar musica"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                  Abra sua playlist antes ou durante a corrida. O Runnex continua acompanhando o treino quando você voltar para o app.
-                </p>
-                <div className="grid gap-3">
-                  {[
-                    { label: "Spotify", url: "https://open.spotify.com/search/running%20playlist" },
-                    { label: "YouTube Music", url: "https://music.youtube.com/search?q=running+playlist" },
-                    { label: "Deezer", url: "https://www.deezer.com/search/running%20playlist" },
-                  ].map((item) => (
-                    <button
-                      key={item.label}
-                      onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
-                      className="bg-card border border-border flex items-center justify-between rounded-2xl px-4 py-4 text-left text-sm font-black"
-                    >
-                      {item.label}
-                      <ExternalLink size={16} className="text-purple-500" />
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          </>
+          <MusicSheet onClose={() => setIsMusicOpen(false)} />
         )}
       </AnimatePresence>
     </div>
