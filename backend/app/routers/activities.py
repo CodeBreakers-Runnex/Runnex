@@ -76,7 +76,8 @@ def save_activity(
         # atividade (activities.user_id e foreign key de users.uid) —
         # necessario porque login com Google nunca chama createUserProfile,
         # só o cadastro por email/senha chama.
-        get_or_create_user(db, payload.user_id, payload.user_name, payload.user_avatar)
+        profile = get_or_create_user(db, payload.user_id, payload.user_name, payload.user_avatar)
+        author_name, author_avatar = _run_author(profile, payload.user_name, payload.user_avatar)
         db.commit()
     except Exception:
         db.rollback()
@@ -92,8 +93,8 @@ def save_activity(
     activity = Activity(
         user_id=payload.user_id,
         shoe_id=payload.shoe_id,
-        user_name=payload.user_name,
-        user_avatar=payload.user_avatar,
+        user_name=author_name,
+        user_avatar=author_avatar,
         distance=payload.distance,
         time=payload.time,
         duration_seconds=payload.duration_seconds,
@@ -151,6 +152,27 @@ def save_activity(
         db.rollback()
 
     return SaveActivityResult(id=activity.id, xp_update_failed=xp_update_failed)
+
+
+# Nome padrao dado por pet, tenis, treinador e agenda quando o perfil nasce
+# antes de a pessoa salvar o nome (services/activity_effects.get_or_create_user).
+PLACEHOLDER_NAME = "Corredor"
+
+
+def _run_author(profile: User, sent_name: str, sent_avatar: str | None) -> tuple[str, str | None]:
+    """Nome e foto gravados na corrida e exibidos no feed.
+
+    Vem do perfil, nao do pedido: antes um POST feito a mao publicava uma
+    corrida com o nome e a foto de outra pessoa. Excecoes, para nao piorar o
+    que as pessoas veem hoje:
+    - perfil ainda com o nome padrao: vale o nome da conta enviado pelo app;
+    - foto do perfil em base64 (escolhida no app, ate 300 kB) ou ausente:
+      vale a foto enviada, como antes, para nao copiar a imagem em cada
+      corrida e pesar o feed."""
+    name = profile.display_name if profile.display_name and profile.display_name != PLACEHOLDER_NAME else sent_name
+    photo = profile.photo_url
+    avatar = photo if photo and photo.startswith(("https://", "http://")) else sent_avatar
+    return name, avatar
 
 
 # Uma corrida da fila offline pode subir dias depois; mais que isso, ou uma
