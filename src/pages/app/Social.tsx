@@ -230,6 +230,10 @@ export default function Social() {
       setJoinedGroups(joined);
       setGroups(groupList);
       setSelectedGroupId((current) => current || joined[0] || groupList[0]?.id || null);
+    } catch (error) {
+      // Antes a falha virava a lista de grupos de demonstração, sem aviso.
+      console.error("Erro ao carregar grupos:", error);
+      toast.error("Não foi possível carregar os grupos. Tente de novo.");
     } finally {
       setGroupsLoading(false);
     }

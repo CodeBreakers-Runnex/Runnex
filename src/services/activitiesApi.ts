@@ -63,7 +63,9 @@ export const deleteUserActivity = async (activityId: string, userId: string) => 
 // exigir mudanças nos componentes que já consomem isso.
 export const subscribeToFeed = (
   callback: (activities: FeedActivity[]) => void,
-  limitCount = 10
+  limitCount = 10,
+  // Falha na busca: a tela troca o carregando por "tentar de novo".
+  onError?: (error: unknown) => void,
 ) => {
   let cancelled = false;
 
@@ -73,6 +75,7 @@ export const subscribeToFeed = (
       if (!cancelled) callback(activities);
     } catch (error) {
       console.error("Erro ao buscar feed:", error);
+      if (!cancelled) onError?.(error);
     }
   };
 
@@ -86,17 +89,13 @@ export const subscribeToFeed = (
 };
 
 // Buscar atividades mais antigas (paginação cursor-based pelo id numérico)
-export const loadMoreActivities = async (
+// Lança em caso de erro: antes devolvia lista vazia e a tela concluía que o
+// feed tinha acabado ("você chegou ao início do feed").
+export const loadMoreActivities = (
   lastId: FeedActivity["id"],
   limitCount = 10
-): Promise<FeedActivity[]> => {
-  try {
-    return await api.get<FeedActivity[]>(`/activities/feed?limit=${limitCount}&before_id=${lastId}`);
-  } catch (error) {
-    console.error("Erro ao carregar mais atividades:", error);
-    return [];
-  }
-};
+): Promise<FeedActivity[]> =>
+  api.get<FeedActivity[]>(`/activities/feed?limit=${limitCount}&before_id=${lastId}`);
 
 // Curtir/Descurtir uma atividade
 export const toggleLike = async (activityId: string, userId: string, isLiked: boolean) => {

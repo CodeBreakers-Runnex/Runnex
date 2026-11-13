@@ -24,6 +24,7 @@ import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
 import ScreenTitle from "@/components/ScreenTitle";
+import LoadRetry from "@/components/LoadRetry";
 const FEED_LIMIT = 10;
 const PULL_THRESHOLD = 70;
 
@@ -37,6 +38,9 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
+  // A primeira busca falhou (antes o carregando girava até o polling acertar).
+  const [feedError, setFeedError] = useState(false);
+  const [feedAttempt, setFeedAttempt] = useState(0);
   const [stats, setStats] = useState({ totalKm: "0.0", runsCount: 0, totalTime: "0m" });
   const [query, setQuery] = useState("");
   const [lastSeenLikes, setLastSeenLikes] = useState(0);
@@ -72,10 +76,20 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
   useEffect(() => {
     const unsub = subscribeToFeed((data) => {
       setLiveActivities(data);
+      setFeedError(false);
       setLoading(false);
-    }, FEED_LIMIT);
+    }, FEED_LIMIT, () => {
+      setFeedError(true);
+      setLoading(false);
+    });
     return () => unsub();
-  }, []);
+  }, [feedAttempt]);
+
+  const retryFeed = () => {
+    setLoading(true);
+    setFeedError(false);
+    setFeedAttempt((attempt) => attempt + 1);
+  };
 
   const handleBellClick = () => {
     if (!user) return;
@@ -99,6 +113,7 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
       setMoreActivities((prev) => [...prev, ...more]);
     } catch (e) {
       console.error(e);
+      toast.error("Não foi possível carregar mais corridas. Tente de novo.");
     } finally {
       setLoadingMore(false);
     }
@@ -421,6 +436,13 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
                   <Loader2 className="animate-spin text-purple-500" size={36} />
                   <p className="text-muted-foreground font-display tracking-widest text-xs uppercase">Carregando Feed...</p>
                 </div>
+              ) : feedError && activities.length === 0 ? (
+                <LoadRetry
+                  className="py-24"
+                  message="Não foi possível carregar o feed."
+                  retryLabel="Tentar carregar o feed de novo"
+                  onRetry={retryFeed}
+                />
               ) : activities.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
