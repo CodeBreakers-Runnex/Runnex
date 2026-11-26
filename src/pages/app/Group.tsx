@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getGroupById, getUserProfile, joinGroup, leaveGroup } from "@/services/database";
+import { describeJoinError } from "@/lib/group-join";
 import type { RunningGroup, UserProfile } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import SafeAvatar from "@/components/SafeAvatar";
@@ -22,6 +23,7 @@ import { LoadingScreen, StateScreen } from "@/pages/app/group/GroupStateScreens"
 import GroupFeedPanel from "@/pages/app/group/GroupFeedPanel";
 import GroupChatPanel from "@/pages/app/group/GroupChatPanel";
 import GroupOptionsModal from "@/pages/app/group/GroupOptionsModal";
+import { JoinCodeModal } from "@/pages/app/group/GroupCodeModals";
 
 type GroupTab = "feed" | "chat";
 
@@ -77,16 +79,26 @@ export default function Group() {
   );
   const isDemoGroup = group?.createdBy === "system";
 
-  const handleJoin = async () => {
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+
+  const handleJoin = async (code?: string) => {
     if (!user || !groupId) return;
+    if (group?.isPrivate && !code) {
+      setCodeError(null);
+      setCodeOpen(true);
+      return;
+    }
     setJoining(true);
     try {
-      await joinGroup(groupId, user.uid);
+      await joinGroup(groupId, user.uid, code);
+      setCodeOpen(false);
       toast.success("Você entrou no grupo.");
       await loadGroup();
     } catch (error) {
       console.error("Erro ao entrar no grupo:", error);
-      toast.error("Não foi possível entrar no grupo.");
+      if (group?.isPrivate) setCodeError(describeJoinError(error));
+      else toast.error(describeJoinError(error));
     } finally {
       setJoining(false);
     }
@@ -163,13 +175,22 @@ export default function Group() {
         <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Você ainda não participa deste grupo</p>
 
         <button
-          onClick={handleJoin}
+          onClick={() => handleJoin()}
           disabled={joining}
           className="flex items-center gap-2 rounded-2xl bg-purple-600 hover:bg-purple-700 transition px-8 py-4 text-xs font-black uppercase tracking-widest text-white disabled:opacity-60"
         >
           {joining ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
           Entrar no grupo
         </button>
+
+        <JoinCodeModal
+          open={codeOpen}
+          onClose={() => setCodeOpen(false)}
+          onSubmit={(code) => handleJoin(code)}
+          submitting={joining}
+          error={codeError}
+          groupName={group.name}
+        />
       </div>
     );
   }
@@ -256,6 +277,7 @@ export default function Group() {
         group={group}
         onLeave={handleLeave}
         leaving={leaving}
+        isCreator={Boolean(user && group.createdBy === user.uid)}
       />
     </div>
   );

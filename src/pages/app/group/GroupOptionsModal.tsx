@@ -1,20 +1,53 @@
 // Opções do grupo: dados e sair (antes dentro de Group.tsx).
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, LogOut, X } from "lucide-react";
+import { KeyRound, Loader2, LogOut, X } from "lucide-react";
+import { toast } from "sonner";
 import type { RunningGroup } from "@/types";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { useBackHandler } from "@/hooks/useBackHandler";
+import { regenerateJoinCode } from "@/services/groupsApi";
+import { ShowCodeModal } from "@/pages/app/group/GroupCodeModals";
 
-export default function GroupOptionsModal({ open, onClose, group, onLeave, leaving }: {
+export default function GroupOptionsModal({ open, onClose, group, onLeave, leaving, isCreator = false }: {
   open: boolean;
   onClose: () => void;
   group: RunningGroup;
   onLeave: () => void;
   leaving: boolean;
+  isCreator?: boolean;
 }) {
   useBackHandler(open, () => { if (!leaving) onClose(); });
+  const [confirmingCode, setConfirmingCode] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [newCode, setNewCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) setConfirmingCode(false);
+  }, [open]);
+
+  // Trocar o código derruba o antigo: pede um segundo toque para confirmar.
+  const handleRegenerate = async () => {
+    if (!confirmingCode) {
+      setConfirmingCode(true);
+      return;
+    }
+    setGenerating(true);
+    try {
+      setNewCode(await regenerateJoinCode(group.id));
+      setConfirmingCode(false);
+    } catch (error) {
+      console.error("Erro ao gerar novo código:", error);
+      toast.error("Não foi possível gerar um novo código.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
+    <>
+    <ShowCodeModal open={newCode !== null} onClose={() => setNewCode(null)} code={newCode} groupName={group.name} />
     <AnimatePresence>
       {open && (
         <>
@@ -49,6 +82,17 @@ export default function GroupOptionsModal({ open, onClose, group, onLeave, leavi
                   <p className="text-sm font-bold">{group.creatorName}</p>
                 </div>
 
+                {isCreator && group.isPrivate && (
+                  <button
+                    onClick={handleRegenerate}
+                    disabled={generating}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-purple-500/30 bg-purple-500/10 py-4 text-xs font-black uppercase tracking-widest text-purple-300 disabled:opacity-60"
+                  >
+                    {generating ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}
+                    {confirmingCode ? "Confirmar: o código atual deixa de valer" : "Gerar novo código"}
+                  </button>
+                )}
+
                 <button
                   onClick={onLeave}
                   disabled={leaving}
@@ -63,5 +107,6 @@ export default function GroupOptionsModal({ open, onClose, group, onLeave, leavi
         </>
       )}
     </AnimatePresence>
+    </>
   );
 }

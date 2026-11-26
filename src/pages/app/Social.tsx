@@ -6,6 +6,7 @@ import {
   Camera,
   ChevronDown,
   Loader2,
+  Lock,
   MapPin,
   Plus,
   Rss,
@@ -28,6 +29,7 @@ import {
   updateGroupPhoto,
 } from "@/services/database";
 import { resizeImageToDataUrl } from "@/lib/image-resize";
+import { describeJoinError } from "@/lib/group-join";
 import type { FeedActivity, RunningGroup, UserProfile } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import SafeAvatar from "@/components/SafeAvatar";
@@ -37,6 +39,7 @@ import { formatCardDate } from "@/lib/feed-utils";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { useBackHandler } from "@/hooks/useBackHandler";
+import { JoinCodeModal, ShowCodeModal } from "@/pages/app/group/GroupCodeModals";
 
 import ScreenTitle from "@/components/ScreenTitle";
 type SocialTab = "feed" | "leaderboard" | "groups" | "events";
@@ -56,6 +59,7 @@ type GroupForm = {
   city: string;
   description: string;
   tag: string;
+  isPrivate: boolean;
 };
 
 const EMPTY_GROUP_FORM: GroupForm = {
@@ -63,6 +67,7 @@ const EMPTY_GROUP_FORM: GroupForm = {
   city: "",
   description: "",
   tag: "",
+  isPrivate: false,
 };
 
 function GroupCreateModal({
@@ -160,7 +165,7 @@ function GroupCreateModal({
                     <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">{field.label} *</span>
                     <input
                       required
-                      value={form[field.key as keyof GroupForm]}
+                      value={form[field.key as "name" | "city" | "tag"]}
                       onChange={(event) => setForm((prev) => ({ ...prev, [field.key]: event.target.value }))}
                       placeholder={field.placeholder}
                       className="w-full bg-secondary border border-input rounded-xl px-4 py-4 text-sm outline-none focus:border-purple-500 transition"
@@ -178,6 +183,23 @@ function GroupCreateModal({
                     rows={3}
                     className="w-full resize-none bg-secondary border border-input rounded-xl px-4 py-4 text-sm outline-none focus:border-purple-500 transition"
                   />
+                </label>
+
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-input bg-secondary/60 p-4">
+                  <input
+                    type="checkbox"
+                    checked={form.isPrivate}
+                    onChange={(event) => setForm((prev) => ({ ...prev, isPrivate: event.target.checked }))}
+                    className="mt-1 h-4 w-4 accent-purple-600"
+                  />
+                  <span>
+                    <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.14em]">
+                      <Lock size={12} className="text-purple-500" /> Grupo privado
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      Só entra quem tiver o código. Você recebe o código ao criar.
+                    </span>
+                  </span>
                 </label>
               </div>
 
@@ -298,17 +320,29 @@ export default function Social() {
 
   const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null);
 
-  const handleJoinGroup = async (group: RunningGroup) => {
+  const [codeGroup, setCodeGroup] = useState<RunningGroup | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [createdCode, setCreatedCode] = useState<{ code: string; groupName: string } | null>(null);
+
+  // Grupo privado: o botão abre o pedido de código; o código vai junto no join.
+  const handleJoinGroup = async (group: RunningGroup, code?: string) => {
     if (!user) return;
+    if (group.isPrivate && !code) {
+      setCodeError(null);
+      setCodeGroup(group);
+      return;
+    }
     setJoiningGroupId(group.id);
     try {
-      await joinGroup(group.id, user.uid);
+      await joinGroup(group.id, user.uid, code);
+      setCodeGroup(null);
       setJoinedGroups((prev) => [...prev, group.id]);
       toast.success("Voce entrou no grupo.");
       navigate(`/grupo/${group.id}`);
     } catch (error) {
       console.error("Erro ao entrar no grupo:", error);
-      toast.error("Nao foi possivel entrar no grupo.");
+      if (group.isPrivate) setCodeError(describeJoinError(error));
+      else toast.error(describeJoinError(error));
     } finally {
       setJoiningGroupId(null);
     }
@@ -354,11 +388,12 @@ export default function Social() {
 
     setCreatingGroup(true);
     try {
-      const groupId = await createGroup({
+      const { id: groupId, joinCode } = await createGroup({
         name,
         city,
         description,
         tag,
+        isPrivate: form.isPrivate,
         userId: user.uid,
         userName: displayName,
       });
@@ -374,6 +409,7 @@ export default function Social() {
       }
 
       setCreateOpen(false);
+      if (joinCode) setCreatedCode({ code: joinCode, groupName: name });
       setSelectedGroupId(groupId);
       toast.success("Comunidade criada.");
       await loadGroups();
@@ -499,7 +535,10 @@ export default function Social() {
                           selectedGroupId === group.id ? "border border-purple-500/50 bg-purple-500/15" : "bg-card border border-border"
                         }`}
                       >
-                        <p className="truncate font-display text-lg font-black">{group.name}</p>
+                        <p className="flex items-center gap-1.5 truncate font-display text-lg font-black">
+                          {group.isPrivate && <Lock size={13} className="shrink-0 text-purple-400" aria-label="Grupo privado" />}
+                          <span className="truncate">{group.name}</span>
+                        </p>
                         <p className="mt-1 flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.14em] text-muted-foreground">
                           <MapPin size={10} className="text-purple-500" />
                           {group.city}
@@ -613,6 +652,20 @@ export default function Social() {
         </motion.main>
       </AnimatePresence>
 
+      <JoinCodeModal
+        open={codeGroup !== null}
+        onClose={() => setCodeGroup(null)}
+        onSubmit={(code) => codeGroup && handleJoinGroup(codeGroup, code)}
+        submitting={joiningGroupId !== null}
+        error={codeError}
+        groupName={codeGroup?.name ?? ""}
+      />
+      <ShowCodeModal
+        open={createdCode !== null}
+        onClose={() => setCreatedCode(null)}
+        code={createdCode?.code ?? null}
+        groupName={createdCode?.groupName ?? ""}
+      />
       <GroupCreateModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={handleCreateGroup} creating={creatingGroup} />
     </div>
   );

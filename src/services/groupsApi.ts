@@ -57,34 +57,52 @@ export const getGroups = async (): Promise<RunningGroup[]> => {
 // Criar grupo: userId/userName não são mais enviados — o backend usa o
 // usuário autenticado (token) como criador e busca o nome no perfil já
 // migrado, evitando que o client possa se declarar como outra pessoa.
+// Em grupo privado a resposta traz joinCode, o código de entrada, que o
+// servidor só mostra nesta resposta (e ao gerar um novo): depois disso só o
+// hash existe lá.
 export const createGroup = async ({
   name,
   city,
   description,
   tag,
+  isPrivate = false,
 }: {
   name: string;
   city: string;
   description: string;
   tag: string;
+  isPrivate?: boolean;
   userId: string;
   userName: string;
-}) => {
-  const group = await api.post<RunningGroup>("/groups", { name, city, description, tag });
-  return group.id;
+}): Promise<{ id: string; joinCode: string | null }> => {
+  const group = await api.post<RunningGroup & { joinCode?: string | null }>("/groups", {
+    name,
+    city,
+    description,
+    tag,
+    private: isPrivate,
+  });
+  return { id: group.id, joinCode: group.joinCode ?? null };
+};
+
+// Novo código do grupo privado; o anterior deixa de valer. Só o criador.
+export const regenerateJoinCode = async (groupId: string): Promise<string> => {
+  const group = await api.post<{ joinCode?: string | null }>(`/groups/${groupId}/join-code`);
+  if (!group.joinCode) throw new Error("O servidor não devolveu o código.");
+  return group.joinCode;
 };
 
 // joinGroup/leaveGroup: grupos de demonstração continuam gravando
 // joinedGroupIds no Firestore (não têm linha real no Postgres); grupos
 // reais vão direto para /groups/{id}/join|leave, que já cuida de
 // membro+contador numa única transação no backend.
-export const joinGroup = async (groupId: string, userId: string) => {
+export const joinGroup = async (groupId: string, userId: string, code?: string) => {
   if (FALLBACK_GROUPS.some((group) => group.id === groupId)) {
     await setDoc(doc(db, "users", userId), { joinedGroupIds: arrayUnion(groupId) }, { merge: true });
     return true;
   }
 
-  await api.post(`/groups/${groupId}/join`);
+  await api.post(`/groups/${groupId}/join`, code ? { code } : undefined);
   return true;
 };
 

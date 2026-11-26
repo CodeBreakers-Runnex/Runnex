@@ -74,7 +74,7 @@ describe("tela do grupo", () => {
     renderGroup();
     expect(await screen.findByText("Você ainda não participa deste grupo")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Entrar no grupo/ }));
-    await waitFor(() => expect(mocks.joinGroup).toHaveBeenCalledWith("7", "ana"));
+    await waitFor(() => expect(mocks.joinGroup).toHaveBeenCalledWith("7", "ana", undefined));
   });
 
   it("membro vê publicações e mensagens do chat", async () => {
