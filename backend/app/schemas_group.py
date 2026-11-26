@@ -10,6 +10,11 @@ class GroupCreate(BaseModel):
     city: str = Field(default="Brasil", max_length=80)
     description: str = Field(default="", max_length=500)
     tag: str = Field(default="Run", max_length=40)
+    private: bool = False
+
+
+class JoinGroupIn(BaseModel):
+    code: str | None = Field(default=None, max_length=64)
 
 
 class GroupOut(BaseModel):
@@ -19,6 +24,7 @@ class GroupOut(BaseModel):
     description: str
     tag: str
     photo_url: str | None = Field(serialization_alias="photoURL")
+    is_private: bool = Field(default=False, serialization_alias="isPrivate")
     created_by: str = Field(serialization_alias="createdBy")
     creator_name: str = Field(serialization_alias="creatorName")
     member_ids: list[str] = Field(serialization_alias="memberIds")
@@ -32,6 +38,12 @@ class GroupOut(BaseModel):
     @classmethod
     def _stringify_id(cls, value: object) -> str:
         return str(value)
+
+
+class GroupCreatedOut(GroupOut):
+    """Resposta de criar/regenerar: unico momento em que o codigo aparece."""
+
+    join_code: str | None = Field(default=None, serialization_alias="joinCode")
 
 
 class UpdateGroupPhotoIn(BaseModel):
