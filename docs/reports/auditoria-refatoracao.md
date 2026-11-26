@@ -299,10 +299,10 @@ Tudo abaixo está na branch `beta-2.3` (PR #31), que reúne os PRs temáticos. N
 | R1 | Cronômetro contava tiques com a tela bloqueada | Corrigido (relógio); **medir em aparelho** | #24 |
 | R2, R3 | Estado/frequência de snapshot da corrida | **Não feito** (depende de roteiro em aparelho) | — |
 | F-A, F1–F9 | Firestore e telas que mostravam zero/spinner com o servidor fora | Telas corrigidas; escrita morta removida; **Firestore inteiro depende de decidir sobre os dados de demonstração** | #17, #20, #23, #28 |
-| S1–S12 | Segurança: token na URL do WS, autor da corrida, limites de entrada, JWKS, `/docs`, python-jose, rate limits | Corrigidos, exceto S5 (memberIds) | #18, #19, #21, #22, #29 |
+| S1–S12 | Segurança: token na URL do WS, autor da corrida, limites de entrada, JWKS, `/docs`, python-jose, rate limits | Corrigidos, exceto S5 (memberIds) | #18, #21, #22, #29 |
 | P1 | Fotos em base64 | **Não feito** (pergunta 5) | — |
 | P2–P9 | Consultas pesadas (recordes, resumo, eventos, grupos) | Corrigidos, exceto P7 (índices) | #30 |
-| E1–E7 | Erros e timeouts do cliente | Corrigidos | #20, #23 |
+| E1–E7 | Erros e timeouts do cliente | Corrigidos | #23 |
 | G1–G3 | Divisão de telas gigantes (Profile, Group, RunTracking) | Feito, verificado por comparação de linhas | #25, #26, #27 |
 | M1–M12 | Código morto, imports, `noUnusedLocals` | Feito. M4 estava errado na auditoria (FirebaseError é alcançável); corrigido na descrição do PR #19 | #19 |
 | T1–T3 | Lacunas de teste | Testes de caracterização escritos antes de cada refatoração | todos |
