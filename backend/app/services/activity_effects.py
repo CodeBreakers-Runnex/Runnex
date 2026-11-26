@@ -100,9 +100,10 @@ def revert_activity_effects(db: Session, user_id: str, activities: list[Activity
     infinitas e inflava o ranking de grupos.
 
     Chamar ANTES de apagar as corridas (precisa da distancia e da data).
-    Nao ha registro de quanto cada corrida creditou, entao o valor e
-    recalculado com a mesma regra; o piso em 0 cobre moedas ja gastas na
-    loja e grupos cuja semana ja virou. Nao faz commit: fica na mesma
+    O estorno usa activity.coins_credited (o que a corrida creditou de fato;
+    0 se a pessoa ainda nao tinha pet). Corridas anteriores a essa coluna
+    (NULL) sao recalculadas pela distancia, como antes; o piso em 0 cobre
+    moedas ja gastas na loja e grupos cuja semana ja virou. Nao faz commit: fica na mesma
     transacao do delete.
 
     Corridas importadas do Health Connect nunca creditaram moedas nem km de
@@ -119,7 +120,10 @@ def revert_activity_effects(db: Session, user_id: str, activities: list[Activity
         return
 
     user = db.get(User, user_id)
-    coins = sum(calculate_run_coins(a.distance) for a in activities)
+    coins = sum(
+        a.coins_credited if a.coins_credited is not None else calculate_run_coins(a.distance)
+        for a in activities
+    )
     if user and coins > 0:
         user.pet_coins = max(0, (user.pet_coins or 0) - coins)
 

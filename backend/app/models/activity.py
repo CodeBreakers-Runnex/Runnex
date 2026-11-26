@@ -34,6 +34,9 @@ class Activity(Base):
     heart_rate_samples: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
     heart_rate_max_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_simulated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # RunCoins que esta corrida creditou de fato (0 se a pessoa nao tinha pet).
+    # NULL = corrida anterior a esta coluna: o estorno recalcula pela distancia.
+    coins_credited: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Gerado no celular; único por usuário (uq_activities_user_client_id).
     client_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
