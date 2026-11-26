@@ -64,7 +64,7 @@ Postgres (Neon) — estrutura criada pelas migrações em backend/alembic/versio
 | Quem pode postar no grupo? | `backend/app/routers/groups.py` (`_require_member`). |
 | Chat em tempo real | `backend/app/ws_manager.py` ↔ `src/services/groupSocket.ts`. |
 | Loja do pet (preço) | `backend/app/pet_catalog.py`: o preço vem do servidor, nunca do app. |
-| Compra de pacote de RunCoins | `backend/app/services/coin_purchases.py`. Hoje só existe compra **simulada**, ligada por `COIN_MOCK_PURCHASES` (`backend/app/config.py`, nunca ligar em produção). |
+| Compra de pacote de RunCoins | `backend/app/services/coin_purchases.py`. Hoje só existe compra **simulada**, ligada por `COIN_MOCK_PURCHASES` (`backend/app/config.py`, nunca ligar em produção); sem a flag a loja nem aparece no app. Ver `docs/MONETIZACAO.md`. |
 | LGPD: baixar e excluir meus dados | Exportação: `backend/app/data_export.py` + `src/services/dataExport.ts`. Exclusão: `backend/app/services/account_deletion.py` + `src/services/auth.ts` (`deleteCurrentAccount`). Página pública exigida pelo Google Play: `public/excluir-conta/index.html`. |
 | Termos e privacidade | Texto: `src/content/legalContent.ts`. Pedido de aceite: `src/components/TermsGate.tsx`. |
 | Treinador virtual | Lógica: `backend/app/chatbot_logic.py`. Rota: `routers/chatbot.py`. Tela: `src/pages/app/Coach.tsx`. |
