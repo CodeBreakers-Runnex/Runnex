@@ -11,19 +11,22 @@ from app.auth import FirebaseUser, decode_firebase_token, get_current_user, requ
 from app.database import SessionLocal, get_db
 from app.listing import page_size
 from app.models import Group, GroupMember, GroupMessage, GroupPost, GroupPostComment, User
-from app.rate_limit import rate_limit
+from app.rate_limit import is_blocked, rate_limit, record_failure
 from app.schemas_group import (
     GroupCommentCreate,
     GroupCommentOut,
     GroupCreate,
+    GroupCreatedOut,
     GroupMessageCreate,
     GroupMessageOut,
     GroupOut,
     GroupPostCreate,
     GroupPostOut,
+    JoinGroupIn,
     ToggleLikeIn,
     UpdateGroupPhotoIn,
 )
+from app.services.group_codes import generate_code, hash_code, verify_code
 from app.ws_manager import manager
 
 router = APIRouter(prefix="/groups", tags=["groups"])
@@ -55,9 +58,12 @@ def _author_display(user: User | None) -> tuple[str, str | None]:
     return user.display_name, user.photo_url
 
 
-def _serialize_group(group: Group, users: UserCache) -> GroupOut:
+def _serialize_group(group: Group, users: UserCache, viewer_uid: str) -> GroupOut:
     member_ids = [m.user_id for m in group.members]
     creator = users.get(group.created_by)
+    # Grupo privado nao entrega a lista de membros a quem esta de fora; a
+    # contagem continua visivel.
+    visible_ids = member_ids if (not group.is_private or viewer_uid in member_ids) else []
     return GroupOut(
         id=group.id,
         name=group.name,
@@ -65,9 +71,10 @@ def _serialize_group(group: Group, users: UserCache) -> GroupOut:
         description=group.description,
         tag=group.tag,
         photo_url=group.photo_url,
+        is_private=group.is_private,
         created_by=group.created_by,
         creator_name=creator.display_name if creator else "Runnex",
-        member_ids=member_ids,
+        member_ids=visible_ids,
         members_count=len(member_ids),
         weekly_km=group.weekly_km,
         weekly_km_week=group.weekly_km_week,
@@ -84,11 +91,11 @@ def _get_group_or_404(db: Session, group_id: int) -> Group:
     return group
 
 
-def _group_out(db: Session, group_id: int) -> GroupOut:
+def _group_out(db: Session, group_id: int, viewer_uid: str) -> GroupOut:
     """Grupo atualizado (membros inclusos) pronto para a resposta. Repetido
     antes em cada rota que devolve o grupo."""
     group = _get_group_or_404(db, group_id)
-    return _serialize_group(group, _load_users(db, [group.created_by]))
+    return _serialize_group(group, _load_users(db, [group.created_by]), viewer_uid)
 
 
 def _is_group_member(db: Session, group_id: int, user_id: str) -> bool:
@@ -110,13 +117,13 @@ def _require_member(db: Session, group_id: int, user_id: str) -> None:
 
 
 @router.get("", response_model=list[GroupOut])
-def list_groups(db: Session = Depends(get_db), _: FirebaseUser = Depends(get_current_user)):
+def list_groups(db: Session = Depends(get_db), current_user: FirebaseUser = Depends(get_current_user)):
     groups = db.query(Group).options(selectinload(Group.members)).order_by(desc(Group.created_at)).limit(50).all()
     users = _load_users(db, [g.created_by for g in groups])
-    return [_serialize_group(g, users) for g in groups]
+    return [_serialize_group(g, users, current_user.uid) for g in groups]
 
 
-@router.post("", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:create", 5, 3600))])
+@router.post("", response_model=GroupCreatedOut, dependencies=[Depends(rate_limit("groups:create", 5, 3600))])
 def create_group(
     payload: GroupCreate,
     db: Session = Depends(get_db),
@@ -128,14 +135,17 @@ def create_group(
         description=payload.description.strip(),
         tag=payload.tag.strip() or "Run",
         created_by=current_user.uid,
+        is_private=payload.private,
     )
+    code = generate_code() if payload.private else None
+    group.join_code_hash = hash_code(code) if code else None
     db.add(group)
     db.flush()
 
     db.add(GroupMember(group_id=group.id, user_id=current_user.uid))
     db.commit()
 
-    return _group_out(db, group.id)
+    return GroupCreatedOut(**_group_out(db, group.id, current_user.uid).model_dump(), join_code=code)
 
 
 def _check_membership(group_id: int, uid: str) -> bool:
@@ -223,8 +233,8 @@ async def group_websocket(group_id: int, websocket: WebSocket, token: str = ""):
 
 
 @router.get("/{group_id}", response_model=GroupOut)
-def get_group(group_id: int, db: Session = Depends(get_db), _: FirebaseUser = Depends(get_current_user)):
-    return _group_out(db, group_id)
+def get_group(group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(get_current_user)):
+    return _group_out(db, group_id, current_user.uid)
 
 
 @router.put("/{group_id}/photo", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:photo", 10, 600))])
@@ -242,14 +252,35 @@ def update_group_photo(
     group.updated_at = datetime.now(timezone.utc)
     db.commit()
 
-    return _group_out(db, group_id)
+    return _group_out(db, group_id, current_user.uid)
+
+
+JOIN_CODE_MAX_FAILURES = 10
+JOIN_CODE_WINDOW_SECONDS = 600
+
+
+def _check_join_code(group: Group, group_id: int, uid: str, code: str | None) -> None:
+    """Codigo errado conta no limite por (usuario, grupo); passado o limite,
+    nem o codigo certo entra ate a janela acabar, senao o limite nao
+    impediria tentativa e erro."""
+    bucket = f"groups:join-code-fail:{group_id}"
+    if is_blocked(bucket, uid, JOIN_CODE_MAX_FAILURES, JOIN_CODE_WINDOW_SECONDS):
+        raise HTTPException(status_code=429, detail="Muitas tentativas com codigo errado. Tente de novo em alguns minutos.")
+    if not code or not verify_code(code, group.join_code_hash):
+        record_failure(bucket, uid)
+        raise HTTPException(status_code=403, detail="Codigo do grupo invalido.")
 
 
 @router.post("/{group_id}/join", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:membership", 20, 60))])
 def join_group(
-    group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(require_verified_email)
+    group_id: int,
+    payload: JoinGroupIn | None = None,
+    db: Session = Depends(get_db),
+    current_user: FirebaseUser = Depends(require_verified_email),
 ):
     group = _get_group_or_404(db, group_id)
+    if group.is_private and current_user.uid not in [m.user_id for m in group.members]:
+        _check_join_code(group, group_id, current_user.uid, payload.code if payload else None)
     # ON CONFLICT em vez de "ja e membro?" + INSERT: com dois toques rapidos,
     # as duas requisicoes passavam pela checagem e a segunda dava 500 na
     # constraint unica.
@@ -262,7 +293,7 @@ def join_group(
         group.updated_at = datetime.now(timezone.utc)
     db.commit()
 
-    return _group_out(db, group_id)
+    return _group_out(db, group_id, current_user.uid)
 
 
 @router.post("/{group_id}/leave", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:membership", 20, 60))])
@@ -276,7 +307,28 @@ def leave_group(
     group.updated_at = datetime.now(timezone.utc)
     db.commit()
 
-    return _group_out(db, group_id)
+    return _group_out(db, group_id, current_user.uid)
+
+
+@router.post(
+    "/{group_id}/join-code",
+    response_model=GroupCreatedOut,
+    dependencies=[Depends(rate_limit("groups:join-code", 5, 600))],
+)
+def regenerate_join_code(
+    group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(require_verified_email)
+):
+    """Gera outro codigo e invalida o anterior. So o criador, so em grupo privado."""
+    group = _get_group_or_404(db, group_id)
+    if group.created_by != current_user.uid:
+        raise HTTPException(status_code=403, detail="So quem criou o grupo pode gerar um novo codigo.")
+    if not group.is_private:
+        raise HTTPException(status_code=400, detail="Este grupo nao e privado.")
+    code = generate_code()
+    group.join_code_hash = hash_code(code)
+    group.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    return GroupCreatedOut(**_group_out(db, group_id, current_user.uid).model_dump(), join_code=code)
 
 
 # ─── Posts ──────────────────────────────────────────────────────────────────

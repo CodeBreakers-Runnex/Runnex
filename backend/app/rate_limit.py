@@ -37,3 +37,19 @@ def rate_limit(bucket: str, max_calls: int, window_seconds: int):
             hits.append(now)
 
     return dependency
+
+
+def is_blocked(bucket: str, uid: str, max_failures: int, window_seconds: int) -> bool:
+    """So conta falhas (ex.: codigo de grupo errado). Consultar antes de
+    verificar, para que quem esta bloqueado nao consiga nem acertar."""
+    now = time.monotonic()
+    with _lock:
+        hits = _hits[(bucket, uid)]
+        while hits and now - hits[0] >= window_seconds:
+            hits.popleft()
+        return len(hits) >= max_failures
+
+
+def record_failure(bucket: str, uid: str) -> None:
+    with _lock:
+        _hits[(bucket, uid)].append(time.monotonic())
