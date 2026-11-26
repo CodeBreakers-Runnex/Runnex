@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 
 import ScreenTitle from "@/components/ScreenTitle";
 import CoinShopSheet from "@/components/CoinShopSheet";
+import { getCoinPacks } from "@/services/coinsApi";
 // Animacao de "vivo" do pet, uma por humor: feliz pula mais e mais rapido,
 // cansado balanca devagar, triste quase nao se mexe (cabisbaixo).
 const PET_IDLE_ANIMATION: Record<PetMood, { y: number[]; rotate: number[]; duration: number }> = {
@@ -155,6 +156,16 @@ export default function Pet() {
   const [adopting, setAdopting] = useState(false);
   const [tab, setTab] = useState<PetTab>("acessorios");
   const [coinShopOpen, setCoinShopOpen] = useState(false);
+  // Compra de RunCoins só existe quando o servidor a habilita (hoje só em
+  // ambiente de teste). Desligada, a loja não aparece: antes mostrava pacotes
+  // com preço, todos desabilitados. Sem resposta do servidor, vale desligada.
+  const [purchasesEnabled, setPurchasesEnabled] = useState(false);
+
+  useEffect(() => {
+    getCoinPacks()
+      .then((info) => setPurchasesEnabled(info.mockPurchases))
+      .catch(() => setPurchasesEnabled(false));
+  }, []);
   const [storeSlot, setStoreSlot] = useState<PetAccessorySlot | "todos">("todos");
   const [busyAccessoryId, setBusyAccessoryId] = useState<string | null>(null);
 
@@ -239,9 +250,12 @@ export default function Pet() {
   const handleBuy = async (accessory: (typeof PET_ACCESSORIES)[number]) => {
     if (!user || !accessory.price) return;
     if ((profile?.petCoins || 0) < accessory.price) {
-      toast.error("RunCoins insuficientes.", {
-        action: { label: "Comprar", onClick: () => setCoinShopOpen(true) },
-      });
+      toast.error(
+        "RunCoins insuficientes.",
+        purchasesEnabled
+          ? { action: { label: "Comprar", onClick: () => setCoinShopOpen(true) } }
+          : { description: "Corra para ganhar mais: 1 km = 1 RunCoin." },
+      );
       return;
     }
     setBusyAccessoryId(accessory.id);
@@ -325,14 +339,23 @@ export default function Pet() {
             <ArrowLeft size={18} />
           </button>
           <ScreenTitle title={profile.petName || "Pet"} className="flex-1" />
-          <button
-            onClick={() => setCoinShopOpen(true)}
-            className="flex items-center gap-1.5 rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-2 text-xs font-black text-purple-300 active:scale-95 transition"
-            aria-label="Comprar RunCoins"
-          >
-            🪙 {(profile.petCoins || 0).toLocaleString("pt-BR")}
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[11px] leading-none text-white">+</span>
-          </button>
+          {purchasesEnabled ? (
+            <button
+              onClick={() => setCoinShopOpen(true)}
+              className="flex items-center gap-1.5 rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-2 text-xs font-black text-purple-300 active:scale-95 transition"
+              aria-label="Comprar RunCoins"
+            >
+              🪙 {(profile.petCoins || 0).toLocaleString("pt-BR")}
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[11px] leading-none text-white">+</span>
+            </button>
+          ) : (
+            <div
+              className="flex items-center gap-1.5 rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-2 text-xs font-black text-purple-300"
+              aria-label="Saldo de RunCoins"
+            >
+              🪙 {(profile.petCoins || 0).toLocaleString("pt-BR")}
+            </div>
+          )}
         </div>
       </header>
 
@@ -519,7 +542,7 @@ export default function Pet() {
         )}
       </AnimatePresence>
 
-      {user && (
+      {user && purchasesEnabled && (
         <CoinShopSheet
           open={coinShopOpen}
           userId={user.uid}
