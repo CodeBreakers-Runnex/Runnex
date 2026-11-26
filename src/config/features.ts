@@ -8,6 +8,6 @@ export const features = {
   healthConnectRuns: false,
   // Sensor cardíaco Bluetooth na corrida e zonas cardíacas nas estatísticas.
   heartRateSensor: false,
-  // Atalhos para Spotify, YouTube Music e Deezer na tela de corrida.
+  // Atalhos para YouTube Music e Deezer na tela de corrida.
   music: false,
 } as const;
