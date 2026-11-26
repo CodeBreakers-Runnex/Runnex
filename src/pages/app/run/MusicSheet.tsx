@@ -40,7 +40,6 @@ export default function MusicSheet({ onClose }: { onClose: () => void }) {
           </p>
           <div className="grid gap-3">
             {[
-              { label: "Spotify", url: "https://open.spotify.com/search/running%20playlist" },
               { label: "YouTube Music", url: "https://music.youtube.com/search?q=running+playlist" },
               { label: "Deezer", url: "https://www.deezer.com/search/running%20playlist" },
             ].map((item) => (

@@ -75,11 +75,13 @@ function GroupCreateModal({
   onClose,
   onCreate,
   creating,
+  canCreatePrivate,
 }: {
   open: boolean;
   onClose: () => void;
   onCreate: (form: GroupForm, avatarFile: File | null) => void;
   creating: boolean;
+  canCreatePrivate: boolean;
 }) {
   const [form, setForm] = useState<GroupForm>(EMPTY_GROUP_FORM);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -185,10 +187,11 @@ function GroupCreateModal({
                   />
                 </label>
 
-                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-input bg-secondary/60 p-4">
+                <label className={cn("flex items-start gap-3 rounded-xl border border-input bg-secondary/60 p-4", canCreatePrivate ? "cursor-pointer" : "opacity-60")}>
                   <input
                     type="checkbox"
-                    checked={form.isPrivate}
+                    disabled={!canCreatePrivate}
+                    checked={form.isPrivate && canCreatePrivate}
                     onChange={(event) => setForm((prev) => ({ ...prev, isPrivate: event.target.checked }))}
                     className="mt-1 h-4 w-4 accent-purple-600"
                   />
@@ -197,7 +200,9 @@ function GroupCreateModal({
                       <Lock size={12} className="text-purple-500" /> Grupo privado
                     </span>
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      Só entra quem tiver o código. Você recebe o código ao criar.
+                      {canCreatePrivate
+                        ? "Só entra quem tiver o código. Você recebe o código ao criar."
+                        : "Benefício do plano VIP. Veja o plano VIP no seu Perfil."}
                     </span>
                   </span>
                 </label>
@@ -229,6 +234,7 @@ export default function Social() {
   const [groups, setGroups] = useState<RunningGroup[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [joinedGroups, setJoinedGroups] = useState<string[]>([]);
+  const [isVip, setIsVip] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [groupFeed, setGroupFeed] = useState<FeedActivity[]>([]);
   const [groupLeaderboard, setGroupLeaderboard] = useState<UserProfile[]>([]);
@@ -251,6 +257,7 @@ export default function Social() {
       ]);
       const joined = profile?.joinedGroupIds || [];
       setJoinedGroups(joined);
+      setIsVip(Boolean(profile?.isVip));
       setGroups(groupList);
       setSelectedGroupId((current) => current || joined[0] || groupList[0]?.id || null);
     } catch (error) {
@@ -393,7 +400,7 @@ export default function Social() {
         city,
         description,
         tag,
-        isPrivate: form.isPrivate,
+        isPrivate: form.isPrivate && isVip,
         userId: user.uid,
         userName: displayName,
       });
@@ -666,7 +673,7 @@ export default function Social() {
         code={createdCode?.code ?? null}
         groupName={createdCode?.groupName ?? ""}
       />
-      <GroupCreateModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={handleCreateGroup} creating={creatingGroup} />
+      <GroupCreateModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={handleCreateGroup} creating={creatingGroup} canCreatePrivate={isVip} />
     </div>
   );
 }

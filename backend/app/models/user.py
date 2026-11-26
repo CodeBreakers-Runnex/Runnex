@@ -35,6 +35,8 @@ class User(Base):
     pet_species: Mapped[str | None] = mapped_column(String, nullable=True)
     pet_name: Mapped[str | None] = mapped_column(String, nullable=True)
     pet_coins: Mapped[int] = mapped_column(Integer, default=0)
+    # Plano VIP: sem pagamento nem validade por enquanto (ver docs/MONETIZACAO.md).
+    is_vip: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     pet_unlocked_accessory_ids: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     pet_equipped_cabeca: Mapped[str | None] = mapped_column(String, nullable=True)
     pet_equipped_pescoco: Mapped[str | None] = mapped_column(String, nullable=True)

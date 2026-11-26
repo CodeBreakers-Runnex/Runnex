@@ -4,9 +4,13 @@ import pytest
 
 
 @pytest.fixture
-def private_group(client, make_user):
-    """Ana cria um grupo privado; termina logada como Ana."""
+def private_group(client, make_user, db):
+    """Ana (VIP, que e quem pode criar grupo privado) cria um; termina logada como Ana."""
+    from app.models import User
+
     make_user("ana", "Ana")
+    db.get(User, "ana").is_vip = True
+    db.commit()
     created = client.post("/groups", json={"name": "Grupo Secreto", "city": "SP", "private": True})
     assert created.status_code == 200, created.text
     return created.json()

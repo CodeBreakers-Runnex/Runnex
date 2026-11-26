@@ -28,6 +28,7 @@ export interface UserProfile {
   petSpecies?: PetSpecies;
   petName?: string;
   petCoins?: number;
+  isVip?: boolean;
   petUnlockedAccessoryIds?: string[];
   petEquippedCabeca?: string | null;
   petEquippedPescoco?: string | null;

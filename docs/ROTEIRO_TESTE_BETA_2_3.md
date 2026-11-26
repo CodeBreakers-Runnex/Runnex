@@ -2,7 +2,7 @@
 
 Cobre tudo que mudou na `beta-2.3` (PR #31): as correções dos PRs #13 a #30 e o chatbot (#32). Este roteiro vem **junto** do `docs/TESTE_ANDROID.md`, que continua valendo para o que não mudou (login nativo, permissões de GPS, botão voltar).
 
-Marque ✅ passou · ❌ falhou · ⚠️ passou com ressalva · ⚪ não testei. Qualquer ❌ ou ⚠️ vira feedback (seção 12).
+Marque ✅ passou · ❌ falhou · ⚠️ passou com ressalva · ⚪ não testei. Qualquer ❌ ou ⚠️ vira feedback (seção 13).
 
 ---
 
@@ -181,7 +181,51 @@ Abrir cada tela uma vez e ver se algo quebrou ou mudou de lugar: Início, Social
 
 ---
 
-## 12. Como me passar o feedback
+## 12. Grupo privado, plano VIP e loja de RunCoins (branches à parte)
+
+Estas funcionalidades **não estão na `beta-2.3`**: ficam nos PRs empilhados (grupo privado backend → grupo privado app → moedas → VIP). **Só teste depois de concluir as seções 1 a 11**, e só se a decisão for mergeá-las. Para testar:
+
+- **Servidor:** rodar o backend da branch `feat/vip-simulado` (a migração `d1a3f5b7c902` roda sozinha) num ambiente de teste, **não** na produção. Para os itens 12.3 em diante, `VIP_MOCK_ACTIVATION=true` no `.env`.
+- **App:** APK gerado dessa mesma branch, apontando para esse servidor.
+- **Contas:** A (criadora) e B (outra pessoa), as duas com e-mail confirmado.
+
+**Com `VIP_MOCK_ACTIVATION` e `COIN_MOCK_PURCHASES` desligados (como em produção):**
+
+| # | Passo | Esperado | Resultado |
+|---|---|---|---|
+| 12.1 | Conta A: Perfil → cartão **Plano VIP**. | Lista dois benefícios e "Ativação disponível em breve"; **sem botão**. | |
+| 12.2 | Conta A: Social → Grupos → criar grupo. | A caixa "Grupo privado" está **desabilitada**, com "Benefício do plano VIP". | |
+| 12.3 | Conta A: Pet. | O saldo aparece **sem o botão "+"** e não abre loja. | |
+| 12.4 | Conta A com poucas RunCoins: tentar comprar um acessório da loja do pet. | Aviso "RunCoins insuficientes" com "Corra para ganhar mais: 1 km = 1 RunCoin", **sem botão Comprar**. | |
+
+**Com `VIP_MOCK_ACTIVATION=true` (e `COIN_MOCK_PURCHASES=true` só para 12.5):**
+
+| # | Passo | Esperado | Resultado |
+|---|---|---|---|
+| 12.5 | Conta A: Pet. | Aparece o "+", a loja abre e mostra "Modo de teste: nenhuma cobrança é feita". | |
+| 12.6 | Conta A: Perfil → cartão VIP → **Ativar VIP (teste)**. | Selo **VIP** ao lado do nome e etiqueta "Ativo" no cartão. | |
+| 12.7 | Conta A: criar grupo com **Grupo privado** marcado. | A caixa está habilitada. Ao criar, aparece um **código de 10 caracteres uma única vez**, com "Copiar código". **Anote o código.** | |
+| 12.8 | Conta A: lista de grupos. | O grupo aparece com **cadeado**. | |
+| 12.9 | Conta B: lista de grupos. | Vê o grupo com cadeado e a contagem de membros, mas **não a lista de quem participa**. | |
+| 12.10 | Conta B: entrar no grupo sem código (botão "Entrar"). | **Pede o código** antes de entrar. | |
+| 12.11 | Conta B: digitar um código errado. | "Código inválido…" e não entra. | |
+| 12.12 | Conta B: digitar o código certo **em minúsculas e com espaços**. | Entra no grupo e abre o chat. | |
+| 12.13 | A e B trocam mensagens no grupo privado. | Funciona como em grupo comum. | |
+| 12.14 | Conta B: sair do grupo e tentar entrar sem código. | Pede o código de novo. | |
+| 12.15 | Conta A: Opções do grupo → **Gerar novo código** (dois toques). | O primeiro toque pede confirmação; o segundo mostra o código novo. | |
+| 12.16 | Conta B: tentar entrar com o código **antigo**. | "Código inválido". Com o novo, entra. | |
+| 12.17 | Conta B: digitar **10 códigos errados seguidos** no mesmo grupo. | Depois do 10º aparece "Muitas tentativas…". **Mesmo o código certo é recusado** por cerca de 10 minutos. | |
+| 12.18 | Conta A: Perfil → **Desativar VIP**. | O selo some. O grupo privado já criado **continua existindo**. Tentar criar outro privado volta a ficar bloqueado. | |
+| 12.19 | Regressão: Conta A cria um grupo **público**, B entra sem código. | Igual à versão anterior. | |
+| 12.20 | Regressão: APK **0.2.0** (se tiver) entra em um grupo **público**. | Entra normalmente. | |
+
+**Conferências no Render antes de qualquer merge:** `VIP_MOCK_ACTIVATION` e `COIN_MOCK_PURCHASES` **não** estão `true` na produção, a menos que seja uma demonstração de propósito.
+
+**Fora destes itens (não reportar como bug):** o selo VIP só aparece no próprio perfil (não em Feed, Ranking nem chat); grupos de demonstração não podem ser privados; quem perde o código só consegue gerar outro; o limite de tentativas zera quando o servidor reinicia. Os atalhos de música seguem desligados (o Spotify foi retirado do código).
+
+---
+
+## 13. Como me passar o feedback
 
 Pode ser uma mensagem por problema, ou uma tabela como esta:
 

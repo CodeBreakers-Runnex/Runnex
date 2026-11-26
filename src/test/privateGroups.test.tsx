@@ -119,7 +119,17 @@ describe("grupo privado na aba Grupos", () => {
     expect(screen.queryByLabelText("Código do grupo")).toBeNull();
   });
 
+  it("sem VIP, a caixa de grupo privado fica desabilitada", async () => {
+    mocks.createGroup.mockResolvedValue({ id: "9", joinCode: null });
+    await renderSocialGroups();
+    fireEvent.click(screen.getByLabelText("Criar grupo"));
+    const checkbox = screen.getByRole("checkbox") as HTMLInputElement;
+    expect(checkbox.disabled).toBe(true);
+    expect(screen.getByText(/Benefício do plano VIP/)).toBeTruthy();
+  });
+
   it("criar grupo privado envia isPrivate e mostra o código uma vez", async () => {
+    mocks.getUserProfile.mockResolvedValue({ uid: "ana", joinedGroupIds: [], isVip: true });
     mocks.createGroup.mockResolvedValue({ id: "9", joinCode: "K7M2QX9TPA" });
     await renderSocialGroups();
     fireEvent.click(screen.getByLabelText("Criar grupo"));

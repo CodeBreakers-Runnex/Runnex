@@ -13,6 +13,15 @@ Decisão do grupo: **não vender RunCoins nesta versão.** O projeto deixa a bas
 | Compra **simulada** (credita sem cobrar) | `POST /users/{uid}/coins/mock-purchase` | Só funciona com `COIN_MOCK_PURCHASES=true` no servidor |
 | Tela da loja | `src/components/CoinShopSheet.tsx` | Só aparece quando o servidor habilita a compra |
 
+## Plano VIP (sem pagamento)
+
+- É uma **marca no usuário** (`users.is_vip`), sem valor, sem validade e sem renovação.
+- **Benefícios hoje:** selo "VIP" no perfil e **criar grupo privado**. Entrar em grupo privado com o código não exige VIP.
+- **Como se ativa:** só pelo modo de teste do servidor, `VIP_MOCK_ACTIVATION=true`. Com a flag desligada (padrão), **ninguém consegue virar VIP** e o cartão no Perfil mostra "Ativação disponível em breve".
+- **Desativar o VIP** não desfaz grupos privados já criados.
+- Para a banca: ligar `VIP_MOCK_ACTIVATION=true` só no ambiente de demonstração e desligar depois.
+- **Não diga** que existe assinatura ou cobrança: a marca existe, a venda não.
+
 ## O que **não** existe
 
 - **Nenhuma cobrança real.** Não há integração com gateway de pagamento nem com o Google Play.

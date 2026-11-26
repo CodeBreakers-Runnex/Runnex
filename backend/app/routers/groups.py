@@ -129,6 +129,10 @@ def create_group(
     db: Session = Depends(get_db),
     current_user: FirebaseUser = Depends(require_verified_email),
 ):
+    if payload.private:
+        creator = db.get(User, current_user.uid)
+        if not creator or not creator.is_vip:
+            raise HTTPException(status_code=403, detail="Criar grupo privado e um beneficio do plano VIP.")
     group = Group(
         name=payload.name.strip(),
         city=payload.city.strip() or "Brasil",

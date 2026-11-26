@@ -37,6 +37,7 @@ class UserProfileOut(BaseModel):
     pet_species: str | None = Field(serialization_alias="petSpecies")
     pet_name: str | None = Field(serialization_alias="petName")
     pet_coins: int = Field(serialization_alias="petCoins")
+    is_vip: bool = Field(default=False, serialization_alias="isVip")
     pet_unlocked_accessory_ids: list[str] = Field(serialization_alias="petUnlockedAccessoryIds")
     pet_equipped_cabeca: str | None = Field(serialization_alias="petEquippedCabeca")
     pet_equipped_pescoco: str | None = Field(serialization_alias="petEquippedPescoco")
