@@ -286,6 +286,32 @@ Ordem proposta. Cada PR: teste que fixa (ou que falha, no caso de bug) → mudan
 5. **Fotos (P1):** aceita reduzir o avatar para ~128 px no envio (muda levemente a nitidez na tela de perfil), ou prefere só a busca incremental do chat, sem tocar na imagem?
 6. **Prazo:** quantos dias até a banca? Define se vale passar do recorte mínimo.
 
+## Status dos achados (atualizado na beta-2.3, app 0.2.1)
+
+Tudo abaixo está na branch `beta-2.3` (PR #31), que reúne os PRs temáticos. Nada disso está em produção até o #31 ser mergeado.
+
+| Achado | O que era | Situação | PR |
+|---|---|---|---|
+| B1 | Falha no push do WebSocket devolvia 500 depois de gravar | Corrigido (reproduzido antes) | #13 |
+| B2 | Dois toques em "Entrar" no grupo/evento davam 500 | Corrigido (teste de concorrência) | #13/#15 |
+| B3 | Post de grupo só com imagem sempre falhava | Corrigido | #15 |
+| B4–B7 | Foto do Google sobrescrevendo o perfil, curtida/refresh do Feed, perfil criado com uid como nome, e-mail não confirmado entrando em grupo | Corrigidos | #14, #15, #16 |
+| R1 | Cronômetro contava tiques com a tela bloqueada | Corrigido (relógio); **medir em aparelho** | #24 |
+| R2, R3 | Estado/frequência de snapshot da corrida | **Não feito** (depende de roteiro em aparelho) | — |
+| F-A, F1–F9 | Firestore e telas que mostravam zero/spinner com o servidor fora | Telas corrigidas; escrita morta removida; **Firestore inteiro depende de decidir sobre os dados de demonstração** | #17, #20, #23, #28 |
+| S1–S12 | Segurança: token na URL do WS, autor da corrida, limites de entrada, JWKS, `/docs`, python-jose, rate limits | Corrigidos, exceto S5 (memberIds) | #18, #19, #21, #22, #29 |
+| P1 | Fotos em base64 | **Não feito** (pergunta 5) | — |
+| P2–P9 | Consultas pesadas (recordes, resumo, eventos, grupos) | Corrigidos, exceto P7 (índices) | #30 |
+| E1–E7 | Erros e timeouts do cliente | Corrigidos | #20, #23 |
+| G1–G3 | Divisão de telas gigantes (Profile, Group, RunTracking) | Feito, verificado por comparação de linhas | #25, #26, #27 |
+| M1–M12 | Código morto, imports, `noUnusedLocals` | Feito. M4 estava errado na auditoria (FirebaseError é alcançável); corrigido na descrição do PR #19 | #19 |
+| T1–T3 | Lacunas de teste | Testes de caracterização escritos antes de cada refatoração | todos |
+| L1–L8 | Itens de baixo risco | Parte feita; o restante é opcional e ficou de fora de propósito | — |
+
+**Adicionado fora da auditoria:** `kid` desconhecido no token causava 500 (agora 401) e chatbot com hidratação e alimentação (#32).
+
+**Deliberadamente não feito:** separação da lógica de GPS, S5 (memberIds), P1 (fotos base64), P7 (índices), R2/R3. Todos precisam de teste em aparelho ou de decisão sua.
+
 ## Fontes (verificação externa)
 
 - python-jose 3.4.0, notas de versão com as correções das duas CVEs: https://newreleases.io/project/pypi/python-jose/release/3.4.0
