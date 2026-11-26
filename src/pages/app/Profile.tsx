@@ -40,6 +40,7 @@ import ScreenTitle from "@/components/ScreenTitle";
 import { features } from "@/config/features";
 import SettingsModal from "@/pages/app/profile/SettingsModal";
 import EditProfileModal from "@/pages/app/profile/EditProfileModal";
+import VipCard from "@/pages/app/profile/VipCard";
 import { type Theme, applyTheme, getStoredTheme, playThemeTransition } from "@/pages/app/profile/theme";
 
 function formatRunHistoryDate(activity: FeedActivity) {
@@ -227,6 +228,9 @@ const Profile = () => {
           className="mt-8 font-display font-black text-3xl tracking-tighter uppercase"
         >
           {displayName}
+          {profile?.isVip && (
+            <span className="ml-2 align-middle rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-black tracking-widest text-black">VIP</span>
+          )}
         </motion.h2>
         <div className="mt-3 flex items-center gap-1.5 rounded-full bg-card border border-border px-3 py-1.5 text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
             <MapPin size={12} className="text-purple-500" />
@@ -236,6 +240,14 @@ const Profile = () => {
             {profile?.bio || "Apaixonado por corrida e desafios urbanos."}
         </p>
       </section>
+
+      {user && (
+        <VipCard
+          userId={user.uid}
+          isVip={Boolean(profile?.isVip)}
+          onChange={(isVip) => setProfile((prev) => (prev ? { ...prev, isVip } : prev))}
+        />
+      )}
 
       {/* Progresso: numeros principais, pet, metas e nivel agrupados sob um unico titulo */}
       <section className="px-6 mt-8 lg:px-0">

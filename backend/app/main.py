@@ -5,7 +5,7 @@ from app.routers import activities, chatbot, events, groups, pet, products, shoe
 from app.routers import recovery
 from app.routers import training
 from app.routers import health_imports
-from app.routers import coins
+from app.routers import coins, vip
 from app.config import settings
 
 app = FastAPI(
@@ -44,6 +44,7 @@ app.include_router(recovery.router)
 app.include_router(training.router)
 app.include_router(health_imports.router)
 app.include_router(coins.router)
+app.include_router(vip.router)
 
 
 @app.get("/health")

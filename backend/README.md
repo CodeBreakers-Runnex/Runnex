@@ -87,3 +87,10 @@ após reautenticar o usuário — o backend não usa Admin SDK.
 sem cobrança, só para testar a tela. **Nunca ligue em produção** (qualquer um ganharia moedas).
 Toda entrada de moedas pagas passa por `app/services/coin_purchases.py` (crédito único por
 transação e estorno); o webhook do Google Play/RevenueCat vai usar as mesmas funções.
+
+## Plano VIP (modo de teste)
+
+`VIP_MOCK_ACTIVATION=true` libera `POST /users/{uid}/vip/mock-activate` e `mock-deactivate`, que
+ligam e desligam a marca VIP da própria conta, sem cobrança. Com a flag desligada (padrão)
+ninguém vira VIP. Hoje o VIP libera criar grupo privado e mostra o selo no perfil.
+**Não ligue em produção**, a menos que seja de propósito para uma demonstração.
