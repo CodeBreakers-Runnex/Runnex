@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.validators import ImageUrl, OptionalImageUrl
 
@@ -45,8 +45,17 @@ class UpdateGroupPhotoIn(BaseModel):
 
 
 class GroupPostCreate(BaseModel):
-    text: str = Field(min_length=1, max_length=2000)
+    # Texto pode ficar vazio quando ha imagem: a tela deixa publicar so a foto.
+    text: str = Field(default="", max_length=2000)
     image_url: OptionalImageUrl = Field(default=None, validation_alias="imageURL")
+
+    @model_validator(mode="after")
+    def _text_or_image(self) -> "GroupPostCreate":
+        # strip: a rota grava o texto sem espacos, entao "   " sem imagem
+        # virava uma publicacao vazia.
+        if not self.text.strip() and not self.image_url:
+            raise ValueError("Escreva algo ou adicione uma imagem para publicar.")
+        return self
 
 
 class GroupPostOut(BaseModel):

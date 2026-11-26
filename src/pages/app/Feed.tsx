@@ -5,7 +5,7 @@ import {
   Loader2, Play, Search, X, Users,
   RotateCw, ChevronDown,
 } from "lucide-react";
-import { subscribeToFeed, toggleLike, getUserStats, loadMoreActivities } from "@/services/database";
+import { subscribeToFeed, toggleLike, getUserStats, loadMoreActivities, getFeed } from "@/services/database";
 import type { FeedActivity } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -15,15 +15,15 @@ import { ptBR } from "date-fns/locale";
 
 // Custom Hooks & Utils
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { initials, toDateSafe } from "@/lib/feed-utils";
+import { toDateSafe } from "@/lib/feed-utils";
 import ActivityCard from "@/components/ActivityCard";
 import SafeAvatar from "@/components/SafeAvatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getBestUserPhotoURL } from "@/lib/user-photo";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 
 import ScreenTitle from "@/components/ScreenTitle";
+import LoadRetry from "@/components/LoadRetry";
 const FEED_LIMIT = 10;
 const PULL_THRESHOLD = 70;
 
@@ -37,6 +37,9 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
+  // A primeira busca falhou (antes o carregando girava até o polling acertar).
+  const [feedError, setFeedError] = useState(false);
+  const [feedAttempt, setFeedAttempt] = useState(0);
   const [stats, setStats] = useState({ totalKm: "0.0", runsCount: 0, totalTime: "0m" });
   const [query, setQuery] = useState("");
   const [lastSeenLikes, setLastSeenLikes] = useState(0);
@@ -66,16 +69,26 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
     setLastSeenLikes(stored);
     getUserStats(user.uid).then((s) =>
       setStats({ totalKm: s.totalKm, runsCount: s.runsCount, totalTime: s.totalTime })
-    );
+    ).catch(() => { /* resumo do topo: sem ele, o feed continua */ });
   }, [user]);
 
   useEffect(() => {
     const unsub = subscribeToFeed((data) => {
       setLiveActivities(data);
+      setFeedError(false);
       setLoading(false);
-    }, FEED_LIMIT);
+    }, FEED_LIMIT, () => {
+      setFeedError(true);
+      setLoading(false);
+    });
     return () => unsub();
-  }, []);
+  }, [feedAttempt]);
+
+  const retryFeed = () => {
+    setLoading(true);
+    setFeedError(false);
+    setFeedAttempt((attempt) => attempt + 1);
+  };
 
   const handleBellClick = () => {
     if (!user) return;
@@ -99,18 +112,30 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
       setMoreActivities((prev) => [...prev, ...more]);
     } catch (e) {
       console.error(e);
+      toast.error("Não foi possível carregar mais corridas. Tente de novo.");
     } finally {
       setLoadingMore(false);
     }
   };
 
   const handleRefresh = useCallback(async () => {
+    // Antes só limpava a paginação e dizia "Feed atualizado!" sem buscar o
+    // feed: as corridas novas só apareciam no polling seguinte.
+    let fresh: FeedActivity[];
+    try {
+      fresh = await getFeed(FEED_LIMIT);
+    } catch (e) {
+      console.error(e);
+      toast.error("Não foi possível atualizar o feed. Tente de novo.");
+      return;
+    }
+    setLiveActivities(fresh);
     setMoreActivities([]);
     setHasMore(true);
     if (user) {
       await getUserStats(user.uid).then((s) =>
         setStats({ totalKm: s.totalKm, runsCount: s.runsCount, totalTime: s.totalTime })
-      );
+      ).catch(() => { /* resumo do topo: sem ele, o feed continua */ });
     }
     toast.success("Feed atualizado!");
   }, [user]);
@@ -120,7 +145,15 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
   const handleLike = useCallback(async (activityId: string, likes: string[] = []) => {
     if (!user) return;
     const isLiked = likes.includes(user.uid);
-    try { await toggleLike(activityId, user.uid, isLiked); }
+    try {
+      // Aplica a resposta na hora, inclusive nas corridas de "ver mais", que o
+      // polling do feed nunca atualiza.
+      const updatedLikes = await toggleLike(activityId, user.uid, isLiked);
+      const apply = (list: FeedActivity[]) =>
+        list.map((a) => (a.id === activityId ? { ...a, likes: updatedLikes } : a));
+      setLiveActivities(apply);
+      setMoreActivities(apply);
+    }
     catch (e) {
       console.error(e);
       toast.error("Não foi possível salvar a curtida. Tente de novo.");
@@ -421,6 +454,13 @@ const Feed = ({ embedded = false }: { embedded?: boolean }) => {
                   <Loader2 className="animate-spin text-purple-500" size={36} />
                   <p className="text-muted-foreground font-display tracking-widest text-xs uppercase">Carregando Feed...</p>
                 </div>
+              ) : feedError && activities.length === 0 ? (
+                <LoadRetry
+                  className="py-24"
+                  message="Não foi possível carregar o feed."
+                  retryLabel="Tentar carregar o feed de novo"
+                  onRetry={retryFeed}
+                />
               ) : activities.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}

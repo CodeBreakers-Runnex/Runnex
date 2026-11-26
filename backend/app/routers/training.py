@@ -4,10 +4,11 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import DateTime, and_, cast, func, or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 
 from app.auth import FirebaseUser, require_verified_email
 from app.database import get_db
+from app.rate_limit import rate_limit
 from app.models import Activity
 from app.models.training import PlannedWorkout
 from app.schemas_training import ActivityLinkInput, StatusInput, WorkoutInput, WorkoutOut, WorkoutPage, WorkoutUpdate, scheduled_instant, valid_zone
@@ -51,14 +52,16 @@ def summary(week: date, zone: str = "America/Sao_Paulo", db: Session = Depends(g
     completed = [w for w in eligible if w.status == "completed"]
     start_utc = datetime.combine(week, time.min, ZoneInfo(zone)).astimezone(timezone.utc)
     end_utc = datetime.combine(end, time.min, ZoneInfo(zone)).astimezone(timezone.utc)
-    runs = db.query(Activity).filter(Activity.user_id == user.uid, Activity.created_at >= start_utc, Activity.created_at < end_utc).all()
+    # So distancia e duracao entram no resumo; rota e amostras ficam no banco.
+    runs = db.query(Activity).options(load_only(Activity.id, Activity.distance, Activity.duration_seconds)).filter(Activity.user_id == user.uid, Activity.created_at >= start_utc, Activity.created_at < end_utc).all()
     closed = end <= utcnow().astimezone(ZoneInfo(zone)).date()
     return {"week": week, "end": end - timedelta(days=1), "timezone": zone, "plannedCount": len(eligible), "completedCount": len(completed), "manualCount": sum(w.completion_source == "manual" for w in completed), "skippedCount": sum(w.status == "skipped" for w in eligible), "restCount": sum(w.category == "rest" and w.status != "cancelled" for w in rows), "targetKm": round(sum(w.target_distance_km or 0 for w in eligible), 2), "targetMinutes": sum(w.target_duration_minutes or 0 for w in eligible), "recordedKm": round(sum(a.distance for a in runs), 2), "recordedMinutes": round(sum(a.duration_seconds for a in runs) / 60, 1), "runCount": len(runs), "closed": closed, "completionRate": round(len(completed) / len(eligible) * 100, 1) if closed and eligible else None}
 
 
-@router.post("/workouts", response_model=WorkoutOut, status_code=201)
+@router.post("/workouts", response_model=WorkoutOut, status_code=201, dependencies=[Depends(rate_limit("training:create", 30, 600))])
 def create(payload: WorkoutInput, db: Session = Depends(get_db), user: FirebaseUser = Depends(require_verified_email)):
-    get_or_create_user(db, user.uid, user.uid, None)
+    # Mesmo nome padrao de pet, tenis e treinador: o uid aparecia no feed.
+    get_or_create_user(db, user.uid, "Corredor", None)
     workout = PlannedWorkout(user_id=user.uid, **payload.model_dump(), original_date=payload.planned_date, scheduled_at=scheduled_instant(payload.planned_date, payload.planned_time, payload.timezone))
     db.add(workout)
     db.commit()
@@ -71,7 +74,7 @@ def detail(workout_id: int, db: Session = Depends(get_db), user: FirebaseUser = 
     return serialize_many(db, user.uid, [owned_workout(db, user.uid, workout_id)])[0]
 
 
-@router.patch("/workouts/{workout_id}", response_model=WorkoutOut)
+@router.patch("/workouts/{workout_id}", response_model=WorkoutOut, dependencies=[Depends(rate_limit("training:write", 60, 60))])
 def update(workout_id: int, payload: WorkoutUpdate, db: Session = Depends(get_db), user: FirebaseUser = Depends(require_verified_email)):
     workout = owned_workout(db, user.uid, workout_id, lock=True)
     check_revision(workout, payload.revision)
@@ -85,7 +88,7 @@ def update(workout_id: int, payload: WorkoutUpdate, db: Session = Depends(get_db
     return serialize_workout(workout)
 
 
-@router.delete("/workouts/{workout_id}", status_code=204)
+@router.delete("/workouts/{workout_id}", status_code=204, dependencies=[Depends(rate_limit("training:write", 60, 60))])
 def delete(workout_id: int, revision: int = Query(ge=1), db: Session = Depends(get_db), user: FirebaseUser = Depends(require_verified_email)):
     workout = owned_workout(db, user.uid, workout_id, lock=True)
     check_revision(workout, revision)
@@ -93,7 +96,7 @@ def delete(workout_id: int, revision: int = Query(ge=1), db: Session = Depends(g
     db.commit()
 
 
-@router.put("/workouts/{workout_id}/status", response_model=WorkoutOut)
+@router.put("/workouts/{workout_id}/status", response_model=WorkoutOut, dependencies=[Depends(rate_limit("training:write", 60, 60))])
 def set_status(workout_id: int, payload: StatusInput, db: Session = Depends(get_db), user: FirebaseUser = Depends(require_verified_email)):
     workout = owned_workout(db, user.uid, workout_id, lock=True)
     check_revision(workout, payload.revision)
@@ -112,7 +115,7 @@ def set_status(workout_id: int, payload: StatusInput, db: Session = Depends(get_
     return serialize_workout(workout)
 
 
-@router.put("/workouts/{workout_id}/activity", response_model=WorkoutOut)
+@router.put("/workouts/{workout_id}/activity", response_model=WorkoutOut, dependencies=[Depends(rate_limit("training:write", 60, 60))])
 def link(workout_id: int, payload: ActivityLinkInput, db: Session = Depends(get_db), user: FirebaseUser = Depends(require_verified_email)):
     activity = db.query(Activity).filter(Activity.id == payload.activity_id, Activity.user_id == user.uid).with_for_update().first()
     if not activity:
@@ -139,7 +142,7 @@ def link(workout_id: int, payload: ActivityLinkInput, db: Session = Depends(get_
     return serialize_workout(workout, activity)
 
 
-@router.delete("/workouts/{workout_id}/activity", response_model=WorkoutOut)
+@router.delete("/workouts/{workout_id}/activity", response_model=WorkoutOut, dependencies=[Depends(rate_limit("training:write", 60, 60))])
 def unlink(workout_id: int, revision: int = Query(ge=1), db: Session = Depends(get_db), user: FirebaseUser = Depends(require_verified_email)):
     workout = owned_workout(db, user.uid, workout_id, lock=True)
     check_revision(workout, revision)

@@ -5,7 +5,25 @@ import type { User } from "firebase/auth";
 import { auth } from "@/config/firebase";
 import { AuthContext } from "@/hooks/auth-context";
 import { syncGoogleProfilePhoto } from "@/lib/user-photo";
+import { api, OWN_DATA_CACHE_MS } from "@/services/apiClient";
 import { createUserProfile } from "@/services/database";
+import type { UserProfile } from "@/types";
+
+// Leva a foto do Firebase Auth (em conta Google, a foto do Google) para o
+// perfil no backend, que é a foto que feed, ranking e grupos mostram. Não
+// grava quando o perfil já tem uma foto escolhida no app: ela fica só no
+// backend como base64 (o Firebase Auth não aceita data URL) e era trocada
+// pela foto do Google toda vez que o app abria. Se não der para ler o perfil
+// (ainda não existe, servidor fora), grava como antes.
+async function syncPhotoToBackend(uid: string, photoURL: string) {
+  try {
+    const profile = await api.get<UserProfile>(`/users/${uid}`, { cacheMs: OWN_DATA_CACHE_MS });
+    if (profile.photoURL === photoURL || profile.photoURL?.startsWith("data:")) return;
+  } catch {
+    // Sem perfil para comparar: segue e grava (o PUT também cria o perfil).
+  }
+  await createUserProfile(uid, { photoURL });
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(auth.currentUser);
@@ -30,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // depois nas sessoes seguintes.
             const current = auth.currentUser;
             if (current?.photoURL) {
-              return createUserProfile(current.uid, { photoURL: current.photoURL });
+              return syncPhotoToBackend(current.uid, current.photoURL);
             }
           })
           .catch((error) => {

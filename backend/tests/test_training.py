@@ -197,3 +197,12 @@ def test_next_workout_orders_different_timezones_by_actual_instant(client, make_
     expected = create(client, title="Mais próximo", plannedDate=close.date().isoformat(), plannedTime=close.strftime("%H:%M"), timezone="Pacific/Kiritimati")
     create(client, title="Mais distante", plannedDate=far.date().isoformat(), plannedTime=far.strftime("%H:%M"), timezone="America/Los_Angeles")
     assert client.get("/training/next").json()["id"] == expected["id"]
+
+
+def test_profile_created_by_calendar_uses_default_name_not_uid(client, login):
+    # Conta Google que cria um treino antes de qualquer outra coisa: o perfil
+    # nasce aqui. Antes o nome de exibicao virava o proprio uid, e ele aparecia
+    # assim no feed e no ranking.
+    login("aB3x9GoogleUid")
+    create(client)
+    assert client.get("/users/aB3x9GoogleUid").json()["displayName"] == "Corredor"

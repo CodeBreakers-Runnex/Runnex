@@ -41,9 +41,11 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 
     return profile;
   } catch (error) {
+    // 404 = ainda nao tem perfil. Qualquer outra falha (servidor fora,
+    // sessao expirada) sobe para a tela avisar, em vez de virar um perfil
+    // vazio que parece conta nova.
     if (error instanceof ApiError && error.status === 404) return null;
-    console.error("Erro ao buscar perfil:", error);
-    return null;
+    throw error;
   }
 };
 

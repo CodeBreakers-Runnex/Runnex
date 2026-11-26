@@ -44,3 +44,11 @@ def test_enrolled_events_only_for_self(client, make_user, event_id):
     make_user("bruno")
     assert client.get("/events/enrolled/ana").status_code == 403
     assert client.get("/events/enrolled/bruno").json() == []
+
+
+def test_unverified_email_cannot_join_event(client, make_user, login, event_id):
+    make_user("ana")
+    login("ana", email_verified=False)
+    assert client.post(f"/events/{event_id}/join").status_code == 403
+    login("ana")
+    assert client.get("/events").json()[0]["participantsCount"] == 0

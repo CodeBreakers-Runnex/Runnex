@@ -170,3 +170,83 @@ def test_unverified_email_cannot_write_in_groups(client, group, login):
     assert client.post(f"/groups/{group}/posts/{post_id}/comments", json={"text": "spam"}).status_code == 403
     # Leitura continua liberada
     assert client.get(f"/groups/{group}/posts").status_code == 200
+
+
+# Imagem minima valida: JPEG comeca com FF D8 FF (app/validators.py confere).
+TINY_JPEG = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ=="
+
+
+def test_post_with_only_an_image(client, group):
+    # A tela permite publicar so com foto ("Escreva algo ou adicione uma
+    # imagem"), mas o backend exigia texto: a publicacao sempre falhava.
+    response = client.post(f"/groups/{group}/posts", json={"text": "", "imageURL": TINY_JPEG})
+    assert response.status_code == 200, response.text
+    assert response.json()["text"] == "" and response.json()["imageURL"] == TINY_JPEG
+
+
+def test_post_needs_text_or_image(client, group):
+    assert client.post(f"/groups/{group}/posts", json={"text": ""}).status_code == 422
+    # So espacos virava uma publicacao vazia (o texto e gravado sem espacos).
+    assert client.post(f"/groups/{group}/posts", json={"text": "   "}).status_code == 422
+    assert client.get(f"/groups/{group}/posts").json() == []
+
+
+def test_unverified_email_cannot_join_or_leave(client, group, make_user, login):
+    make_user("carla")
+    login("carla", email_verified=False)
+    assert client.post(f"/groups/{group}/join").status_code == 403
+    login("bruno", email_verified=False)
+    assert client.post(f"/groups/{group}/leave").status_code == 403
+    login("ana")
+    assert client.get(f"/groups/{group}").json()["membersCount"] == 2
+
+
+# ─── Token fora da URL ──────────────────────────────────────────────────────
+# A URL do WebSocket (com ?token=) fica em log de acesso do Render e de
+# proxies, e o token vale 1 h. O app novo abre sem token e manda
+# {"type": "auth", "token": ...} como primeira mensagem. O ?token= continua
+# aceito para o APK 0.2.0 ja instalado (testes acima).
+
+
+def _auth_message(ws, token="x"):
+    ws.send_json({"type": "auth", "token": token})
+
+
+def test_websocket_auth_by_first_message(client, group, monkeypatch):
+    fake_token(monkeypatch, "bruno")
+    with client.websocket_connect(f"/groups/{group}/ws") as ws:
+        _auth_message(ws)
+        assert ws.receive_json() == {"type": "ready"}
+        client.post(f"/groups/{group}/messages", json={"text": "Oi"})
+        assert ws.receive_json() == {"type": "message_created"}
+
+
+@pytest.mark.parametrize("uid, code", [(None, 4401), ("intruso", 4403)])
+def test_websocket_first_message_rejects_invalid_token_and_non_members(client, group, monkeypatch, uid, code):
+    fake_token(monkeypatch, uid)
+    with pytest.raises(WebSocketDisconnect) as exc, client.websocket_connect(f"/groups/{group}/ws") as ws:
+        _auth_message(ws)
+        ws.receive_json()
+    assert exc.value.code == code
+
+
+@pytest.mark.parametrize("first", [{"type": "hello"}, {"type": "auth"}, ["auth", "x"], "nao e json"])
+def test_websocket_first_message_must_be_auth(client, group, monkeypatch, first):
+    fake_token(monkeypatch, "bruno")
+    with pytest.raises(WebSocketDisconnect) as exc, client.websocket_connect(f"/groups/{group}/ws") as ws:
+        if isinstance(first, str):
+            ws.send_text(first)
+        else:
+            ws.send_json(first)
+        ws.receive_json()
+    assert exc.value.code == 4401
+
+
+def test_websocket_without_auth_message_is_closed(client, group, monkeypatch):
+    from app.routers import groups as groups_router
+
+    fake_token(monkeypatch, "bruno")
+    monkeypatch.setattr(groups_router, "WS_AUTH_TIMEOUT_SECONDS", 0.2)
+    with pytest.raises(WebSocketDisconnect) as exc, client.websocket_connect(f"/groups/{group}/ws") as ws:
+        ws.receive_json()
+    assert exc.value.code == 4401

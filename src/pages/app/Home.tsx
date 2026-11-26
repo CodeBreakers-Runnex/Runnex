@@ -92,6 +92,9 @@ export default function Home() {
       setStats(statsData);
       setActivities(runs);
       setProfile(userProfile);
+    } catch (error) {
+      console.error("Erro ao carregar a tela inicial:", error);
+      toast.error("Não foi possível carregar seus dados. Confira sua conexão e tente de novo.");
     } finally {
       setLoading(false);
     }
@@ -126,7 +129,6 @@ export default function Home() {
   };
 
   const maxKm = Math.max(...stats.weeklyData.map((day) => day.km), 1);
-  const lastRun = stats.lastActivity;
 
   const summaryCards = useMemo(() => [
     { label: "Semana", value: formatDistance(stats.weeklyTotalKm, unit), unit, icon: TrendingIcon },

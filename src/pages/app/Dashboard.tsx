@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserStats, ActivityData, getUserProfile, UserProfile } from "@/services/database";
+import { toast } from "sonner";
 import { getLevelFromXP } from "@/lib/gamification";
 import { toDateSafe } from "@/lib/feed-utils";
 import { GLASS_CARD_CLASS } from "@/components/GlassCard";
@@ -79,6 +80,7 @@ const Dashboard = () => {
         setProfile(profileData);
       } catch (error) {
         console.error("Erro ao carregar dashboard:", error);
+        toast.error("Não foi possível carregar suas estatísticas. Confira sua conexão e tente de novo.");
       } finally {
         setLoading(false);
       }

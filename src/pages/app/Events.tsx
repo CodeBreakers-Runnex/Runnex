@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MapPin, Users, ChevronRight, Bell, Tag, Clock, Loader2, CheckCircle, ExternalLink, Navigation } from "lucide-react";
+import { motion } from "framer-motion";
+import { Calendar, MapPin, Users, ChevronRight, Tag, Clock, Loader2, CheckCircle, ExternalLink, Navigation } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -71,7 +71,8 @@ const Events = ({ embedded = false }: { embedded?: boolean }) => {
             try {
                 
                 // Pegar cidade do perfil
-                const profile = await getUserProfile(user.uid);
+                // Perfil só ordena pela cidade e marca os salvos: sem ele, a lista aparece.
+                const profile = await getUserProfile(user.uid).catch(() => null);
                 const city = profile?.location || "";
                 setUserCity(city);
                 setEnrolledIds(profile?.enrolledEvents || []);

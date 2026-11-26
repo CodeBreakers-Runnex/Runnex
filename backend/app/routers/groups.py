@@ -1,8 +1,10 @@
+import asyncio
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import desc
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth import FirebaseUser, decode_firebase_token, get_current_user, require_verified_email
@@ -75,10 +77,18 @@ def _serialize_group(group: Group, users: UserCache) -> GroupOut:
 
 
 def _get_group_or_404(db: Session, group_id: int) -> Group:
-    group = db.query(Group).options(selectinload(Group.members)).get(group_id)
+    # db.get no lugar de Query.get, API legada no SQLAlchemy 2.
+    group = db.get(Group, group_id, options=[selectinload(Group.members)])
     if not group:
         raise HTTPException(status_code=404, detail="Grupo nao encontrado.")
     return group
+
+
+def _group_out(db: Session, group_id: int) -> GroupOut:
+    """Grupo atualizado (membros inclusos) pronto para a resposta. Repetido
+    antes em cada rota que devolve o grupo."""
+    group = _get_group_or_404(db, group_id)
+    return _serialize_group(group, _load_users(db, [group.created_by]))
 
 
 def _is_group_member(db: Session, group_id: int, user_id: str) -> bool:
@@ -125,9 +135,7 @@ def create_group(
     db.add(GroupMember(group_id=group.id, user_id=current_user.uid))
     db.commit()
 
-    group = _get_group_or_404(db, group.id)
-    users = _load_users(db, [group.created_by])
-    return _serialize_group(group, users)
+    return _group_out(db, group.id)
 
 
 def _check_membership(group_id: int, uid: str) -> bool:
@@ -138,28 +146,71 @@ def _check_membership(group_id: int, uid: str) -> bool:
         db.close()
 
 
-@router.websocket("/{group_id}/ws")
-async def group_websocket(group_id: int, websocket: WebSocket, token: str = ""):
-    """Substitui o polling de 15s do chat/feed/comentarios do grupo. O
-    browser nao consegue mandar header Authorization no handshake do
-    WebSocket, entao o ID token do Firebase chega via query param
-    (?token=...) em vez do Bearer normal."""
-    # Validar o token pode buscar as chaves do Google (requests, ate 5 s) e a
-    # checagem de membro usa o banco sincrono: as duas vao para uma thread
-    # para nao travar o loop de eventos, que atende todos os usuarios.
+# Prazo para o app mandar {"type": "auth", "token": ...} depois de conectar.
+WS_AUTH_TIMEOUT_SECONDS = 5
+
+
+async def _authorize(group_id: int, token: str) -> tuple[FirebaseUser | None, int | None]:
+    """(usuario, None) se pode ouvir o grupo; (None, codigo de fechamento)
+    se nao. Validar o token pode buscar as chaves do Google (requests, ate
+    5 s) e a checagem de membro usa o banco sincrono: as duas vao para uma
+    thread para nao travar o loop de eventos, que atende todos os usuarios."""
     try:
         user = await run_in_threadpool(decode_firebase_token, token)
     except HTTPException:
-        await websocket.close(code=4401)
-        return
+        return None, 4401
+    if not await run_in_threadpool(_check_membership, group_id, user.uid):
+        return None, 4403
+    return user, None
 
-    is_member = await run_in_threadpool(_check_membership, group_id, user.uid)
 
-    if not is_member:
-        await websocket.close(code=4403)
-        return
+async def _token_from_first_message(websocket: WebSocket) -> str | None:
+    try:
+        first = await asyncio.wait_for(websocket.receive_json(), WS_AUTH_TIMEOUT_SECONDS)
+    except WebSocketDisconnect:
+        raise
+    except Exception:  # prazo esgotado, texto que nao e JSON
+        return None
+    if isinstance(first, dict) and first.get("type") == "auth" and isinstance(first.get("token"), str):
+        return first["token"]
+    return None
 
-    await manager.connect(group_id, websocket)
+
+@router.websocket("/{group_id}/ws")
+async def group_websocket(group_id: int, websocket: WebSocket, token: str = ""):
+    """Push do chat/feed/comentarios do grupo (substitui o polling de 15 s).
+
+    O navegador nao manda header Authorization no handshake do WebSocket.
+    O app atual conecta sem token e manda {"type": "auth", "token": ...}
+    como primeira mensagem: o token nao aparece na URL, que fica em log de
+    acesso do Render e de proxies. Recusa depois de aceitar, para o app
+    receber o codigo (4401 token invalido, 4403 nao e membro) e parar de
+    reconectar.
+
+    ?token= na URL continua aceito para o APK 0.2.0 ja instalado, com o
+    comportamento antigo (recusa antes de aceitar)."""
+    if token:
+        _, refusal = await _authorize(group_id, token)
+        if refusal:
+            await websocket.close(code=refusal)
+            return
+        await manager.connect(group_id, websocket)
+    else:
+        await websocket.accept()
+        try:
+            first_token = await _token_from_first_message(websocket)
+        except WebSocketDisconnect:
+            return
+        if first_token is None:
+            await websocket.close(code=4401)
+            return
+        _, refusal = await _authorize(group_id, first_token)
+        if refusal:
+            await websocket.close(code=refusal)
+            return
+        manager.add(group_id, websocket)
+        await websocket.send_json({"type": "ready"})
+
     try:
         while True:
             # Conexao e so push (servidor -> cliente); ainda precisamos
@@ -173,9 +224,7 @@ async def group_websocket(group_id: int, websocket: WebSocket, token: str = ""):
 
 @router.get("/{group_id}", response_model=GroupOut)
 def get_group(group_id: int, db: Session = Depends(get_db), _: FirebaseUser = Depends(get_current_user)):
-    group = _get_group_or_404(db, group_id)
-    users = _load_users(db, [group.created_by])
-    return _serialize_group(group, users)
+    return _group_out(db, group_id)
 
 
 @router.put("/{group_id}/photo", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:photo", 10, 600))])
@@ -193,30 +242,32 @@ def update_group_photo(
     group.updated_at = datetime.now(timezone.utc)
     db.commit()
 
-    group = _get_group_or_404(db, group_id)
-    users = _load_users(db, [group.created_by])
-    return _serialize_group(group, users)
+    return _group_out(db, group_id)
 
 
 @router.post("/{group_id}/join", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:membership", 20, 60))])
 def join_group(
-    group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(get_current_user)
+    group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(require_verified_email)
 ):
     group = _get_group_or_404(db, group_id)
-    already_member = any(m.user_id == current_user.uid for m in group.members)
-    if not already_member:
-        db.add(GroupMember(group_id=group_id, user_id=current_user.uid))
+    # ON CONFLICT em vez de "ja e membro?" + INSERT: com dois toques rapidos,
+    # as duas requisicoes passavam pela checagem e a segunda dava 500 na
+    # constraint unica.
+    inserted = db.execute(
+        insert(GroupMember)
+        .values(group_id=group_id, user_id=current_user.uid)
+        .on_conflict_do_nothing(index_elements=["group_id", "user_id"])
+    ).rowcount
+    if inserted:
         group.updated_at = datetime.now(timezone.utc)
-        db.commit()
+    db.commit()
 
-    group = _get_group_or_404(db, group_id)
-    users = _load_users(db, [group.created_by])
-    return _serialize_group(group, users)
+    return _group_out(db, group_id)
 
 
 @router.post("/{group_id}/leave", response_model=GroupOut, dependencies=[Depends(rate_limit("groups:membership", 20, 60))])
 def leave_group(
-    group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(get_current_user)
+    group_id: int, db: Session = Depends(get_db), current_user: FirebaseUser = Depends(require_verified_email)
 ):
     group = _get_group_or_404(db, group_id)
     db.query(GroupMember).filter(
@@ -225,9 +276,7 @@ def leave_group(
     group.updated_at = datetime.now(timezone.utc)
     db.commit()
 
-    group = _get_group_or_404(db, group_id)
-    users = _load_users(db, [group.created_by])
-    return _serialize_group(group, users)
+    return _group_out(db, group_id)
 
 
 # ─── Posts ──────────────────────────────────────────────────────────────────

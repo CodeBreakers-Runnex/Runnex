@@ -81,13 +81,21 @@ CONHECIMENTO: dict[str, dict[str, str]] = {
         "curta": "Refeição completa 2-3h antes, ou lanche leve 30-60min antes.",
         "detalhada": "Refeição completa 2-3 horas antes com carboidratos e proteína magra. Lanche leve 30-60 minutos antes.",
     },
+    # pos_treino, hidratacao e alimentacao_corrida: so entra o que foi conferido
+    # nas diretrizes (ISSN 2017 e ACSM). Os textos antigos traziam volumes e uma
+    # "janela de 30 minutos" que nao foi possivel confirmar. Sem litros, ml,
+    # calorias ou peso; o resto fica generico.
     "pos_treino": {
-        "curta": "Coma proteína e carboidrato até 30min após. Hidrate-se bem.",
-        "detalhada": "Após o treino, consuma proteína e carboidrato nos primeiros 30 minutos. Duas horas depois, refeição completa.",
+        "curta": "Depois de correr, junte carboidrato e uma proteína de boa qualidade nas próximas horas (a ISSN cita até 2 horas para a proteína) e reponha o que suou. Orientação geral, não substitui nutricionista.",
+        "detalhada": "Depois do treino, combine carboidrato, para repor a energia, com uma proteína de boa qualidade em até 2 horas, que é a janela citada pela ISSN para a recuperação muscular. Reponha o líquido perdido no suor, sem exagerar. Os valores ideais dependem de cada pessoa; para um plano seu, procure um nutricionista. Orientação geral, não substitui nutricionista.",
     },
     "hidratacao": {
-        "curta": "Beba 2-3 litros por dia. Durante o treino: 150-300ml a cada 15-20min.",
-        "detalhada": "Beba 2-3 litros de água por dia. Durante o treino, beba 150-300ml a cada 15-20 minutos.",
+        "curta": "Hidratação é individual, porque a taxa de suor varia muito de pessoa para pessoa. Reponha o que perdeu no suor, sem beber além disso. Orientação geral, não substitui nutricionista.",
+        "detalhada": "Não há um volume único que sirva para todo mundo: a taxa de suor e a perda de sais variam muito de pessoa para pessoa, e por isso as diretrizes do ACSM defendem planos individualizados de reposição. A ideia é repor o que se perde no suor, evitando beber mais do que isso. Se você corre distâncias longas ou tem alguma condição de saúde, vale montar o seu plano com um nutricionista ou médico. Orientação geral, não substitui nutricionista.",
+    },
+    "alimentacao_corrida": {
+        "curta": "Em esforços acima de cerca de 1 hora, as diretrizes falam em 30 a 60 g de carboidrato por hora durante o exercício. Depois, combine carboidrato com uma proteína de boa qualidade, em até 2 horas. Orientação geral, não substitui nutricionista.",
+        "detalhada": "Para esforços de mais de 1 hora em intensidade alta, a posição da ISSN e as orientações do ACSM citam cerca de 30 a 60 g de carboidrato por hora durante a corrida; em esforços muito longos as recomendações podem ser maiores. Depois do treino, uma proteína de boa qualidade em até 2 horas ajuda na recuperação muscular, junto com carboidrato para repor a energia. Alimentação e hidratação variam de pessoa para pessoa: para um plano seu, procure um nutricionista. Orientação geral, não substitui nutricionista.",
     },
     "suplementos": {
         "curta": "Whey, creatina e cafeína podem ajudar. Consulte nutricionista.",
@@ -745,8 +753,8 @@ def texto_intencao(intencao: str, estado: EstadoConversa, dados: DadosDoApp) -> 
         return f"Até mais{nome}! Se tiver mais dúvidas sobre corrida, é só chamar. Bons treinos!"
     if intencao == "ajuda":
         return (
-            f"Posso ajudar{nome} com técnica, treinos, pace, zonas, provas (5k à maratona), nutrição, "
-            "equipamento e lesões. Com os seus dados do Runnex: 'minhas estatísticas', 'minhas últimas "
+            f"Posso ajudar{nome} com técnica, treinos, pace, zonas, provas (5k à maratona), nutrição "
+            "(o que comer e beber depois de correr), equipamento e lesões. Com os seus dados do Runnex: 'minhas estatísticas', 'minhas últimas "
             "corridas', 'meus recordes' e 'minha meta'. Pra definir a meta semanal: 'meta: 20'."
         )
     raise ValueError(f"intenção desconhecida: {intencao}")
@@ -928,6 +936,160 @@ def _analisar_pergunta_complexa(
 
 
 # ---------------------------------------------------------------------------
+# Nutricao: o que comer e beber (chat reativo)
+# ---------------------------------------------------------------------------
+# Detector proprio, com \b em volta de cada termo, ligado ANTES das regras de
+# dados e de pergunta complexa. O dicionario MAPEAMENTO_CONHECIMENTO_CURTO casa
+# por substring e a primeira entrada ganha: "gel" casaria com "gelo", "sede"
+# com "sedentario", e "ritmo", "recuperacao" e "meia" venceriam a pergunta
+# antes de "depois de correr". Conteudo: so o que foi conferido nas diretrizes
+# (ISSN 2017 e ACSM). Sem litros, ml, calorias ou peso.
+
+AVISO_NUTRICAO = "Orientação geral, não substitui nutricionista."
+
+_PEDE_BEBIDA = re.compile(r"\b(hidrata\w*|beber|bebidas?|[áa]gua|sede|desidrata\w*|isot[ôo]nic\w*)\b")
+_PEDE_COMIDA = re.compile(
+    r"\b(comer|comidas?|alimenta[çc][ãa]o|alimentar|lanch\w+|refei[çc][ãa]o|refei[çc][õo]es"
+    r"|carbo|carboidratos?|carbs?|gel|g[eé]is)\b"
+)
+_MOMENTO_DEPOIS = re.compile(r"\b(depois|ap[óo]s|p[óo]s|terminei|acabei|recupera\w*)\b")
+_MOMENTO_ANTES = re.compile(r"\b(antes|pr[ée])\b")
+_MOMENTO_DURANTE = re.compile(r"\b(durante|enquanto|na prova|no longão)\b")
+
+# "1h30", "2h", "2h30min" / "2 horas e 30 minutos" / "40 minutos". Hora do dia
+# ("às 6h", "depois das 6h") nao e duracao.
+_HORAS_COLADAS = re.compile(r"(?<![\w:.])(\d{1,2})h(?:(\d{2})(?:\s*min\w*)?)?(?![a-zà-ú\d])")
+_HORAS_POR_EXTENSO = re.compile(r"(?<![\w:.])(\d{1,2})\s*horas?(?:\s*(?:e\s*)?(\d{1,2})\s*min\w*)?")
+_MINUTOS = re.compile(r"(?<![\w:.])(\d{1,3})\s*min(?:utos?)?\b")
+_HORA_DO_DIA = re.compile(r"\b(?:às|as|ao|até|ate|das|desde|após|apos)\s*$")
+
+# Ritmo usado so para estimar a duracao quando a pessoa informa apenas a distancia.
+_PACE_PADRAO_REPOSICAO = 6.0
+_LIMITE_CURTA_MIN = 60
+_LIMITE_MEDIA_MIN = 120
+
+_PEDIDO_DE_DURACAO = (
+    "Me diga quanto tempo durou a corrida (ou quantos km) para eu orientar o que comer e beber depois. "
+    "Exemplo: 'corri 1h30, o que comer depois?' ou 'corri 10 km'."
+)
+
+_POR_HORA = "30 a 60 g de carboidrato por hora"
+
+# Faixas por duracao. Cada variante tem 2 ou 3 frases e so afirma o que foi
+# conferido: proteina de boa qualidade em ate 2 horas depois (ISSN),
+# 30 a 60 g de carboidrato por hora em esforcos acima de 1 hora (ISSN/ACSM) e
+# hidratacao individual, repondo o suor sem beber alem disso (ACSM 2007).
+_REPOSICAO: dict[str, list[str]] = {
+    "curta": [
+        "Depois de uma corrida curta, junte carboidrato e uma proteína de boa qualidade em uma refeição ou "
+        "lanche nas próximas horas. Reponha o que você suou, sem beber além disso.",
+        "Corrida curta pede uma recuperação simples: carboidrato para repor a energia e proteína de boa "
+        "qualidade, em até 2 horas. Hidratação é individual, então reponha o que perdeu no suor, sem exagerar.",
+        "Depois de uma corrida curta, pense em carboidrato para repor a energia e em uma proteína de boa "
+        "qualidade, em até 2 horas. Beba o suficiente para repor o suor, sem passar disso.",
+    ],
+    "media": [
+        f"Em corridas acima de 1 hora, as diretrizes citam {_POR_HORA} durante o esforço; vale pensar nisso "
+        "para os próximos treinos longos. Agora, junte carboidrato e uma proteína de boa qualidade, em até "
+        "2 horas, e reponha o que suou, sem exagerar.",
+        "Depois de uma corrida de mais de 1 hora, combine carboidrato e uma proteína de boa qualidade, em até "
+        f"2 horas. Para os próximos esforços desse tamanho, as diretrizes falam em {_POR_HORA}. Hidratação é "
+        "individual: reponha o que perdeu no suor, sem beber além disso.",
+        "Para uma corrida de 1 a 2 horas, a recuperação combina carboidrato para repor a energia e proteína de "
+        f"boa qualidade, em até 2 horas. Nos próximos treinos desse tamanho, as diretrizes citam {_POR_HORA} "
+        "durante o esforço. Reponha o suor, sem exagerar.",
+    ],
+    "longa": [
+        "Depois de uma corrida longa, junte carboidrato e uma proteína de boa qualidade, em até 2 horas, e "
+        f"reponha o que suou, sem exagerar. Para esforços acima de 1 hora, as diretrizes citam {_POR_HORA}; em "
+        "esforços muito longos as recomendações podem ser maiores, e vale combinar isso com um nutricionista.",
+        "Corrida longa pede atenção à recuperação: carboidrato para repor a energia e proteína de boa "
+        f"qualidade, em até 2 horas. Durante esforços desse tamanho, as diretrizes falam em {_POR_HORA}, e em "
+        "esforços muito longos as recomendações podem ser maiores. Hidratação é individual: reponha o que "
+        "perdeu no suor, sem beber além disso.",
+    ],
+}
+
+
+def texto_reposicao(duracao_min: Optional[float], distancia_km: Optional[float]) -> str:
+    """Orientacao geral para depois de correr, por faixa de duracao: ate 60 min,
+    de 60 a 120 min e acima de 120 min. So a distancia: estima a duracao a
+    6 min/km. Sem nenhum dos dois, pede um deles."""
+    if duracao_min is None and distancia_km:
+        duracao_min = distancia_km * _PACE_PADRAO_REPOSICAO
+    if not duracao_min or duracao_min <= 0:
+        return _PEDIDO_DE_DURACAO
+    if duracao_min <= _LIMITE_CURTA_MIN:
+        faixa = "curta"
+    elif duracao_min <= _LIMITE_MEDIA_MIN:
+        faixa = "media"
+    else:
+        faixa = "longa"
+    return f"{random.choice(_REPOSICAO[faixa])} {AVISO_NUTRICAO}"
+
+
+def _duracao_na_mensagem(mensagem_lower: str) -> Optional[int]:
+    """Duracao da corrida dita na mensagem, em minutos."""
+    for achado in (_HORAS_COLADAS.search(mensagem_lower), _HORAS_POR_EXTENSO.search(mensagem_lower)):
+        if achado and not _HORA_DO_DIA.search(mensagem_lower[: achado.start()]):
+            minutos = int(achado.group(1)) * 60 + int(achado.group(2) or 0)
+            return minutos if 1 <= minutos <= 24 * 60 else None
+    achado = _MINUTOS.search(mensagem_lower)
+    if achado:
+        minutos = int(achado.group(1))
+        return minutos if 1 <= minutos <= 24 * 60 else None
+    return None
+
+
+def _reposicao_apos_correr(
+    duracao_msg: Optional[int], distancia_msg: Optional[float], estado: EstadoConversa, dados: DadosDoApp
+) -> str:
+    """O que a pessoa disse na mensagem vale mais que a ultima corrida salva."""
+    if duracao_msg is not None:
+        return f"Para uma corrida de {duracao_msg} min: {texto_reposicao(duracao_msg, distancia_msg)}"
+    if distancia_msg:
+        ultima = dados.corridas[0] if dados.corridas else None
+        pace_ref = estado.pace_informado or (ultima.pace if ultima else _PACE_PADRAO_REPOSICAO)
+        estimada = distancia_msg * pace_ref
+        return (
+            f"Estimando uns {round(estimada)} min para {distancia_msg:g} km (a {formatar_pace(pace_ref)} min/km): "
+            f"{texto_reposicao(estimada, distancia_msg)}"
+        )
+    if dados.corridas:
+        ultima = dados.corridas[0]
+        return (
+            f"Pela sua última corrida ({ultima.distancia_km:.1f} km em {round(ultima.duracao_s / 60)} min, "
+            f"{_quando_relativo(dados, ultima)}): {texto_reposicao(ultima.duracao_s / 60, ultima.distancia_km)}"
+        )
+    return texto_reposicao(None, None)
+
+
+def _pergunta_nutricao(
+    mensagem_lower: str, distancia: Optional[float], estado: EstadoConversa, dados: DadosDoApp
+) -> Optional[tuple[str, str]]:
+    """(texto, topico) se a mensagem pergunta o que comer ou beber; None se nao."""
+    bebida = _PEDE_BEBIDA.search(mensagem_lower)
+    comida = _PEDE_COMIDA.search(mensagem_lower)
+    if not (bebida or comida):
+        return None
+
+    duracao = _duracao_na_mensagem(mensagem_lower)
+    antes = _MOMENTO_ANTES.search(mensagem_lower)
+    depois = _MOMENTO_DEPOIS.search(mensagem_lower)
+    durante = _MOMENTO_DURANTE.search(mensagem_lower)
+
+    # Depois de correr: usa a duracao dita, a distancia dita ou a ultima corrida.
+    if not durante and not antes and (depois or duracao is not None):
+        return _reposicao_apos_correr(duracao, distancia, estado, dados), "pos_treino"
+    if antes and not depois and not durante:
+        # pre_treino fala so de refeicoes; "beber antes" e hidratacao.
+        topico = "pre_treino" if comida else "hidratacao"
+        return CONHECIMENTO[topico]["curta"], topico
+    topico = "hidratacao" if bebida and not comida else "alimentacao_corrida"
+    return CONHECIMENTO[topico]["curta"], topico
+
+
+# ---------------------------------------------------------------------------
 # Ponto de entrada
 # ---------------------------------------------------------------------------
 
@@ -966,6 +1128,13 @@ def responder(mensagem_original: str, estado: EstadoConversa, dados: DadosDoApp)
     if aprendida:
         return Resposta(aprendida)
 
+    nutricao = _pergunta_nutricao(mensagem_lower, distancia, estado, dados)
+    if nutricao:
+        texto, topico = nutricao
+        estado.ultimo_topico_explicado = topico
+        estado.aguardando_aprofundamento = True
+        return Resposta(texto)
+
     sobre_dados = _pergunta_sobre_dados(mensagem_lower, dados)
     if sobre_dados:
         return Resposta(sobre_dados)
@@ -989,3 +1158,4 @@ def responder(mensagem_original: str, estado: EstadoConversa, dados: DadosDoApp)
         return Resposta(random.choice(_AGRADECIMENTOS))
 
     return Resposta(gerar_resposta_generica(dados.nome, estado.pace_informado, estado.distancia_frequente))
+

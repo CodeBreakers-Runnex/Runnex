@@ -57,22 +57,29 @@ export const deleteUserActivity = async (activityId: string, userId: string) => 
   void userId; // mantido na assinatura por compatibilidade com os chamadores existentes
 };
 
+// Primeira página do feed. Lança em caso de erro: quem chama decide como avisar.
+export const getFeed = (limitCount = 10): Promise<FeedActivity[]> =>
+  api.get<FeedActivity[]>(`/activities/feed?limit=${limitCount}`);
+
 // Feed de atividades — Fase 1: sem onSnapshot ainda (real-time via WebSocket
 // é a Fase 2 do plano de migração). Por enquanto, poll simples a cada 15s.
 // Interface mantida igual (retorna uma função de "unsubscribe") para não
 // exigir mudanças nos componentes que já consomem isso.
 export const subscribeToFeed = (
   callback: (activities: FeedActivity[]) => void,
-  limitCount = 10
+  limitCount = 10,
+  // Falha na busca: a tela troca o carregando por "tentar de novo".
+  onError?: (error: unknown) => void,
 ) => {
   let cancelled = false;
 
   const fetchFeed = async () => {
     try {
-      const activities = await api.get<FeedActivity[]>(`/activities/feed?limit=${limitCount}`);
+      const activities = await getFeed(limitCount);
       if (!cancelled) callback(activities);
     } catch (error) {
       console.error("Erro ao buscar feed:", error);
+      if (!cancelled) onError?.(error);
     }
   };
 
@@ -86,27 +93,26 @@ export const subscribeToFeed = (
 };
 
 // Buscar atividades mais antigas (paginação cursor-based pelo id numérico)
-export const loadMoreActivities = async (
+// Lança em caso de erro: antes devolvia lista vazia e a tela concluía que o
+// feed tinha acabado ("você chegou ao início do feed").
+export const loadMoreActivities = (
   lastId: FeedActivity["id"],
   limitCount = 10
-): Promise<FeedActivity[]> => {
-  try {
-    return await api.get<FeedActivity[]>(`/activities/feed?limit=${limitCount}&before_id=${lastId}`);
-  } catch (error) {
-    console.error("Erro ao carregar mais atividades:", error);
-    return [];
-  }
-};
+): Promise<FeedActivity[]> =>
+  api.get<FeedActivity[]>(`/activities/feed?limit=${limitCount}&before_id=${lastId}`);
 
 // Curtir/Descurtir uma atividade
-export const toggleLike = async (activityId: string, userId: string, isLiked: boolean) => {
+// Devolve a lista de curtidas já atualizada pelo backend, para a tela
+// mostrar o resultado sem esperar a próxima busca do feed.
+export const toggleLike = async (activityId: string, userId: string, isLiked: boolean): Promise<string[]> => {
+  void userId; // mantido na assinatura: quem curte é sempre o usuario autenticado no backend
   try {
-    await api.post(`/activities/${activityId}/like`, { isLiked });
+    const { likes } = await api.post<{ likes: string[] }>(`/activities/${activityId}/like`, { isLiked });
+    return likes;
   } catch (error) {
     console.error("Erro ao dar like:", error);
     throw error;
   }
-  void userId; // mantido na assinatura: quem curte é sempre o usuario autenticado no backend
 };
 
 // Resposta de GET /activities/stats/me: números brutos, o app só formata.
@@ -131,57 +137,35 @@ type UserStatsResponse = {
 // para a sequência, o gráfico da semana e as conquistas de horário.
 export const getUserStats = async (userId: string): Promise<UserStats> => {
   void userId; // o backend sempre usa o usuário autenticado
-  try {
-    const utcOffsetMinutes = -new Date().getTimezoneOffset();
-    const stats = await api.get<UserStatsResponse>(`/activities/stats/me?utc_offset_minutes=${utcOffsetMinutes}`, {
-      cacheMs: OWN_DATA_CACHE_MS,
-    });
-    const normalize = (activity: FeedActivity | null) =>
-      activity ? normalizeActivity(activity.id, activity) : null;
+  // Sem try/catch de propósito: antes uma falha virava estatísticas zeradas,
+  // e a tela mostrava uma conta "nova" em vez de avisar do erro.
+  const utcOffsetMinutes = -new Date().getTimezoneOffset();
+  const stats = await api.get<UserStatsResponse>(`/activities/stats/me?utc_offset_minutes=${utcOffsetMinutes}`, {
+    cacheMs: OWN_DATA_CACHE_MS,
+  });
+  const normalize = (activity: FeedActivity | null) =>
+    activity ? normalizeActivity(activity.id, activity) : null;
 
-    return {
-      totalKm: stats.totalKm.toFixed(1),
-      runsCount: stats.runsCount,
-      totalTime: formatTotalTime(stats.totalSeconds),
-      totalCalories: Math.round(stats.totalCalories),
-      averagePace: formatPace(stats.totalSeconds, stats.totalKm),
-      currentStreak: stats.currentStreak,
-      weeklyTotalKm: stats.weeklyTotalKm,
-      bestActivity: normalize(stats.bestActivity),
-      lastActivity: normalize(stats.lastActivity),
-      weeklyData: stats.weeklyData,
-      hasHourLongRun: stats.hasHourLongRun,
-      hasSub10kRun: stats.hasSub10kRun,
-      dawnRunsCount: stats.dawnRunsCount,
-      nightRunsCount: stats.nightRunsCount,
-    };
-  } catch (error) {
-    console.error("Erro ao buscar estatísticas:", error);
-    return {
-      totalKm: "0.0",
-      runsCount: 0,
-      totalTime: "0m",
-      totalCalories: 0,
-      averagePace: "0'00\"",
-      currentStreak: 0,
-      weeklyTotalKm: 0,
-      bestActivity: null,
-      lastActivity: null,
-      weeklyData: [],
-      hasHourLongRun: false,
-      hasSub10kRun: false,
-      dawnRunsCount: 0,
-      nightRunsCount: 0,
-    };
-  }
+  return {
+    totalKm: stats.totalKm.toFixed(1),
+    runsCount: stats.runsCount,
+    totalTime: formatTotalTime(stats.totalSeconds),
+    totalCalories: Math.round(stats.totalCalories),
+    averagePace: formatPace(stats.totalSeconds, stats.totalKm),
+    currentStreak: stats.currentStreak,
+    weeklyTotalKm: stats.weeklyTotalKm,
+    bestActivity: normalize(stats.bestActivity),
+    lastActivity: normalize(stats.lastActivity),
+    weeklyData: stats.weeklyData,
+    hasHourLongRun: stats.hasHourLongRun,
+    hasSub10kRun: stats.hasSub10kRun,
+    dawnRunsCount: stats.dawnRunsCount,
+    nightRunsCount: stats.nightRunsCount,
+  };
 };
 
+// Lança em caso de erro (antes devolvia lista vazia, que parecia "nenhuma corrida").
 export const getUserActivities = async (userId: string, limitCount = 10): Promise<FeedActivity[]> => {
-  try {
-    const activities = await api.get<FeedActivity[]>(`/activities/user/${userId}?limit=${limitCount}`);
-    return activities.map((activity) => normalizeActivity(activity.id, activity));
-  } catch (error) {
-    console.error("Erro ao buscar corridas do usuario:", error);
-    return [];
-  }
+  const activities = await api.get<FeedActivity[]>(`/activities/user/${userId}?limit=${limitCount}`);
+  return activities.map((activity) => normalizeActivity(activity.id, activity));
 };

@@ -47,7 +47,7 @@ export default function TrainingCalendar() {
     const request = ++requests.current;
     setLoading(true); setLoadError("");
     try {
-      const [workouts, summary, activities] = await Promise.all([getWorkouts(start, end), getTrainingSummary(monday, localZone()), getUserActivities(uid, 100)]);
+      const [workouts, summary, activities] = await Promise.all([getWorkouts(start, end), getTrainingSummary(monday, localZone()), getUserActivities(uid, 100).catch(() => [])]); // corridas só servem para vincular: sem elas a agenda abre
       if (request === requests.current && scopeRef.current === uid) setData({ uid, workouts, summary, activities });
     } catch (e) { if (request === requests.current && scopeRef.current === uid) setLoadError(e instanceof Error ? e.message : "Não foi possível carregar a agenda."); }
     finally { if (request === requests.current && scopeRef.current === uid) setLoading(false); }

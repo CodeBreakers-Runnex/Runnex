@@ -223,13 +223,18 @@ export default function Social() {
     setGroupsLoading(true);
     try {
       const [profile, groupList] = await Promise.all([
-        getUserProfile(user.uid),
+        // Perfil só diz em quais grupos a pessoa está: sem ele, a lista aparece.
+        getUserProfile(user.uid).catch(() => null),
         getGroups(),
       ]);
       const joined = profile?.joinedGroupIds || [];
       setJoinedGroups(joined);
       setGroups(groupList);
       setSelectedGroupId((current) => current || joined[0] || groupList[0]?.id || null);
+    } catch (error) {
+      // Antes a falha virava a lista de grupos de demonstração, sem aviso.
+      console.error("Erro ao carregar grupos:", error);
+      toast.error("Não foi possível carregar os grupos. Tente de novo.");
     } finally {
       setGroupsLoading(false);
     }

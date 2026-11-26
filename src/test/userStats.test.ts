@@ -34,11 +34,10 @@ describe("getUserStats", () => {
     expect(stats.hasSub10kRun).toBe(true);
   });
 
-  it("devolve zeros se o servidor falhar", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    api.get.mockRejectedValue(new Error("offline"));
-    const stats = await getUserStats("ana");
-    expect(stats.runsCount).toBe(0);
-    expect(stats.totalKm).toBe("0.0");
+  // Antes devolvia zeros, e a tela mostrava uma conta "nova" em vez de avisar.
+  it("se o servidor falhar, avisa quem chamou em vez de devolver zeros", async () => {
+    const offline = new Error("offline");
+    api.get.mockRejectedValue(offline);
+    await expect(getUserStats("ana")).rejects.toBe(offline);
   });
 });

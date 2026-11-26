@@ -138,4 +138,12 @@ describe("eventos", () => {
     expect(await screen.findByText(/Nenhum evento encontrado/)).toBeInTheDocument();
     expect(mocks.error).toHaveBeenCalledWith("Não foi possível carregar os eventos.");
   });
+
+  it("se o perfil não carregar, os eventos aparecem mesmo assim (sem ordenar pela cidade)", async () => {
+    mocks.getUserProfile.mockRejectedValue(new Error("offline"));
+    render(<Events />);
+    expect((await screen.findAllByText("Corrida da Primavera")).length).toBeGreaterThan(0);
+    expect(mocks.getEvents).toHaveBeenCalledWith("");
+    expect(mocks.error).not.toHaveBeenCalled();
+  });
 });
