@@ -310,6 +310,12 @@ Tudo abaixo está na branch `beta-2.3` (PR #31), que reúne os PRs temáticos. N
 
 **Adicionado fora da auditoria:** `kid` desconhecido no token causava 500 (agora 401) e chatbot com hidratação e alimentação (#32).
 
+**Adicionado depois, em PRs empilhados (não estão na `beta-2.3`; ver #33 a #36 e o PR do fix de RunCoins):**
+- Grupo privado com código gerado pelo servidor, no backend e no app (#33, #34).
+- Loja de RunCoins só aparece quando o servidor habilita a compra; `docs/MONETIZACAO.md` e `docs/APRESENTACAO_BANCA.md` (#35).
+- Plano VIP sem pagamento (selo e grupo privado) e retirada do Spotify (#36).
+- **Bug encontrado depois da auditoria:** quem corria sem pet não recebia RunCoins, mas apagar essa corrida subtraía moedas calculadas pela distância. Corrigido com `activities.coins_credited` (corridas antigas, com valor nulo, continuam recalculando).
+
 **Deliberadamente não feito:** separação da lógica de GPS, S5 (memberIds), P1 (fotos base64), P7 (índices), R2/R3. Todos precisam de teste em aparelho ou de decisão sua.
 
 ## Fontes (verificação externa)
