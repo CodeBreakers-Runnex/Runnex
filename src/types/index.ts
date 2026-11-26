@@ -129,6 +129,7 @@ export interface RunningGroup {
   description: string;
   tag: string;
   photoURL?: string | null;
+  isPrivate?: boolean;
   createdBy: string;
   creatorName: string;
   memberIds: string[];

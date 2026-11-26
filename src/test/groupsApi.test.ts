@@ -28,11 +28,13 @@ vi.mock("@/services/groupSocket", () => ({
 
 import { ApiError } from "@/services/apiClient";
 import {
+  createGroup,
   getGroupById,
   getGroupLeaderboard,
   getGroups,
   joinGroup,
   leaveGroup,
+  regenerateJoinCode,
   subscribeToGroupMessages,
   subscribeToGroupPostComments,
   subscribeToGroupPosts,
@@ -82,10 +84,38 @@ describe("groupsApi", () => {
       expect(mocks.setDoc).not.toHaveBeenCalled();
     });
 
+    it("grupo público entra sem corpo; privado manda o código", async () => {
+      await joinGroup("42", "ana");
+      await joinGroup("43", "ana", "K7M2QX9TPA");
+      expect(mocks.api.post).toHaveBeenNthCalledWith(1, "/groups/42/join", undefined);
+      expect(mocks.api.post).toHaveBeenNthCalledWith(2, "/groups/43/join", { code: "K7M2QX9TPA" });
+    });
+
     it("grupo de demonstração grava no Firestore legado, não na API", async () => {
       await joinGroup("sp-runners", "ana");
       expect(mocks.setDoc).toHaveBeenCalledWith("users/ana", { joinedGroupIds: { arrayUnion: "sp-runners" } }, { merge: true });
       expect(mocks.api.post).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("grupo privado", () => {
+    it("criar envia private e devolve o código só quando existe", async () => {
+      mocks.api.post.mockResolvedValueOnce({ id: "9", joinCode: "K7M2QX9TPA" });
+      const base = { name: "G", city: "SP", description: "d", tag: "t", userId: "ana", userName: "Ana" };
+      expect(await createGroup({ ...base, isPrivate: true })).toEqual({ id: "9", joinCode: "K7M2QX9TPA" });
+      expect(mocks.api.post).toHaveBeenLastCalledWith("/groups", { name: "G", city: "SP", description: "d", tag: "t", private: true });
+
+      mocks.api.post.mockResolvedValueOnce({ id: "10" });
+      expect(await createGroup(base)).toEqual({ id: "10", joinCode: null });
+      expect(mocks.api.post).toHaveBeenLastCalledWith("/groups", expect.objectContaining({ private: false }));
+    });
+
+    it("regenerar devolve o código novo ou falha se o servidor não mandar", async () => {
+      mocks.api.post.mockResolvedValueOnce({ joinCode: "NOVOCODE22" });
+      expect(await regenerateJoinCode("9")).toBe("NOVOCODE22");
+      expect(mocks.api.post).toHaveBeenLastCalledWith("/groups/9/join-code");
+      mocks.api.post.mockResolvedValueOnce({});
+      await expect(regenerateJoinCode("9")).rejects.toThrow();
     });
   });
 
