@@ -148,3 +148,46 @@ def test_delete_all_runs_refunds_total(client, make_user):
     assert client.delete("/activities/user/ana/all").json() == {"deleted_count": 2}
     assert client.get("/users/ana").json()["petCoins"] == 0
     assert _group_weekly_km(client, group_id) == 0
+
+
+def test_deleting_a_run_made_before_adopting_a_pet_keeps_the_coins(client, make_user):
+    """Sem pet a corrida nao credita RunCoins; apagar essa corrida tambem nao
+    pode tirar moedas que vieram de outras (antes tirava, recalculando pela
+    distancia)."""
+    make_user("ana")
+    first = client.post("/activities", json=run_payload("ana", km=5.0, seconds=1800)).json()["id"]
+    assert client.get("/users/ana").json()["petCoins"] == 0  # sem pet, sem moedas
+
+    client.post("/users/ana/pet/choose", json={"species": "guepardo", "name": "Flash"})
+    client.post("/activities", json=run_payload("ana", km=3.0, seconds=1080))
+    assert client.get("/users/ana").json()["petCoins"] == 3
+
+    assert client.delete(f"/activities/{first}").status_code == 200
+    assert client.get("/users/ana").json()["petCoins"] == 3
+
+
+
+def test_legacy_run_without_record_is_still_refunded_by_distance(client, make_user, db):
+    """Corrida anterior a coins_credited (NULL) mantem o estorno de antes."""
+    from app.models import Activity
+
+    make_user("ana")
+    client.post("/users/ana/pet/choose", json={"species": "guepardo", "name": "Flash"})
+    run_id = client.post("/activities", json=run_payload("ana", km=5.0, seconds=1800)).json()["id"]
+    db.query(Activity).filter(Activity.id == int(run_id)).update({"coins_credited": None})
+    db.commit()
+    assert client.get("/users/ana").json()["petCoins"] == 5
+
+    assert client.delete(f"/activities/{run_id}").status_code == 200
+    assert client.get("/users/ana").json()["petCoins"] == 0
+
+
+def test_run_records_what_it_credited(client, make_user, db):
+    from app.models import Activity
+
+    make_user("ana")
+    without_pet = client.post("/activities", json=run_payload("ana", km=4.0, seconds=1440)).json()["id"]
+    client.post("/users/ana/pet/choose", json={"species": "guepardo", "name": "Flash"})
+    with_pet = client.post("/activities", json=run_payload("ana", km=6.0, seconds=2160)).json()["id"]
+    assert db.get(Activity, int(without_pet)).coins_credited == 0
+    assert db.get(Activity, int(with_pet)).coins_credited == 6

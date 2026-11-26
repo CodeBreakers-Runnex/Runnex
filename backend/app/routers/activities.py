@@ -109,6 +109,9 @@ def save_activity(
         heart_rate_max_bpm=payload.heart_rate_max_bpm,
         is_simulated=payload.is_simulated,
         client_id=payload.client_id,
+        # Comeca em 0: se o passo de creditar falhar, nada foi creditado e o
+        # estorno tambem nao tira nada.
+        coins_credited=0,
     )
     if finished_at is not None:
         activity.created_at = finished_at
@@ -141,6 +144,7 @@ def save_activity(
         run_coins = calculate_run_coins(payload.distance)
         if user and user.pet_species and run_coins > 0:
             user.pet_coins = (user.pet_coins or 0) + run_coins
+            activity.coins_credited = run_coins
             db.commit()
     except Exception:
         db.rollback()
